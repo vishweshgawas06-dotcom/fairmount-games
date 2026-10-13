@@ -43,9 +43,7 @@ These multipliers intentionally differ from conventional casino total-return fig
 
 ## 3. Bet limit
 
-Current user requirement: each player has a maximum permitted bet amount of 2,000 coins, and this is **not an aggregate cap on the total amount bet during an entire round**.
-
-Implementation interpretation to verify before coding: enforce 2,000 coins as the maximum stake for each individual bet selection; allow multiple distinct selections in the same round, subject to the available wallet balance. The earlier proposed 3,000-coin cap for other bet categories is superseded by the latest 2,000-coin requirement unless the owner explicitly revises it.
+**Rule recorded from the user's clarification:** maximum stake is 2,000 coins for each individual bet selection. This is not a maximum for the total amount bet during a round. A player may place multiple selections in the same round, subject to available wallet balance. The earlier proposed 3,000-coin cap for other bet categories is superseded; the 2,000-coin per-selection cap applies to every selection type.
 
 ## 4. Rebet
 
@@ -80,7 +78,6 @@ Implementation interpretation to verify before coding: enforce 2,000 coins as th
 
 ## 7. Remaining approval items
 
-- Confirm whether the 2,000-coin limit is per individual selection as stated in Section 3.
 - Confirm duplicate identical selections are allowed as separate bet records or combined in the display.
 - Confirm the void-round policy and any exceptional handling when the system cannot safely complete a round.
 - Confirm exact table-layout mapping for zero-containing splits/streets and the first-four bet.
