@@ -1,0 +1,38 @@
+# Secrets and environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+coverage.xml
+htmlcov/
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+.turbo/
+coverage/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local runtime data
+postgres-data/
+redis-data/
+*.log
