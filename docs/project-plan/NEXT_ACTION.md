@@ -6,11 +6,11 @@
 
 ## Objective
 
-Resolve the remaining interpretations and obtain explicit approval of the complete V1 bet catalogue and settlement rules before implementing the betting engine.
+Resolve remaining interpretations and obtain explicit approval of the complete V1 bet catalogue and settlement rules before implementing the betting engine.
 
 ## Current draft
 
-See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md). It records the latest owner instructions and a labelled failure-recovery recommendation. It remains unapproved.
+See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md). It records the latest owner instructions and a labelled server-failure recovery recommendation. It remains unapproved.
 
 ## Latest owner rules recorded
 
@@ -21,22 +21,21 @@ See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_S
 - Intended 2,000-coin combined cap per player, per round, per exact Red, Black, dozen, column, Odd, Even, and row/street selection.
 - Duplicate selections remain separate records but display a combined stake.
 - Bets may be edited/cancelled only before server acceptance; accepted bets are immutable.
-- Over-cap requests are proposed to accept only the remaining valid stake and return the excess immediately, subject to chip rules.
+- If a stake exceeds the applicable cap, the draft proposes accepting only the valid remaining amount and immediately returning the excess, subject to chip rules.
 - Rebet repeats the player's own prior-round set all-or-nothing; accepted rebet bets are immutable.
 - Seconds 0–44 betting open; second 45 final-bet call; second 50 close/freeze bets and start animation; second 60 reveal and settle.
 - Player internet disconnection after acceptance does not cancel a bet.
-- Server/game-side failure that prevents safe completion should trigger automatic audited refunds; reuse any persisted outcome if safe and never regenerate a persisted outcome.
+- Proposed server/game-failure policy: use atomic round settlement; if the round fails before settlement commits, void/refund all accepted stakes idempotently; if settlement has committed, do not refund; never regenerate a persisted outcome.
 - Standard European single-zero layout only.
 
 ## Remaining decisions before approval
 
 1. Confirm the cap treatment for corner, six-line, first-four, and Low/High.
 2. Confirm “rows” means street/row bets.
-3. Confirm partial acceptance and immediate excess refund behavior.
-4. Confirm local-draft editing before submission and immutable accepted bets.
-5. Review the canonical legal-position catalogue, especially zero-adjacent bets.
-6. Confirm the proposed server-failure recovery and no-double-pay/refund safeguard.
-7. Explicit owner approval of the complete specification.
+3. Review the canonical legal-position catalogue, especially zero-adjacent bets.
+4. Confirm the local-draft interaction before server acceptance.
+5. Confirm the proposed server/game-failure policy and atomic settlement.
+6. Explicit owner approval of the complete specification.
 
 ## Do not do yet
 
