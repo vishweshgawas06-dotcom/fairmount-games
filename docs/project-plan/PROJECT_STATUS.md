@@ -1,34 +1,33 @@
 # Project Status
 
 **Current phase:** P00 — Specification lock  
-**Current task:** P00-T02 — Approve roulette bet types and payout rules  
-**Implementation status:** Not started / not verified  
-**Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14; automated cap/partial-acceptance and catalogue-fixture verification pending  
+**Current task:** P00-T02 — Verify catalogue fixture and cap/partial-acceptance criteria  
+**Implementation status:** Betting engine not started  
+**Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14  
+**Verification status:** Deterministic catalogue fixture and Python tests committed; test execution and cap-matrix review pending  
 **Last updated:** 2026-10-14
 
 ## Completed in repository
 
 - Initial repository baseline and development/security guidance.
 - Master phase plan and immediate next-task definition.
-- Updated the P00-T02 draft to record total-payout multipliers, player-private bet data, per-number straight-up/split exposure caps, all confirmed per-selection caps, chip denominations, duplicate records, local-draft editing, immutable accepted bets, rebet rules, round timing, player-disconnect behavior, owner-selected atomic settlement/refund recovery, and standard European layout.
-- Recorded the owner's four choices dated 2026-10-14 in the draft, P00-T02 task, and NEXT_ACTION.md.
-- Recorded the owner's explicit approval of the P00-T02 payout/settlement specification on 2026-10-14.
-- Owner approved the canonical legal-position catalogue on 2026-10-14; catalogue counts and red/black test fixtures still require automated verification.
-- Added `docs/project-plan/roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md` to define required cap, partial-acceptance, concurrency, rollback, and idempotency checks; not yet implementation/test evidence.
+- P00-T02 payout/settlement specification records total-payout multipliers, player-private bet data, per-number straight-up/split exposure caps, all confirmed per-selection caps, chip denominations, duplicate records, local-draft editing, immutable accepted bets, rebet rules, round timing, player-disconnect behavior, owner-selected atomic settlement/refund recovery, and standard European layout.
+- Owner's specification choices and approval recorded on 2026-10-14.
+- Owner-approved canonical legal-position catalogue with fixed red/black sets and expected counts.
+- Cap/partial-acceptance edge-case matrix covering acceptance, exposure caps, concurrency, cutoff, normalization, idempotency, rollback, rebet, insufficient balance, and settlement/refund.
+- Added deterministic JSON fixture tests/fixtures/roulette_catalogue.json, including all canonical inside selections, outside sets, red/black sets, and expected catalogue counts.
+- Added standard-library test suite tests/test_roulette_catalogue_fixture.py to compare fixture data with independently generated expected combinations and validate catalogue counts/color coverage.
 
-## Blocking specification decisions
+## Current verification gates
 
-- Verify cap/partial-acceptance behavior against `roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md`, including concurrent requests, rollback, and idempotency.
-- Encode and verify catalogue counts and fixed red/black sets in deterministic tests before betting-engine implementation.
-- Owner decision recorded: reject ordinary bets in full if balance cannot cover the requested stake; cap-limited partial acceptance remains permitted when the full request is affordable.
-- User/agent removal and point-accounting behavior.
-- Historical record retention, anonymization, and deletion policy.
-- Owner MFA recovery and session policy.
-- Measurable performance/availability targets and acceptance thresholds.
+- Execute python -m unittest discover -s tests -v and record actual results; committed test files are not proof that the tests have passed.
+- Review PA-01 through PA-23 against locked requirements and define the automated verification plan for caps, balance reservation, concurrency, rollback, idempotency, settlement, and void/refund.
+- Ensure future API/realtime authorization tests prove player-private bet data cannot be read by other players.
+- Resolve remaining non-blocking product/operations decisions: user/agent removal and point-accounting behavior; historical record retention/anonymization/deletion; owner MFA recovery/session policy; measurable performance/availability targets.
 
 ## Important status distinction
 
-The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. Edge-case policy and acceptance-criteria verification remain open. No betting-engine implementation or production behavior has been verified. Do not mark P00-T02 complete until these remaining gates are verified.
+The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. Catalogue fixture and test artifacts now exist, but test execution and cap/partial-acceptance verification remain open. No betting-engine implementation or production behavior has been verified. Do not mark P00-T02 complete until the remaining gates and acceptance criteria have recorded evidence.
 
 ## Status update rule
 
