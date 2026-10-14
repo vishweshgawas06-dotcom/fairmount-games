@@ -2,11 +2,11 @@
 
 ## Active task
 
-**P00-T02 — Verify cap/partial-acceptance edge cases and resolve insufficient-balance behavior.**
+**P00-T02 — Verify cap/partial-acceptance edge cases and deterministic catalogue fixtures.**
 
 ## Objective
 
-The owner approved the canonical legal-position catalogue on 2026-10-14. The catalogue is now the specification baseline. Next, verify cap/partial-acceptance edge cases and resolve the normal-bet insufficient-balance policy; do not begin betting-engine implementation until these gates are cleared.
+The owner approved the canonical legal-position catalogue on 2026-10-14. The catalogue is now the specification baseline. The owner selected reject-on-insufficient-balance: ordinary bets are rejected in full if balance cannot cover the requested stake, while cap-limited partial acceptance remains allowed when balance covers the full request. Next, verify the edge-case matrix and deterministic catalogue fixtures; do not begin betting-engine implementation until these gates are cleared.
 
 ## Current draft
 
@@ -40,7 +40,8 @@ See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_S
 - Owner approval of the complete payout/settlement specification recorded on 2026-10-14.
 - Catalogue review draft: [LEGAL_POSITION_CATALOGUE_REVIEW.md](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md).
 - Catalogue approved by owner on 2026-10-14; see [LEGAL_POSITION_CATALOGUE_REVIEW.md](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md).
-- Next: review [CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md](roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md) and decide the normal-bet insufficient-balance behavior.
+- Owner selected reject-on-insufficient-balance on 2026-10-14; details are in [CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md](roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md).
+- Next: verify the edge-case matrix and deterministic catalogue/red-black fixtures.
 - Do not start betting-engine implementation until the catalogue and relevant acceptance criteria are verified.
 
 ## Do not do yet
