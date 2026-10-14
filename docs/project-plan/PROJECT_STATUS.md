@@ -3,7 +3,7 @@
 **Current phase:** P00 — Specification lock  
 **Current task:** P00-T02 — Approve roulette bet types and payout rules  
 **Implementation status:** Not started / not verified  
-**Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14; cap/partial-acceptance verification pending  
+**Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14; automated cap/partial-acceptance and catalogue-fixture verification pending  
 **Last updated:** 2026-10-14
 
 ## Completed in repository
@@ -19,8 +19,8 @@
 ## Blocking specification decisions
 
 - Verify cap/partial-acceptance behavior against `roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md`, including concurrent requests, rollback, and idempotency.
-- Resolve normal-bet insufficient-balance behavior, including a balance not divisible by 5.
 - Encode and verify catalogue counts and fixed red/black sets in deterministic tests before betting-engine implementation.
+- Owner decision recorded: reject ordinary bets in full if balance cannot cover the requested stake; cap-limited partial acceptance remains permitted when the full request is affordable.
 - User/agent removal and point-accounting behavior.
 - Historical record retention, anonymization, and deletion policy.
 - Owner MFA recovery and session policy.
