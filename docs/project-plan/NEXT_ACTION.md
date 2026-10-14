@@ -6,35 +6,38 @@
 
 ## Objective
 
-Resolve remaining ambiguities and obtain explicit approval of the complete V1 bet catalogue and settlement rules before implementing the betting engine.
+Resolve the remaining interpretations and obtain explicit approval of the complete V1 bet catalogue and settlement rules before implementing the betting engine.
 
 ## Current draft
 
-See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md). It records the owner's latest choices but remains a proposal and is not approved.
+See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md). It records the latest owner instructions and a labelled failure-recovery recommendation. It remains unapproved.
 
-## Owner choices recorded for review
+## Latest owner rules recorded
 
-- Original payout ratios calculate **total payout including the placed stake**. Example: a 10-coin straight-up win credits 350 coins total, not 360.
-- Each player has an individual roulette table view and sees only their own bets and amounts. Other players' individual bets remain private; the winning result is global and shared.
-- Maximum stake is 2,000 coins per individual bet selection, not a total-round cap; this applies to all bet types.
-- REBET copies that player's own previous-round bet set and amounts. The complete set is accepted only if the available balance covers its total stake; otherwise none is placed.
-- Seconds 0–44 betting open; second 45 final-bet call; second 50 close/freeze bets and start animation; second 60 reveal result and credit aggregate winning payout.
-- One server-authoritative result is shared by all players; result generation is independent of bets and balances. Settlement must be transactional and idempotent.
-- Minimum stake 5; allowed chip denominations 5, 10, 50, 100, 500.
-- Duplicate identical selections remain separate records, but the UI displays their combined stake clearly.
-- Bet edits are atomic: validate the full requested change first, then accept all or leave the prior accepted state unchanged.
-- A round that cannot safely complete freezes settlement for owner/admin review.
-- Standard European layout only; only valid standard selections are allowed.
+- Total payout includes the stake; a 10-coin straight-up win credits 350 coins total.
+- One shared server-authoritative result; individual bet data stays private to each player.
+- Chips: 5, 10, 50, 100, 500; minimum stake 5.
+- Straight-up and split bets share a 2,000-coin exposure cap per underlying number.
+- Intended 2,000-coin combined cap per player, per round, per exact Red, Black, dozen, column, Odd, Even, and row/street selection.
+- Duplicate selections remain separate records but display a combined stake.
+- Bets may be edited/cancelled only before server acceptance; accepted bets are immutable.
+- Over-cap requests are proposed to accept only the remaining valid stake and return the excess immediately, subject to chip rules.
+- Rebet repeats the player's own prior-round set all-or-nothing; accepted rebet bets are immutable.
+- Seconds 0–44 betting open; second 45 final-bet call; second 50 close/freeze bets and start animation; second 60 reveal and settle.
+- Player internet disconnection after acceptance does not cancel a bet.
+- Server/game-side failure that prevents safe completion should trigger automatic audited refunds; reuse any persisted outcome if safe and never regenerate a persisted outcome.
+- Standard European single-zero layout only.
 
 ## Remaining decisions before approval
 
-1. Does the 2,000-coin cap apply to combined duplicate records for the same exact selection or separately to each record?
-2. Is an edit affecting multiple selections one all-or-nothing operation, or is each selection edited independently?
-3. What actions can owner/admin take for a frozen round (including refund versus resuming settlement with the persisted outcome), and what happens if review is delayed?
-4. Record the exact valid-position catalogue for zero-adjacent inside bets and first four.
-5. Define failure recovery for before outcome generation, after outcome persistence, and after result display. Never regenerate a persisted outcome to alter a round.
-6. Explicit owner approval of the complete specification.
+1. Confirm the cap treatment for corner, six-line, first-four, and Low/High.
+2. Confirm “rows” means street/row bets.
+3. Confirm partial acceptance and immediate excess refund behavior.
+4. Confirm local-draft editing before submission and immutable accepted bets.
+5. Review the canonical legal-position catalogue, especially zero-adjacent bets.
+6. Confirm the proposed server-failure recovery and no-double-pay/refund safeguard.
+7. Explicit owner approval of the complete specification.
 
 ## Do not do yet
 
-Do not implement payout or betting code. Do not silently choose missing rules. Do not mark P00-T02 complete or update locked requirements as approved until the owner explicitly approves the full specification.
+Do not implement betting or payout code. Do not silently resolve open rules. Do not mark P00-T02 complete or update locked requirements as approved until the owner explicitly approves the full specification.
