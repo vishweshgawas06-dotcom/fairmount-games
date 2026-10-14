@@ -32,6 +32,11 @@ This document records current requirements. Items explicitly listed as unresolve
 - Reconnection must recover authoritative server state. A server-accepted bet remains valid; a bet not accepted by the server does not exist.
 - Passwords must never be retrievable in plaintext; use secure password hashing and reset flows.
 
+## Bet acceptance and insufficient balance
+
+- If a player's wallet balance is below an ordinary requested bet stake, reject the entire bet and preserve the balance unchanged. Do not accept a balance-limited partial stake.
+- Partial acceptance is allowed for cap-limited bets only when the player can cover the full requested stake; accept the largest valid amount within applicable caps and return the cap-excess atomically, subject to chip/minimum rules.
+
 ## Accounting
 
 - Maintain an auditable point ledger.
@@ -63,4 +68,4 @@ The owner approved the P00-T02 payout/settlement specification on 2026-10-14. Se
 
 ## Unresolved
 
-Do not guess these: delete/deactivate/anonymize semantics; history retention; owner MFA recovery; operational SLOs and performance targets; and verified cap/partial-acceptance behavior including insufficient-balance semantics. The canonical legal-position catalogue itself is owner-approved; automated verification remains required.
+Do not guess these: delete/deactivate/anonymize semantics; history retention; owner MFA recovery; operational SLOs and performance targets; and verified cap/partial-acceptance behavior. The canonical legal-position catalogue itself is owner-approved; automated verification remains required.
