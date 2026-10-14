@@ -4,7 +4,7 @@
 **Current task:** P00-T02 — Verify catalogue fixture and cap/partial-acceptance criteria  
 **Implementation status:** Betting engine not started  
 **Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14  
-**Verification status:** Deterministic catalogue fixture and Python tests committed; test execution and cap-matrix review pending  
+**Verification status:** Catalogue suite reported passing locally (8/8); PA-01–PA-23 reviewed; engine verification plan defined, engine not implemented  
 **Last updated:** 2026-10-14
 
 ## Completed in repository
@@ -17,17 +17,19 @@
 - Cap/partial-acceptance edge-case matrix covering acceptance, exposure caps, concurrency, cutoff, normalization, idempotency, rollback, rebet, insufficient balance, and settlement/refund.
 - Added deterministic JSON fixture tests/fixtures/roulette_catalogue.json, including all canonical inside selections, outside sets, red/black sets, and expected catalogue counts.
 - Added standard-library test suite tests/test_roulette_catalogue_fixture.py to compare fixture data with independently generated expected combinations and validate catalogue counts/color coverage.
+- Owner-reported local test evidence on 2026-10-14: `python -m unittest discover -s tests -v` completed with 8 tests passed and 0 failures.
+- Reviewed PA-01 through PA-23 against locked requirements. Clarified PA-05 as a defensive invariant test because 1–4 coins of remaining cap capacity cannot occur through valid multiples-of-5 operations. The matrix now maps scenarios to unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and authorization test layers.
 
 ## Current verification gates
 
-- Execute python -m unittest discover -s tests -v and record actual results; committed test files are not proof that the tests have passed.
-- Review PA-01 through PA-23 against locked requirements and define the automated verification plan for caps, balance reservation, concurrency, rollback, idempotency, settlement, and void/refund.
+- Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally.
+- Before betting-engine implementation, settle the concrete architecture and test design for cap enforcement, balance reservation, concurrency, cutoff, rollback, idempotency, rebet atomicity, settlement, and void/refund, then run those tests against the actual implementation and supported database.
 - Ensure future API/realtime authorization tests prove player-private bet data cannot be read by other players.
 - Resolve remaining non-blocking product/operations decisions: user/agent removal and point-accounting behavior; historical record retention/anonymization/deletion; owner MFA recovery/session policy; measurable performance/availability targets.
 
 ## Important status distinction
 
-The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. Catalogue fixture and test artifacts now exist, but test execution and cap/partial-acceptance verification remain open. No betting-engine implementation or production behavior has been verified. Do not mark P00-T02 complete until the remaining gates and acceptance criteria have recorded evidence.
+The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. Catalogue fixture tests are reported passing (8/8), and the PA matrix review is recorded. Cap/partial-acceptance and production behavior remain unimplemented and unverified; no betting-engine implementation has been written. Do not mark P00-T02 complete until the remaining gates and acceptance criteria have recorded evidence.
 
 ## Status update rule
 
