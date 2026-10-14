@@ -32,8 +32,8 @@ For every new bet submission, the server must evaluate the complete canonical se
 | PA-04 | Requested 10; 0 remains under any applicable cap | Reject; no wallet or exposure mutation |
 | PA-05 | Defensive invariant test: inject or simulate an invalid internal state where computed cap capacity is 1–4 coins, despite accepted stakes and caps normally being multiples of 5 | The acceptance service must never accept a stake below 5 or a non-multiple of 5; reject without wallet/exposure mutation and emit an invariant/error signal. This state is unreachable through valid operations and is not a normal gameplay scenario |
 | PA-06 | Straight-up 17 already has 1,995 exposure; request 10 on 17 | Accept 5; return 5; total exposure becomes 2,000 |
-| PA-07 | Straight-up 17 already has 1,500 exposure; request 1,000 on split 17/20; both number and split-selection caps otherwise unused | Accept at most 500, subject to all other applicable limits; return remainder |
-| PA-08 | Split 17/20 has 1,500 accepted; request another 1,000 on same split | Accept at most 500 under the exact split-selection cap, also constrained by both numbers' remaining exposure; return remainder |
+| PA-07 | Straight-up 17 already has 1,500 exposure; request 1,000 on split 17/20; number 20 and other applicable limits have sufficient capacity | Accept at most 500 because number 17 has only 500 exposure capacity remaining; return remainder |
+| PA-08 | Split 17/20 has 1,500 accepted; request another 1,000 on the same split | Accept at most 500 because each constituent number has only 500 exposure capacity remaining; return remainder. Do not apply an additional exact-split cap unless the locked requirements are explicitly amended |
 | PA-09 | Split includes number A with 200 capacity remaining and number B with 700 remaining; request 500 | Accept at most 200, subject to split-selection cap; return remainder |
 | PA-10 | Duplicate bet records on the same exact corner; aggregate is 1,995; request 10 | Accept 5; return 5; preserve separate accepted records |
 | PA-11 | Straight-up and split requests race to consume the same number's remaining exposure | Serialized/locked acceptance allows no aggregate exposure above 2,000; loser request is partially accepted or rejected according to remaining valid capacity |
@@ -65,7 +65,7 @@ For every new bet submission, the server must evaluate the complete canonical se
 
 ## 4. Review of PA-01 through PA-23
 
-The matrix has been reviewed against the locked requirements. PA-01–PA-04, PA-06–PA-23 are consistent with the current rules when interpreted with the shared acceptance algorithm in Section 1. PA-05 needed clarification: because all accepted stakes and both caps are multiples of 5, a 1–4 coin remaining capacity cannot occur through valid operations. It is retained as a defensive invariant/corrupt-state test, not a normal acceptance scenario.
+The matrix has been reviewed against the locked requirements. PA-01–PA-04, PA-06–PA-23 are consistent after clarifying PA-07 and PA-08: the locked requirements define the per-number exposure cap for straight-up and split bets, but do not define a separate exact-split cap. Those cases therefore derive the 500-coin limit from the remaining exposure on the constituent number(s), not an extra split-selection cap. PA-05 needed clarification: because all accepted stakes and both caps are multiples of 5, a 1–4 coin remaining capacity cannot occur through valid operations. It is retained as a defensive invariant/corrupt-state test, not a normal acceptance scenario.
 
 Implementation test layers:
 
