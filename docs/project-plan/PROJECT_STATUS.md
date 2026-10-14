@@ -3,7 +3,7 @@
 **Current phase:** P00 — Specification lock  
 **Current task:** P00-T02 — Approve roulette bet types and payout rules  
 **Implementation status:** Not started / not verified  
-**Specification status:** P00-T02 payout/settlement specification approved by owner on 2026-10-14; canonical position catalogue review pending  
+**Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14; cap/partial-acceptance verification pending  
 **Last updated:** 2026-10-14
 
 ## Completed in repository
@@ -13,14 +13,14 @@
 - Updated the P00-T02 draft to record total-payout multipliers, player-private bet data, per-number straight-up/split exposure caps, all confirmed per-selection caps, chip denominations, duplicate records, local-draft editing, immutable accepted bets, rebet rules, round timing, player-disconnect behavior, owner-selected atomic settlement/refund recovery, and standard European layout.
 - Recorded the owner's four choices dated 2026-10-14 in the draft, P00-T02 task, and NEXT_ACTION.md.
 - Recorded the owner's explicit approval of the P00-T02 payout/settlement specification on 2026-10-14.
-- Added `docs/project-plan/roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md` as the next review artifact; it is not yet locked.
+- Owner approved the canonical legal-position catalogue on 2026-10-14; catalogue counts and red/black test fixtures still require automated verification.
+- Added `docs/project-plan/roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md` to define required cap, partial-acceptance, concurrency, rollback, and idempotency checks; not yet implementation/test evidence.
 
 ## Blocking specification decisions
 
-- Review the canonical valid European table-position catalogue, especially zero-adjacent combinations.
-- Confirm partial acceptance and immediate excess refund behavior for every applicable cap, including split bets, against the selected chip/minimum rules.
-- Review and lock the canonical valid European table-position catalogue in `roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md`, especially zero-adjacent combinations and expected counts, before betting-engine implementation.
-- Verify partial-acceptance and immediate excess-refund behavior for every applicable cap, including split bets, against chip/minimum rules.
+- Verify cap/partial-acceptance behavior against `roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md`, including concurrent requests, rollback, and idempotency.
+- Resolve normal-bet insufficient-balance behavior, including a balance not divisible by 5.
+- Encode and verify catalogue counts and fixed red/black sets in deterministic tests before betting-engine implementation.
 - User/agent removal and point-accounting behavior.
 - Historical record retention, anonymization, and deletion policy.
 - Owner MFA recovery and session policy.
@@ -28,7 +28,7 @@
 
 ## Important status distinction
 
-The owner approved the P00-T02 payout/settlement specification on 2026-10-14, and the approval is recorded in the task and specification. The legal-position catalogue and acceptance-criteria verification remain open. No betting-engine implementation or production behavior has been verified. Do not mark P00-T02 complete until these remaining gates are verified.
+The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. Edge-case policy and acceptance-criteria verification remain open. No betting-engine implementation or production behavior has been verified. Do not mark P00-T02 complete until these remaining gates are verified.
 
 ## Status update rule
 
