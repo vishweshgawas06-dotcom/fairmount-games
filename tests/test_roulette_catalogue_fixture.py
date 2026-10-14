@@ -30,6 +30,8 @@ class RouletteCatalogueFixtureTests(unittest.TestCase):
     def test_red_black_sets_are_disjoint_and_cover_one_to_36(self):
         red = self.fixture["colors"]["red"]
         black = self.fixture["colors"]["black"]
+        self.assertEqual(red, [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36])
+        self.assertEqual(black, [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35])
         self.assertEqual(len(red), 18)
         self.assertEqual(len(black), 18)
         self.assertEqual(len(set(red)), 18)
@@ -38,6 +40,20 @@ class RouletteCatalogueFixtureTests(unittest.TestCase):
         self.assertNotIn(0, red + black)
         self.assertEqual(sorted(red + black), list(range(1, 37)))
         self.assertEqual(self.fixture["colors"]["green"], [0])
+
+
+    def test_outside_selection_sets(self):
+        outside = self.fixture["outside_selections"]
+        self.assertEqual(outside["dozens"]["dozen_1"], list(range(1, 13)))
+        self.assertEqual(outside["dozens"]["dozen_2"], list(range(13, 25)))
+        self.assertEqual(outside["dozens"]["dozen_3"], list(range(25, 37)))
+        self.assertEqual(outside["columns"]["column_1"], list(range(1, 37, 3)))
+        self.assertEqual(outside["columns"]["column_2"], list(range(2, 37, 3)))
+        self.assertEqual(outside["columns"]["column_3"], list(range(3, 37, 3)))
+        self.assertEqual(outside["low"], list(range(1, 19)))
+        self.assertEqual(outside["high"], list(range(19, 37)))
+        self.assertEqual(outside["odd"], list(range(1, 37, 2)))
+        self.assertEqual(outside["even"], list(range(2, 37, 2)))
 
     def test_split_catalogue_counts_and_geometry(self):
         splits = self.inside["splits"]
