@@ -14,8 +14,8 @@ This document records current requirements. Items explicitly listed as unresolve
 - A server-authoritative global round and one outcome shared by all active players.
 - Outcome generation is independent of stakes, bets, balances, and player identity.
 - Nominal round duration: 60 seconds.
-- Betting is accepted during seconds 0–49 and closed from second 50.
-- Seconds 50–59 are the result/settlement phase; exact ordering of animation, result publication, and settlement is still unresolved.
+- Betting is open during seconds 0–44; at second 45 show the final-bet call while betting remains open; close and freeze accepted bets at second 50. At second 50, begin wheel/ball animation; at second 60, reveal the result and settle.
+- The animation must land on the server-determined outcome and must never determine the outcome.
 - Chip values: 5, 10, 50, 100, 500.
 - Multiple bets per round.
 - Unlimited rounds while the player has sufficient points to place a valid bet.
@@ -57,6 +57,10 @@ This document records current requirements. Items explicitly listed as unresolve
 - Client is untrusted; hiding UI controls is not authorization.
 - Realtime messages must not permit users to forge balances, outcomes, or accepted bets.
 
+## Roulette payout/settlement rules approved 2026-10-14
+
+The owner approved the P00-T02 payout/settlement specification on 2026-10-14. See [approved payout and settlement specification](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md) for exact payout multipliers, caps, accepted-bet finality, rebet, settlement, zero handling, and failure recovery. The canonical legal-position catalogue remains a pre-implementation verification gate.
+
 ## Unresolved
 
-Do not treat these as locked until explicitly approved: exact bet catalogue/payouts; animation and settlement timing; delete/deactivate/anonymize semantics; history retention; owner MFA recovery; operational SLOs and performance targets.
+Do not guess these: delete/deactivate/anonymize semantics; history retention; owner MFA recovery; operational SLOs and performance targets; and the complete reviewed legal-position catalogue.
