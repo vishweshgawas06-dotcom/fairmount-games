@@ -48,16 +48,16 @@ These multipliers intentionally differ from conventional casino total-return fig
 - **Straight-up number exposure:** at most 2,000 coins of accepted stake exposure on any one number across straight-up bets and split bets that include that number. Separate bet records remain separate, but the cap is aggregated per underlying number.
 - Example: if 1,500 coins are already placed straight-up on 17, no more than 500 additional coins of exposure to 17 can be accepted from another straight-up or split bet. Any excess is returned to the wallet.
 - A split bet contributes its accepted stake to the exposure of both numbers in that split. Its accepted amount cannot exceed the smaller remaining cap of the two numbers; return the unaccepted remainder. Validate atomically.
-- **Outside-selection caps:** a 2,000-coin maximum applies per player, per round, per exact selection for Red, Black, each dozen, each column, Odd, Even, and the described row/street selections. Duplicate records of the same selection count toward the same combined cap.
-- The earlier blanket interpretation of a 2,000-coin cap on every individual record is superseded by these more specific rules.
-- Whether the same cap applies to corner, six-line, first-four, and Low/High selections remains unresolved in Section 10.
+- **Per-selection caps:** a 2,000-coin combined maximum applies per player, per round, per exact selection for Red, Black, each dozen, each column, each street/row, Odd, Even, each corner, each six-line, the first-four selection, and each Low/High selection. Duplicate records of the same exact selection count toward that selection's combined cap.
+- These per-selection caps are separate from the 2,000-coin exposure cap per underlying number across straight-up and split bets. Apply every relevant cap independently; satisfying one cap does not bypass another.
+- If a submission exceeds an applicable cap, accept only the valid amount remaining under the relevant cap(s) and immediately return the unaccepted remainder, provided the accepted amount satisfies the minimum stake and allowed chip rules. Otherwise reject it without changing the wallet.
 
 ## 4. Duplicate selections and bet finality
 
 - Duplicate identical selections remain separate bet records, while the interface clearly displays their combined stake.
-- A player may modify or cancel a bet only before the server accepts it.
-- Once the server confirms a bet as accepted, it is immutable: it cannot be edited, cancelled, or withdrawn. Additional stake must be submitted as a new bet and validated against wallet balance, exposure limits, and cutoff.
-- The client must distinguish a pending submission from a server-confirmed accepted bet. A click or client-side display is not proof of acceptance.
+- Players edit or cancel bets in a local draft before submission; draft changes do not reserve or deduct wallet coins.
+- On submission, the server validates the request and confirms acceptance or rejection. Once the server confirms a bet as accepted, it is immutable: it cannot be edited, cancelled, or withdrawn. Additional stake must be submitted as a new bet and validated against wallet balance, exposure limits, and cutoff.
+- The client must distinguish a local draft, a pending submission, and a server-confirmed accepted bet. A click or client-side display is not proof of acceptance.
 - If a requested stake exceeds an applicable cap, accept only the valid amount remaining under the cap and immediately return the unaccepted remainder, provided the accepted amount is at least 5 and conforms to the allowed chip denominations. If no valid amount can be accepted, reject the submission and leave the wallet unchanged.
 - Prevent concurrent submissions from exceeding any per-number or per-selection cap.
 - The earlier draft rule allowing already accepted bets to be edited or removed is superseded.
@@ -92,8 +92,8 @@ These multipliers intentionally differ from conventional casino total-return fig
 ## 8. Internet disconnection and server/game failure
 
 - **Player-side internet disconnection after acceptance:** accepted bets remain valid and settle normally against the shared winning number. Disconnection does not cancel or change the bet. On reconnect, return authoritative balance, round, result, and the player's own bet state.
-- **FairMount server/game-side failure preventing safe completion:** automatically return affected accepted stakes to the wallet; do not leave stakes frozen pending manual review. Record the incident/void reason and idempotent refund ledger entries.
-- **Recommended recovery rule:** if no outcome has been persisted when a server-side failure makes the round unsafe, void the round and refund all accepted stakes for that round. If an outcome has been persisted, never generate a replacement outcome; resume settlement using the saved outcome if safe. If settlement cannot safely be completed, void/refund with an audited incident, ensuring no player receives both a payout and a refund for the same stake.
+- **Owner-selected atomic recovery rule:** settlement for a global round is one atomic transaction. If a server/game-side failure prevents the settlement transaction from committing successfully, void the round and refund all accepted stakes for that round through idempotent ledger entries. If settlement commits successfully, do not issue a later refund for that same round/stake. Record the incident/void reason and refund entries; do not leave stakes frozen pending manual review.
+- Generate and persist at most one outcome per round. Never generate a replacement outcome if an outcome has already been persisted. If a persisted outcome exists but settlement cannot safely commit, void/refund according to the atomic recovery rule while retaining the persisted outcome for audit; never pay and refund the same stake.
 - Each round must end in one terminal accounting state (for example, settled or void-refunded), enforced through transactional state transitions and unique ledger references.
 - A player disconnect must not be classified as a server/game-side failure.
 
@@ -106,12 +106,16 @@ These multipliers intentionally differ from conventional casino total-return fig
 
 ## 10. Remaining ambiguities and approval gates
 
-1. **Other selection caps:** Confirm whether the 2,000-coin per-player/per-round cap also applies to each corner, six-line, first-four, and Low/High selection.
-2. **Meaning of “rows”:** This draft interprets “rows” as street/row bets. Confirm if another selection was intended.
-3. **Pre-acceptance edit/cancel flow:** Proposed implementation is to let the player edit/cancel a local bet draft before submission. On submission, the server validates it and either accepts it immutably or rejects it. This reflects the owner's rule that accepted bets cannot be changed.
-4. **Canonical layout catalogue:** Review the exact valid standard positions, especially zero-adjacent combinations.
-5. **Owner approval:** Approval of the complete specification remains required before implementation.
+1. **Canonical layout catalogue:** Review the exact valid standard positions, especially zero-adjacent combinations, before implementation.
+2. **Owner approval:** Explicit approval of the complete consolidated specification remains required before implementation.
+
+### Owner choices recorded on 2026-10-14
+
+- Apply the 2,000-coin combined per-player/per-round cap to each exact corner, six-line, first-four, and Low/High selection as well as the previously listed selection types.
+- Interpret “rows” as street bets.
+- Use local bet drafts that can be edited/cancelled before submission; accepted bets are immutable.
+- Use atomic settlement/refund recovery: if settlement cannot commit, void/refund accepted stakes idempotently; if settlement commits, do not refund again; never regenerate a persisted outcome.
 
 ## 11. Approval status
 
-This draft records the owner's latest instructions and one explicitly labelled recovery recommendation. These choices do **not** constitute approval of the complete specification. P00-T02 remains open; no betting-engine implementation is authorized.
+This draft records the owner's latest instructions, including the four choices listed above. These choices do **not** constitute approval of the complete specification. P00-T02 remains open; no betting-engine implementation is authorized.
