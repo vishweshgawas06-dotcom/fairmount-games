@@ -59,12 +59,12 @@ Outside selections use named canonical values rather than arbitrary number array
 - Column 1: 1,4,7,10,13,16,19,22,25,28,31,34.
 - Column 2: 2,5,8,11,14,17,20,23,26,29,32,35.
 - Column 3: 3,6,9,12,15,18,21,24,27,30,33,36.
-- Red and Black: the standard European roulette color mapping, stored as a fixed audited set.
+- Red and Black: fixed canonical sets for the standard European roulette wheel. **Red:** 1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36. **Black:** 2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35.
 - Odd and Even: numbers 1–36 with the stated parity; zero is neither.
 - Low: 1–18; High: 19–36.
 - Zero is excluded from all outside selections.
 
-The red/black mapping must be stored as a fixed canonical list and covered by tests; it must not be inferred from the number's position or client state.
+The red/black mapping above is the fixed canonical list and must be covered by tests; it must not be inferred from the number's position or client state.
 
 ## 4. Validation and normalization rules
 
@@ -100,7 +100,7 @@ Owner approval recorded on 2026-10-14. The approved catalogue choices are:
 1. The zero-adjacent catalogue: splits (0,1), (0,2), (0,3); streets (0,1,2) and (0,2,3); First Four (0,1,2,3).
 2. Generic corners are limited to the 22 2×2 blocks in the numbered grid, with no separate generic zero corner.
 3. Six lines are adjacent pairs of numbered streets only.
-4. The exact standard red/black mapping will be encoded as a fixed audited list.
+4. The fixed red/black lists are now specified above and must be verified by automated tests.
 5. The catalogue and counts must be tested before the betting engine is implemented.
 
-**Owner approval recorded:** On 2026-10-14, the owner approved this catalogue as presented and instructed the project to proceed to the next step. The catalogue is now the specification baseline; its counts and validation behavior must still be verified with automated tests before betting-engine implementation.
+**Owner approval recorded:** On 2026-10-14, the owner approved this catalogue as presented and instructed the project to proceed to the next step. The catalogue is the specification baseline. The fixed red/black lists are now explicit; catalogue counts and validation behavior must still be verified with automated tests before betting-engine implementation.
