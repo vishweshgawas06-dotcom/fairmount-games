@@ -1,10 +1,10 @@
 # Project Status
 
-**Current phase:** P00 — Specification lock  
-**Current task:** P00-T02 — Verify catalogue fixture and cap/partial-acceptance criteria  
-**Implementation status:** Betting engine not started  
+**Current phase:** P01 — Repository foundation  
+**Current task:** P01-T01 — Establish and verify the Python API foundation  
+**Implementation status:** Initial FastAPI liveness foundation committed; betting engine not started  
 **Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14  
-**Verification status:** Catalogue suite reported passing locally (8/8); PA-01–PA-23 reviewed; engine verification plan defined, engine not implemented  
+**Verification status:** Catalogue suite reported passing locally (8/8); PA-01–PA-23 reviewed; API foundation committed; new API tests, lint, and local endpoint verification pending  
 **Last updated:** 2026-10-14
 
 ## Completed in repository
@@ -19,17 +19,20 @@
 - Added standard-library test suite tests/test_roulette_catalogue_fixture.py to compare fixture data with independently generated expected combinations and validate catalogue counts/color coverage.
 - Owner-reported local test evidence on 2026-10-14: `python -m unittest discover -s tests -v` completed with 8 tests passed and 0 failures.
 - Reviewed PA-01 through PA-23 against locked requirements. Clarified PA-05 as a defensive invariant test because 1–4 coins of remaining cap capacity cannot occur through valid multiples-of-5 operations. Clarified PA-07/PA-08 so split bets are limited by constituent-number exposure; no separate exact-split cap is in the locked requirements. The matrix now maps scenarios to unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and authorization test layers.
+- Added `roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md` with proposed server components, transaction sequences, round state machine, and test layers.
+- Added Python project metadata, a minimal FastAPI liveness endpoint, API smoke tests, a Python test/lint workflow, and local setup instructions for P01-T01. These are committed but have not yet been executed locally or by CI.
 
 ## Current verification gates
 
 - Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally.
-- Before betting-engine implementation, settle the concrete architecture and test design for cap enforcement, balance reservation, concurrency, cutoff, rollback, idempotency, rebet atomicity, settlement, and void/refund, then run those tests against the actual implementation and supported database.
+- Verify P01-T01 locally: install `python -m pip install -e ".[dev]"`, run `python -m unittest discover -s tests -v`, run `ruff check .`, start Uvicorn, and request `/health/live`.
+- Before betting-engine implementation, use the documented architecture/test plan and implement tests for cap enforcement, balance reservation, concurrency, cutoff, rollback, idempotency, rebet atomicity, settlement, and void/refund against the actual implementation and supported database.
 - Ensure future API/realtime authorization tests prove player-private bet data cannot be read by other players.
 - Resolve remaining non-blocking product/operations decisions: user/agent removal and point-accounting behavior; historical record retention/anonymization/deletion; owner MFA recovery/session policy; measurable performance/availability targets.
 
 ## Important status distinction
 
-The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. Catalogue fixture tests are reported passing (8/8), and the PA matrix review is recorded. Cap/partial-acceptance and production behavior remain unimplemented and unverified; no betting-engine implementation has been written. Do not mark P00-T02 complete until the remaining gates and acceptance criteria have recorded evidence.
+The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. Catalogue fixture tests are reported passing (8/8), and the PA matrix review is recorded. A minimal API foundation is committed but awaits local verification. Cap/partial-acceptance and production behavior remain unimplemented and unverified; no betting-engine implementation has been written. Do not mark P00-T02 complete until the remaining gates and acceptance criteria have recorded evidence.
 
 ## Status update rule
 
