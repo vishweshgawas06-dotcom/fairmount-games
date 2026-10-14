@@ -3,24 +3,25 @@
 **Current phase:** P00 — Specification lock  
 **Current task:** P00-T02 — Approve roulette bet types and payout rules  
 **Implementation status:** Not started / not verified  
-**Specification status:** Owner choices recorded; full-spec approval pending  
-**Last updated:** 2026-10-13
+**Specification status:** Latest owner rules recorded; full-spec approval pending  
+**Last updated:** 2026-10-14
 
 ## Completed in repository
 
 - Initial repository baseline and development/security guidance.
 - Master phase plan and immediate next-task definition.
-- Updated the P00-T02 draft to record total-payout multipliers, per-player bet privacy, 2,000-coin per-selection cap, individual previous-bet rebet behavior, second-45/50/60 round timing, and the owner's latest chip, duplicate-record, atomic-edit, void-review, and standard-layout choices.
-- Updated P00-T02 and NEXT_ACTION.md with remaining ambiguities and explicit no-implementation/no-approval gates.
+- Updated the P00-T02 draft to record total-payout multipliers, player-private bet data, per-number straight-up/split exposure caps, outside-selection caps, chip denominations, duplicate records, immutable accepted bets, rebet rules, round timing, player-disconnect behavior, server/game-side failure refunds, and standard European layout.
+- Updated P00-T02 and NEXT_ACTION.md with remaining interpretations and explicit approval/implementation gates.
 
 ## Blocking specification decisions
 
-- Resolve the duplicate-selection interaction with the 2,000-coin cap.
-- Define the scope of a multi-selection atomic edit.
-- Define owner/admin decisions and timing for frozen/void rounds, including refund/resume behavior.
-- Publish exact valid European table-position mappings for all supported inside bets, especially zero-adjacent positions and first four.
-- Define failure recovery before/after outcome persistence and result display.
-- Product-owner approval of the complete roulette bet catalogue and payout convention.
+- Confirm cap treatment for corner, six-line, first-four, and Low/High selections.
+- Confirm “rows” means street/row bets.
+- Confirm partial acceptance and immediate excess refund behavior, including split bets.
+- Confirm pre-acceptance edit/cancel interaction.
+- Review the canonical valid European table-position catalogue.
+- Confirm the recommended server/game-side failure recovery rules.
+- Obtain product-owner approval of the complete roulette specification.
 - User/agent removal and point-accounting behavior.
 - Historical record retention, anonymization, and deletion policy.
 - Owner MFA recovery and session policy.
@@ -28,7 +29,7 @@
 
 ## Important status distinction
 
-The roulette payout/settlement document is a draft, not an approved requirement. The owner's five latest choices have been recorded but do not approve the complete specification. No betting-engine implementation or production behavior has been verified. Do not mark P00-T02 complete until remaining ambiguities are resolved, full approval is explicitly given, and acceptance evidence is recorded.
+The roulette payout/settlement document is a draft, not an approved requirement. The latest owner rules and a labelled recovery recommendation have been recorded, but the complete specification is not approved. No betting-engine implementation or production behavior has been verified. Do not mark P00-T02 complete until remaining decisions are resolved, full approval is explicit, and acceptance evidence is recorded.
 
 ## Status update rule
 
