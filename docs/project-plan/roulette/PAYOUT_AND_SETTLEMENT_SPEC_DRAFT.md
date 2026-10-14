@@ -108,10 +108,9 @@ These multipliers intentionally differ from conventional casino total-return fig
 
 1. **Other selection caps:** Confirm whether the 2,000-coin per-player/per-round cap also applies to each corner, six-line, first-four, and Low/High selection.
 2. **Meaning of “rows”:** This draft interprets “rows” as street/row bets. Confirm if another selection was intended.
-3. **Partial acceptance:** Confirm that a capped bet may be partially accepted up to the available limit, with the remainder immediately returned, including for split bets. The current proposal only accepts a remainder compatible with chip denominations and at least 5 coins.
-4. **Pre-acceptance edit/cancel:** Recommended implementation is to let the player edit/cancel a local bet draft before submission. Server submission is then validated and either accepted immutably or rejected. Confirm this matches the intended interaction.
-5. **Canonical layout catalogue:** Review the exact valid standard positions, especially zero-adjacent combinations.
-6. **Owner approval:** Approval of the complete specification remains required before implementation.
+3. **Pre-acceptance edit/cancel flow:** Proposed implementation is to let the player edit/cancel a local bet draft before submission. On submission, the server validates it and either accepts it immutably or rejects it. This reflects the owner's rule that accepted bets cannot be changed.
+4. **Canonical layout catalogue:** Review the exact valid standard positions, especially zero-adjacent combinations.
+5. **Owner approval:** Approval of the complete specification remains required before implementation.
 
 ## 11. Approval status
 
