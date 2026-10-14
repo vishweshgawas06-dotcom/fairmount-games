@@ -2,11 +2,11 @@
 
 ## Active task
 
-**P00-T02 — Finalize approved roulette payout/settlement specification gates.**
+**P00-T02 — Review canonical roulette position catalogue before implementation.**
 
 ## Objective
 
-Owner approval was received on 2026-10-14. Next, complete and review the canonical legal-position catalogue before any betting-engine implementation.
+Owner approval was received on 2026-10-14. A legal-position catalogue review draft has been added. Next, review its zero-adjacent combinations, position definitions, and counts; do not begin betting-engine implementation until reviewed.
 
 ## Current draft
 
@@ -38,7 +38,8 @@ See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_S
 ## Approval and next gate
 
 - Owner approval of the complete payout/settlement specification recorded on 2026-10-14.
-- Next: document and review the exact canonical legal-position catalogue, especially zero-adjacent combinations.
+- Catalogue review draft: [LEGAL_POSITION_CATALOGUE_REVIEW.md](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md).
+- Next: owner review of zero-adjacent combinations, catalogue definitions, and counts; then verify cap/partial-acceptance edge cases against chip rules.
 - Do not start betting-engine implementation until the catalogue and relevant acceptance criteria are verified.
 
 ## Do not do yet
