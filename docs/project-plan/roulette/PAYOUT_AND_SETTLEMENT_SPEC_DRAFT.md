@@ -1,6 +1,6 @@
 # P00-T02 — Roulette Payout and Settlement Specification (Draft)
 
-**Status:** Draft for owner review — NOT APPROVED  
+**Status:** Owner-approved on 2026-10-14; legal-position catalogue review remains a pre-implementation gate  
 **Implementation status:** Not implemented  
 **Purpose:** Record owner-provided choices and make remaining interpretations visible before coding.
 
@@ -104,10 +104,9 @@ These multipliers intentionally differ from conventional casino total-return fig
 - First four is exactly {0, 1, 2, 3}.
 - The complete machine-readable catalogue, including legal positions adjacent to zero, is a prerequisite before the betting engine is built.
 
-## 10. Remaining ambiguities and approval gates
+## 10. Remaining pre-implementation gate
 
-1. **Canonical layout catalogue:** Review the exact valid standard positions, especially zero-adjacent combinations, before implementation.
-2. **Owner approval:** Explicit approval of the complete consolidated specification remains required before implementation.
+1. **Canonical layout catalogue:** The exact valid standard positions, especially zero-adjacent combinations, must be documented and reviewed before betting-engine implementation. This is the next specification task; it does not revoke the owner's approval of the payout/settlement rules in this document.
 
 ### Owner choices recorded on 2026-10-14
 
@@ -116,6 +115,9 @@ These multipliers intentionally differ from conventional casino total-return fig
 - Use local bet drafts that can be edited/cancelled before submission; accepted bets are immutable.
 - Use atomic settlement/refund recovery: if settlement cannot commit, void/refund accepted stakes idempotently; if settlement commits, do not refund again; never regenerate a persisted outcome.
 
-## 11. Approval status
+## 11. Approval status and owner approval record
 
-This draft records the owner's latest instructions, including the four choices listed above. These choices do **not** constitute approval of the complete specification. P00-T02 remains open; no betting-engine implementation is authorized.
+- **Owner approval received:** 2026-10-14. The owner explicitly approved the complete P00-T02 roulette payout and settlement specification as presented.
+- The four owner choices dated 2026-10-14 are included in this approved specification.
+- The canonical legal-position catalogue remains a documented prerequisite before betting-engine implementation. Track its completion as the next specification task.
+- No betting-engine implementation has been started or authorized before the position catalogue is reviewed and the project status is updated accordingly.
