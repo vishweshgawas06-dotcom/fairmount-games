@@ -38,11 +38,10 @@ See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_S
 ## Approval and next gate
 
 - Owner approval of the complete payout/settlement specification recorded on 2026-10-14.
-- Catalogue review draft: [LEGAL_POSITION_CATALOGUE_REVIEW.md](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md).
 - Catalogue approved by owner on 2026-10-14; see [LEGAL_POSITION_CATALOGUE_REVIEW.md](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md).
 - Owner selected reject-on-insufficient-balance on 2026-10-14; details are in [CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md](roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md).
-- Next: verify the edge-case matrix and deterministic catalogue/red-black fixtures.
-- Do not start betting-engine implementation until the catalogue and relevant acceptance criteria are verified.
+- Next: verify the documented catalogue counts and red/black sets against deterministic fixtures, then review the cap/partial-acceptance matrix against the approved requirements.
+- Do not start betting-engine implementation until deterministic catalogue verification and edge-case acceptance criteria are complete.
 
 ## Do not do yet
 
