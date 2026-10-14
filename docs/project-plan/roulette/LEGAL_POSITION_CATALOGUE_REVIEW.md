@@ -1,6 +1,6 @@
-# FairMount Roulette — Canonical Legal-Position Catalogue (Review Draft)
+# FairMount Roulette — Canonical Legal-Position Catalogue
 
-**Status:** Draft for owner review — not yet accepted as the implementation catalogue  
+**Status:** Owner-approved on 2026-10-14; implementation validation tests still required  
 **Scope:** Standard single-zero European roulette table only  
 **Purpose:** Define legal number combinations for inside bets before any betting-engine code is written.
 
@@ -95,7 +95,7 @@ Expected counts from the rules above:
 
 ## 6. Owner review checklist
 
-Please review and confirm or correct:
+Owner approval recorded on 2026-10-14. The approved catalogue choices are:
 
 1. The zero-adjacent catalogue: splits (0,1), (0,2), (0,3); streets (0,1,2) and (0,2,3); First Four (0,1,2,3).
 2. Generic corners are limited to the 22 2×2 blocks in the numbered grid, with no separate generic zero corner.
@@ -103,4 +103,4 @@ Please review and confirm or correct:
 4. The exact standard red/black mapping will be encoded as a fixed audited list.
 5. The catalogue and counts must be tested before the betting engine is implemented.
 
-**No betting-engine implementation is authorized by this draft.**
+**Owner approval recorded:** On 2026-10-14, the owner approved this catalogue as presented and instructed the project to proceed to the next step. The catalogue is now the specification baseline; its counts and validation behavior must still be verified with automated tests before betting-engine implementation.
