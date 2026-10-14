@@ -59,8 +59,8 @@ This document records current requirements. Items explicitly listed as unresolve
 
 ## Roulette payout/settlement rules approved 2026-10-14
 
-The owner approved the P00-T02 payout/settlement specification on 2026-10-14. See [approved payout and settlement specification](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md) for exact payout multipliers, caps, accepted-bet finality, rebet, settlement, zero handling, and failure recovery. The canonical legal-position catalogue remains a pre-implementation verification gate.
+The owner approved the P00-T02 payout/settlement specification on 2026-10-14. See [approved payout and settlement specification](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md) for exact payout multipliers, caps, accepted-bet finality, rebet, settlement, zero handling, and failure recovery. The canonical legal-position catalogue was owner-approved on 2026-10-14. Its deterministic counts/red-black fixtures and cap/partial-acceptance acceptance tests remain pre-implementation verification gates.
 
 ## Unresolved
 
-Do not guess these: delete/deactivate/anonymize semantics; history retention; owner MFA recovery; operational SLOs and performance targets; and the complete reviewed legal-position catalogue.
+Do not guess these: delete/deactivate/anonymize semantics; history retention; owner MFA recovery; operational SLOs and performance targets; and verified cap/partial-acceptance behavior including insufficient-balance semantics. The canonical legal-position catalogue itself is owner-approved; automated verification remains required.
