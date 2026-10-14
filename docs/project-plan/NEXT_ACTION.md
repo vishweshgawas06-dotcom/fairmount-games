@@ -6,7 +6,7 @@
 
 ## Objective
 
-The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. The owner reports that the deterministic catalogue suite passed locally on 2026-10-14 (8 tests, 0 failures). PA-01 through PA-23 have now been reviewed against the locked requirements; PA-05 is clarified as a defensive invariant test for an unreachable invalid state. The next step is to define concrete engine test cases and prepare the minimal betting-engine architecture only after the implementation gates are agreed. Do not skip the verification plan.
+The owner approved the payout/settlement specification and canonical legal-position catalogue on 2026-10-14. The owner reports that the deterministic catalogue suite passed locally on 2026-10-14 (8 tests, 0 failures). PA-01 through PA-23 have now been reviewed against the locked requirements; PA-05 is clarified as a defensive invariant test for an unreachable invalid state, and PA-07/PA-08 now correctly derive split limits from per-number exposure (no separate exact-split cap is defined in locked requirements). The next step is to define concrete engine test cases and prepare the minimal betting-engine architecture before writing engine code. Do not skip the verification plan.
 
 ## Verification artifacts
 
@@ -37,7 +37,7 @@ The fixture/test files are specification verification artifacts only. The report
 
 - Owner approval of the payout/settlement specification and canonical catalogue recorded on 2026-10-14.
 - Catalogue fixture suite reported passing locally: 8 tests, 0 failures, using `python -m unittest discover -s tests -v` from the repository root.
-- PA-01 through PA-23 reviewed; PA-05 clarified as an unreachable-state defensive invariant test. Test layers are specified for unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and player-privacy authorization behavior.
+- PA-01 through PA-23 reviewed; PA-05 clarified as an unreachable-state defensive invariant test; PA-07/PA-08 aligned with per-number split exposure rules. Test layers are specified for unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and player-privacy authorization behavior.
 - Next: draft/confirm the betting-engine architecture and concrete test implementation plan (including database locking, atomic ledger/wallet updates, idempotency, and failure injection) before writing engine code.
 - No engine code exists yet; passing catalogue tests do not authorize treating cap or settlement behavior as verified.
 
