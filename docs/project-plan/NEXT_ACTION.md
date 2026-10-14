@@ -2,15 +2,15 @@
 
 ## Active task
 
-**P00-T02 — Approve roulette bet types and payout rules.**
+**P00-T02 — Finalize approved roulette payout/settlement specification gates.**
 
 ## Objective
 
-Resolve remaining interpretations and obtain explicit approval of the complete V1 bet catalogue and settlement rules before implementing the betting engine.
+Owner approval was received on 2026-10-14. Next, complete and review the canonical legal-position catalogue before any betting-engine implementation.
 
 ## Current draft
 
-See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md). It records the latest owner instructions and a labelled server-failure recovery recommendation. It remains unapproved.
+See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md). It records the latest owner instructions and the selected atomic server-failure recovery policy. The owner approved the specification on 2026-10-14; the legal-position catalogue remains a pre-implementation gate.
 
 ## Latest owner rules recorded
 
@@ -35,11 +35,12 @@ See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_S
 - Editing/cancellation is local-draft-only before submission; accepted bets are immutable.
 - Atomic settlement/refund policy is selected: refund accepted stakes if settlement cannot commit; do not refund after a successful settlement commit; never regenerate a persisted outcome.
 
-## Remaining decisions before approval
+## Approval and next gate
 
-1. Review the canonical legal-position catalogue, especially zero-adjacent bets.
-2. Explicit owner approval of the complete specification.
+- Owner approval of the complete payout/settlement specification recorded on 2026-10-14.
+- Next: document and review the exact canonical legal-position catalogue, especially zero-adjacent combinations.
+- Do not start betting-engine implementation until the catalogue and relevant acceptance criteria are verified.
 
 ## Do not do yet
 
-Do not implement betting or payout code. Do not silently resolve open rules. Do not mark P00-T02 complete or update locked requirements as approved until the owner explicitly approves the full specification.
+Do not implement betting or payout code yet. Owner approval is recorded, but do not mark P00-T02 complete until the canonical legal-position catalogue and remaining acceptance criteria are verified.
