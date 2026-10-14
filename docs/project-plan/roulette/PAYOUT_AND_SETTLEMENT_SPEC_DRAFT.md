@@ -41,66 +41,78 @@ These multipliers intentionally differ from conventional casino total-return fig
 - Track bet-level settlement and wallet ledger entries so the accounting can be audited and retries cannot pay twice.
 - Gameplay P/L must be calculated consistently with the total-return convention and must not double-count the stake.
 
-## 3. Bet limits and stake increments
+## 3. Chips and stake limits
 
-- Maximum stake is 2,000 coins for each individual bet selection. This is not a maximum for the total amount bet during a round. Multiple selections are allowed subject to available wallet balance.
-- The 2,000-coin cap applies to every bet type; the earlier proposed 3,000-coin cap for other bet categories is superseded.
-- Owner choice: use only chip denominations 5, 10, 50, 100, and 500 coins; minimum stake is 5 coins.
-- The final accepted stake for a bet must be buildable from the allowed chips; the smallest possible positive stake is 5 coins. Whether repeated identical selections share one combined 2,000-coin cap is still unresolved (see Section 9).
+- Allowed chip denominations: 5, 10, 50, and 100, 500 coins. Minimum positive stake: 5 coins.
+- A player may bet on multiple selections in a round, subject to available balance and the caps below.
+- **Straight-up number exposure:** at most 2,000 coins of accepted stake exposure on any one number across straight-up bets and split bets that include that number. Separate bet records remain separate, but the cap is aggregated per underlying number.
+- Example: if 1,500 coins are already placed straight-up on 17, no more than 500 additional coins of exposure to 17 can be accepted from another straight-up or split bet. Any excess is returned to the wallet.
+- A split bet contributes its accepted stake to the exposure of both numbers in that split. Its accepted amount cannot exceed the smaller remaining cap of the two numbers; return the unaccepted remainder. Validate atomically.
+- **Outside-selection caps:** a 2,000-coin maximum applies per player, per round, per exact selection for Red, Black, each dozen, each column, Odd, Even, and the described row/street selections. Duplicate records of the same selection count toward the same combined cap.
+- The earlier blanket interpretation of a 2,000-coin cap on every individual record is superseded by these more specific rules.
+- Whether the same cap applies to corner, six-line, first-four, and Low/High selections remains unresolved in Section 10.
 
-## 4. Duplicate selections and bet edits
+## 4. Duplicate selections and bet finality
 
-- Owner choice: duplicate identical selections are retained as separate bet records, while the interface clearly displays their combined stake for that selection.
-- Owner choice: edits are atomic. Validate the full requested change first; either accept the complete change or leave the existing accepted bet state unchanged.
-- No partial edit may be applied if the full edit fails validation, balance checks, the per-selection cap, or the betting cutoff.
-- Exact cap aggregation across duplicate records and the precise scope of a multi-selection edit remain open questions in Section 9.
+- Duplicate identical selections remain separate bet records, while the interface clearly displays their combined stake.
+- A player may modify or cancel a bet only before the server accepts it.
+- Once the server confirms a bet as accepted, it is immutable: it cannot be edited, cancelled, or withdrawn. Additional stake must be submitted as a new bet and validated against wallet balance, exposure limits, and cutoff.
+- The client must distinguish a pending submission from a server-confirmed accepted bet. A click or client-side display is not proof of acceptance.
+- If a requested stake exceeds an applicable cap, accept only the valid amount remaining under the cap and immediately return the unaccepted remainder, provided the accepted amount is at least 5 and conforms to the allowed chip denominations. If no valid amount can be accepted, reject the submission and leave the wallet unchanged.
+- Prevent concurrent submissions from exceeding any per-number or per-selection cap.
+- The earlier draft rule allowing already accepted bets to be edited or removed is superseded.
 
 ## 5. Rebet
 
-- Provide a Rebet button for every player.
-- Rebet repeats that player's own previous-round bet set, preserving the selections and amounts; it must never copy another player's bets.
-- Check that the player's available wallet balance is sufficient for the total stake of the complete repeated set.
-- If insufficient, place none of the rebet and show a clear message.
-- If sufficient, place the repeated set through the same server-side validation, wallet reservation, bet-limit, and cutoff checks as normal bets.
-- After the rebet is placed, the player may add bets, remove selections, or change their bets while betting remains open.
-- The rebet operation must be atomic: do not partially place the previous set if the balance is insufficient or if any required validation fails.
-- The previous bet set is the current player's own most recent placed set, not a shared/global bet set.
+- Provide a Rebet button for every player. It repeats that player's own previous-round bet set and amounts; it never copies another player's bets.
+- Validate the full rebet set against available balance, chip rules, number-exposure limits, per-selection limits, and cutoff before accepting.
+- If the full set cannot be accepted under all rules, place none and show a clear message. Do not partially rebet.
+- Once accepted, each repeated bet is immutable. The player may submit additional new bets while betting remains open, but cannot edit or cancel accepted rebet records.
+- Rebet is an atomic operation and uses the player's own most recent placed set.
 
 ## 6. Round timing and settlement
 
-- Seconds 0–44: betting open; accepted bets may be edited or removed.
+- Seconds 0–44: betting open; players may submit bets.
 - At second 45: show the final-bet call/warning; betting remains open until the cutoff.
-- At second 50: server closes betting, rejects new bets and edits, and freezes the accepted bet set. The roulette wheel and ball animation begins.
-- Generate and persist exactly one server-authoritative outcome per global round, independently of all bets, balances, and player identities. The animation must land on the already determined result; animation never determines the result.
-- At second 60: reveal/display the winning number, calculate each player's combined winning payout, and update the player's wallet. Start the next round according to the authoritative round clock.
-- Only server-confirmed accepted bets before the cutoff are valid. Client-side timestamps or UI state do not establish acceptance.
-- Settlement must be idempotent and protected by database transactions/constraints so a retry or reconnect cannot credit a player twice.
+- At second 50: server closes betting, rejects new submissions, and freezes the accepted bet set. Wheel/ball animation begins.
+- Generate and persist exactly one server-authoritative outcome per global round, independently of bets, balances, and player identities. Animation lands on the already determined result; it never determines the result.
+- At second 60: reveal the winning number, calculate each player's combined winning payout, and update wallets. Start the next round according to the authoritative clock.
+- Only server-confirmed accepted bets before cutoff are valid. Client timestamps/UI do not establish acceptance.
+- Settlement must be transactional and idempotent so retries or reconnects cannot credit a player twice.
 
 ## 7. Zero and supported bet catalogue
 
-- Zero is the single green pocket 0.
-- Zero does not qualify as red/black, odd/even, low/high, dozen, or column.
-- No La Partage or En Prison is currently proposed.
-- Inside bets: straight-up, split, street, corner, six line, and first four.
-- Outside bets: dozen, column, red/black, odd/even, and low/high.
-- Use the standard European roulette layout; only valid standard selections are allowed. Custom bet types or nonstandard positions are not included.
+- Zero is the single green pocket 0 and does not qualify as Red/Black, Odd/Even, Low/High, dozen, or column.
+- No La Partage or En Prison is proposed.
+- Inside bets: straight-up, split, street, corner, six line, and first four. Outside bets: dozen, column, Red/Black, Odd/Even, and Low/High.
+- Use only valid standard selections on the standard single-zero European layout; no custom bet types or nonstandard positions.
 - Overlapping bets settle independently.
-- Exact canonical position mapping for all inside bets, including zero-containing split/street positions, corners/six lines adjacent to zero, and first four, must be written as an explicit validated selection catalogue before implementation.
+- A canonical list of valid positions, including zero-adjacent positions, must be reviewed before implementation.
 
-## 8. Void-round handling
+## 8. Internet disconnection and server/game failure
 
-- Owner choice: if a round cannot safely complete, freeze settlement for owner/admin review.
-- This choice does not yet specify the admin decision options, whether/when stakes are refunded, whether the round outcome is retained or voided, or how the next round proceeds. These remain open and must not be guessed by implementation.
+- **Player-side internet disconnection after acceptance:** accepted bets remain valid and settle normally against the shared winning number. Disconnection does not cancel or change the bet. On reconnect, return authoritative balance, round, result, and the player's own bet state.
+- **FairMount server/game-side failure preventing safe completion:** automatically return affected accepted stakes to the wallet; do not leave stakes frozen pending manual review. Record the incident/void reason and idempotent refund ledger entries.
+- **Recommended recovery rule:** if no outcome has been persisted when a server-side failure makes the round unsafe, void the round and refund all accepted stakes for that round. If an outcome has been persisted, never generate a replacement outcome; resume settlement using the saved outcome if safe. If settlement cannot safely be completed, void/refund with an audited incident, ensuring no player receives both a payout and a refund for the same stake.
+- Each round must end in one terminal accounting state (for example, settled or void-refunded), enforced through transactional state transitions and unique ledger references.
+- A player disconnect must not be classified as a server/game-side failure.
 
-## 9. Remaining ambiguities and approval gates
+## 9. Valid standard European table positions
 
-1. **Duplicate-selection cap:** Does the 2,000-coin limit apply to the combined stake across all separate records for the same exact selection, or to each separate record independently? The UI will show a combined total either way.
-2. **Edit scope:** Is an atomic edit one user action affecting one selection, or may one action edit several selections and must then succeed/fail as a whole? Suggested default for review: each submitted edit operation is one atomic unit; multi-selection edits are all-or-nothing.
-3. **Void-round admin decision:** What explicit actions can owner/admin take after settlement is frozen (for example, void and refund all accepted stakes, or resume settlement using the already-persisted outcome)? What happens if no decision is made promptly?
-4. **Canonical layout catalogue:** Confirm/record the full set of valid standard positions for zero-adjacent inside bets and first four. The rule is standard European layout only; the exact machine-readable mapping is not yet attached.
-5. **Outcome timing on exceptional failure:** If a failure occurs before an outcome is generated, or after it is persisted but before result display/settlement, should the system generate an outcome, reuse the persisted outcome, or freeze for review? Outcome must never be regenerated to change a round already persisted.
-6. **Owner approval:** Approval of the complete specification is still required before implementation.
+- Use the standard single-zero European roulette table.
+- Validate selections server-side against a canonical list of legal straight-up, split, street, corner, six-line, and first-four combinations.
+- First four is exactly {0, 1, 2, 3}.
+- The complete machine-readable catalogue, including legal positions adjacent to zero, is a prerequisite before the betting engine is built.
 
-## 10. Approval status
+## 10. Remaining ambiguities and approval gates
 
-This document is a draft that records the owner's five latest choices. Those choices do **not** constitute approval of the entire specification. P00-T02 remains open; no betting-engine implementation is authorized by this draft.
+1. **Other selection caps:** Confirm whether the 2,000-coin per-player/per-round cap also applies to each corner, six-line, first-four, and Low/High selection.
+2. **Meaning of “rows”:** This draft interprets “rows” as street/row bets. Confirm if another selection was intended.
+3. **Partial acceptance:** Confirm that a capped bet may be partially accepted up to the available limit, with the remainder immediately returned, including for split bets. The current proposal only accepts a remainder compatible with chip denominations and at least 5 coins.
+4. **Pre-acceptance edit/cancel:** Recommended implementation is to let the player edit/cancel a local bet draft before submission. Server submission is then validated and either accepted immutably or rejected. Confirm this matches the intended interaction.
+5. **Canonical layout catalogue:** Review the exact valid standard positions, especially zero-adjacent combinations.
+6. **Owner approval:** Approval of the complete specification remains required before implementation.
+
+## 11. Approval status
+
+This draft records the owner's latest instructions and one explicitly labelled recovery recommendation. These choices do **not** constitute approval of the complete specification. P00-T02 remains open; no betting-engine implementation is authorized.
