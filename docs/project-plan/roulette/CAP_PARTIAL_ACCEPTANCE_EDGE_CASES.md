@@ -30,7 +30,7 @@ For every new bet submission, the server must evaluate the complete canonical se
 | PA-02 | Requested 500; only 15 remains under applicable cap | Accept 15; return 485; exposure rises by 15 |
 | PA-03 | Requested 10; only 5 remains under applicable cap | Accept 5; return 5 |
 | PA-04 | Requested 10; 0 remains under any applicable cap | Reject; no wallet or exposure mutation |
-| PA-05 | Requested amount would leave only 1–4 coins of cap capacity | Accept only the largest multiple of 5 within capacity if at least 5; otherwise reject. Existing accepted stakes are multiples of 5, so cap capacity should itself remain a multiple of 5 |
+| PA-05 | Defensive invariant test: inject or simulate an invalid internal state where computed cap capacity is 1–4 coins, despite accepted stakes and caps normally being multiples of 5 | The acceptance service must never accept a stake below 5 or a non-multiple of 5; reject without wallet/exposure mutation and emit an invariant/error signal. This state is unreachable through valid operations and is not a normal gameplay scenario |
 | PA-06 | Straight-up 17 already has 1,995 exposure; request 10 on 17 | Accept 5; return 5; total exposure becomes 2,000 |
 | PA-07 | Straight-up 17 already has 1,500 exposure; request 1,000 on split 17/20; both number and split-selection caps otherwise unused | Accept at most 500, subject to all other applicable limits; return remainder |
 | PA-08 | Split 17/20 has 1,500 accepted; request another 1,000 on same split | Accept at most 500 under the exact split-selection cap, also constrained by both numbers' remaining exposure; return remainder |
@@ -63,11 +63,27 @@ For every new bet submission, the server must evaluate the complete canonical se
 - One request's idempotency key cannot create multiple accepted bets or wallet mutations.
 - Player-private bet data remains inaccessible to other players through API and realtime payloads.
 
-## 4. Gate before implementation
+## 4. Review of PA-01 through PA-23
 
-This matrix is a test specification, not evidence that tests have run. Do not begin betting-engine implementation until:
-1. The canonical red/black sets and all catalogue counts are represented in a deterministic test fixture.
-2. The acceptance criteria are reviewed and testable.
-3. The implementation plan includes concurrency, transaction rollback, and idempotency tests.
+The matrix has been reviewed against the locked requirements. PA-01–PA-04, PA-06–PA-23 are consistent with the current rules when interpreted with the shared acceptance algorithm in Section 1. PA-05 needed clarification: because all accepted stakes and both caps are multiples of 5, a 1–4 coin remaining capacity cannot occur through valid operations. It is retained as a defensive invariant/corrupt-state test, not a normal acceptance scenario.
+
+Implementation test layers:
+
+- **Pure unit tests:** PA-01–PA-10, PA-14–PA-16, PA-20–PA-21; include exact accepted amount, excess return, normalization, and no-side-effect assertions.
+- **Database/transaction integration tests:** PA-17–PA-18 and PA-22–PA-23; assert ledger, wallet, accepted-bet records, idempotency keys, and terminal round state.
+- **Concurrency tests:** PA-11–PA-12 using genuinely overlapping requests and the production database transaction/locking strategy; assert no cap or wallet overspend.
+- **Round lifecycle tests:** PA-13 against server-authoritative cutoff state, not a client timer.
+- **Rebet atomicity tests:** PA-19, including balance failure, cap failure, and rollback of the entire set.
+- **Authorization tests:** separately test that one player cannot read another player's bets or private realtime payloads.
+
+The current eight passing catalogue tests validate catalogue fixture invariants only. They do not execute any PA acceptance behavior and are not evidence that a betting engine exists.
+
+## 5. Gate before implementation
+
+This matrix is a test specification, not evidence that the betting engine has passed tests. Before implementation begins:
+1. The canonical red/black sets and all catalogue counts must be represented in the deterministic fixture and the catalogue suite must pass.
+2. The acceptance criteria must be reviewed and testable (review recorded above).
+3. The implementation plan must include concurrency, transaction rollback, idempotency, rebet atomicity, cutoff, and settlement/refund tests.
+4. Tests must run against the actual implementation and supported database before any implementation task is declared verified.
 
 No betting-engine implementation is authorized by this document.
