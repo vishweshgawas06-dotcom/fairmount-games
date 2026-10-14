@@ -10,8 +10,8 @@ The owner approved the payout/settlement specification and canonical legal-posit
 
 ## Verification artifacts
 
-- [Canonical catalogue fixture](../../../../tests/fixtures/roulette_catalogue.json)
-- [Catalogue fixture tests](../../../../tests/test_roulette_catalogue_fixture.py)
+- [Canonical catalogue fixture](../../tests/fixtures/roulette_catalogue.json)
+- [Catalogue fixture tests](../../tests/test_roulette_catalogue_fixture.py)
 - [Cap and partial-acceptance edge cases](roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md)
 - [Canonical legal-position catalogue](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md)
 
