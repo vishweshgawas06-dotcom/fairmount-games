@@ -2,11 +2,11 @@
 
 ## Active task
 
-**P00-T02 — Review canonical roulette position catalogue before implementation.**
+**P00-T02 — Verify cap/partial-acceptance edge cases and resolve insufficient-balance behavior.**
 
 ## Objective
 
-Owner approval was received on 2026-10-14. A legal-position catalogue review draft has been added. Next, review its zero-adjacent combinations, position definitions, and counts; do not begin betting-engine implementation until reviewed.
+The owner approved the canonical legal-position catalogue on 2026-10-14. The catalogue is now the specification baseline. Next, verify cap/partial-acceptance edge cases and resolve the normal-bet insufficient-balance policy; do not begin betting-engine implementation until these gates are cleared.
 
 ## Current draft
 
@@ -39,9 +39,10 @@ See [Roulette Payout and Settlement Specification (Draft)](roulette/PAYOUT_AND_S
 
 - Owner approval of the complete payout/settlement specification recorded on 2026-10-14.
 - Catalogue review draft: [LEGAL_POSITION_CATALOGUE_REVIEW.md](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md).
-- Next: owner review of zero-adjacent combinations, catalogue definitions, and counts; then verify cap/partial-acceptance edge cases against chip rules.
+- Catalogue approved by owner on 2026-10-14; see [LEGAL_POSITION_CATALOGUE_REVIEW.md](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md).
+- Next: review [CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md](roulette/CAP_PARTIAL_ACCEPTANCE_EDGE_CASES.md) and decide the normal-bet insufficient-balance behavior.
 - Do not start betting-engine implementation until the catalogue and relevant acceptance criteria are verified.
 
 ## Do not do yet
 
-Do not implement betting or payout code yet. Owner approval is recorded, but do not mark P00-T02 complete until the canonical legal-position catalogue and remaining acceptance criteria are verified.
+Do not implement betting or payout code yet. The payout/settlement specification and catalogue are owner-approved, but P00-T02 remains open until edge-case policy and test acceptance criteria are verified.
