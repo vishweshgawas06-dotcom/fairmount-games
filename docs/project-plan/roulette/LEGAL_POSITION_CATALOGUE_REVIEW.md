@@ -89,11 +89,9 @@ Expected counts from the rules above:
 - Numbered streets: 12
 - Zero-adjacent streets: 2
 - Total streets: 14
-- Generic corners: 44 (11 adjacent row-pairs × 2 adjacent column-pairs × 2? See review note below)
+- Generic corners: 22 (11 adjacent row-pairs × 2 adjacent column-pairs)
 - Six lines: 11
 - First Four: 1
-
-**Count review note:** The generic-corner count must be verified against the actual table geometry before locking. There are 11 adjacent row-pairs and 2 adjacent column-pairs per row-pair, yielding 22 generic 2×2 corners under the geometry defined above. The provisional value “44” is not authoritative and is explicitly superseded by this derivation; expected generic-corner count is **22**.
 
 ## 6. Owner review checklist
 
