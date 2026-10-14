@@ -1,6 +1,6 @@
 # FairMount Roulette — Cap and Partial-Acceptance Edge-Case Matrix
 
-**Status:** Specification verification draft — not implementation or test evidence  
+**Status:** Owner decisions recorded on 2026-10-14; specification verification draft — not implementation or test evidence  
 **Prerequisites:** Owner-approved payout/settlement specification and canonical legal-position catalogue  
 **Purpose:** Define deterministic cases that must pass before betting-engine implementation is authorized.
 
@@ -19,6 +19,8 @@ For every new bet submission, the server must evaluate the complete canonical se
 - For split bets, the stake counts against both constituent numbers. The accepted amount is limited by the smaller remaining per-number capacity as well as the split-selection cap.
 - The per-selection caps and per-number exposure caps are independent constraints; apply all constraints that match the bet.
 - Rebet remains a separate all-or-nothing operation for the player's complete previous-round set. Do not partially rebet.
+- For an ordinary bet, if the player's balance is less than the requested stake, reject the entire bet and preserve the balance unchanged. Do not balance-limit or partially accept an ordinary bet.
+- Cap-limited partial acceptance remains allowed only when the player can cover the full requested stake and the applicable cap(s), rather than balance, are the only limiting factor. Reserve the accepted amount and return cap-excess atomically. If balance is insufficient for the original request, reject it without any wallet or cap mutation.
 
 ## 2. Required verification matrix
 
@@ -43,8 +45,8 @@ For every new bet submission, the server must evaluate the complete canonical se
 | PA-17 | Accepted bet followed by client retry with same idempotency key | Return original result; do not reserve/debit twice |
 | PA-18 | Acceptance transaction fails after internal work begins | Roll back all wallet, accepted-bet, cap/exposure, and ledger changes |
 | PA-19 | Rebet set total exceeds balance or any bet in the set cannot be accepted under current caps | Reject the entire rebet; no partial rebet or partial debit |
-| PA-20 | A normal single-bet request exceeds available wallet balance | **Unresolved policy:** confirm whether to reject the whole bet or accept a balance-limited partial amount. Do not implement either behavior until the owner decides. |
-| PA-21 | Wallet balance is not a multiple of 5 and request is within cap but exceeds balance | **Unresolved interaction:** define insufficient-balance behavior and ensure any accepted amount remains a multiple of 5 and at least 5. |
+| PA-20 | Ordinary 20-coin bet with 12-coin balance; caps otherwise allow it | Reject entire bet; balance remains 12; no bet record or exposure change |
+| PA-21 | Balance is 12 and ordinary requested stake is 15; caps otherwise allow it | Reject entire bet; balance remains 12. A wallet balance not divisible by 5 does not permit balance-limited partial acceptance. |
 | PA-22 | Round is voided after settlement failure | Refund every accepted stake once, idempotently; no payout is credited for the voided round |
 | PA-23 | Settlement has committed and a retry/recovery worker runs | No refund; no duplicate payout; terminal state remains settled |
 
@@ -64,9 +66,8 @@ For every new bet submission, the server must evaluate the complete canonical se
 ## 4. Gate before implementation
 
 This matrix is a test specification, not evidence that tests have run. Do not begin betting-engine implementation until:
-1. The owner resolves PA-20/PA-21 insufficient-balance behavior.
-2. The canonical red/black sets and all catalogue counts are represented in a deterministic test fixture.
-3. The acceptance criteria are reviewed and testable.
-4. The implementation plan includes concurrency, transaction rollback, and idempotency tests.
+1. The canonical red/black sets and all catalogue counts are represented in a deterministic test fixture.
+2. The acceptance criteria are reviewed and testable.
+3. The implementation plan includes concurrency, transaction rollback, and idempotency tests.
 
 No betting-engine implementation is authorized by this document.
