@@ -2,7 +2,7 @@
 
 ## Active task
 
-**Owner review checkpoint — D-01/D-02 account removal and record-retention decisions before proposed P02-T01 schema design. Await owner permission for the next task.**
+**Next proposed task: P02-T01 conceptual schema/transaction design; request separate owner permission before starting. D-02 retention periods remain open.**
 
 The owner approved the [detailed delivery plan for P00–P19](DETAILED_DELIVERY_PLAN.md) on 2026-10-15 and emphasized a realistic-feeling European roulette machine with a smoothly spinning wheel and ball. The owner separately approved verification of P01-T01. Local Python 3.12 tests, lint, and liveness passed; [pull-request CI run 38693744680](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38693744680) also passed. P01-T01 is complete; pull request #1 is open for owner review and has not been merged. No gameplay implementation was started. P01-T02/P01-T03 remain future scoped tasks.
 
@@ -44,9 +44,9 @@ The catalogue tests validate catalogue invariants, not bet acceptance or settlem
 - PA-01 through PA-23 reviewed; PA-05 clarified as an unreachable-state defensive invariant test; PA-07/PA-08 aligned with per-number split exposure rules. Test layers are specified for unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and player-privacy authorization behavior.
 - Architecture and test plan recorded in `roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md`.
 - Local sandbox verification on 2026-10-15 using Python 3.12.12: editable install succeeded; 10/10 tests, Ruff and `/health/live` passed after test-formatting corrections. [GitHub pull-request CI run 38693744680](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38693744680) passed tests and Ruff on Python 3.12. P01-T01 complete. An upstream Starlette/httpx deprecation warning remains; CI reported advisory action/runner notices. The owner's earlier Python 3.14.4 environment still needs a supported interpreter for their own local setup.
-- Next owner checkpoint: decide D-01 user/agent removal and point treatment and D-02 historical retention/anonymization/deletion before P02 schema design. Scope P02-T01 only after this review and separate permission.
+- The owner approved [D-01 account disablement/reassignment](decisions/2026-10-15-account-disable-and-reassignment.md) and the anonymization direction of [D-02 privacy deletion](decisions/2026-10-15-privacy-deletion-and-retention.md) on 2026-10-15. Exact retention periods, deletion exceptions and backups remain open by owner choice pending legal/operations review. Do not run destructive cleanup. With separate permission, P02-T01 can design the entity/transaction model and mark D-02-dependent schema details as pending; do not implement migrations yet.
 - No engine code exists yet; passing catalogue tests do not authorize treating cap or settlement behavior as verified.
 
 ## Do not do yet
 
-Do not begin P02 schema implementation, betting or payout code without a separately approved scoped task. P01-T01 verification is complete; owner approval of the delivery plan does not waive later phase gates.
+Do not begin P02 schema design or implementation, betting or payout code without a separately approved scoped task. P01-T01 verification is complete; owner approval of these decisions does not waive later phase gates.

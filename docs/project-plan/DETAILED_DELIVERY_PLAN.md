@@ -18,8 +18,8 @@
 
 | Checkpoint | Decision/evidence needed | Needed before |
 |---|---|---|
-| D-01 | Define removal/disablement of players and agents, outstanding allocations, active sessions/bets, and ledger treatment; preserve auditability. | Destructive account operations in P03/P06/P07 |
-| D-02 | Define historical records' retention, anonymization/deletion, and export/access rules, with applicable privacy/legal review. | Final schema/data lifecycle in P02 and release in P18 |
+| D-01 | **Accepted 2026-10-15:** [disablement, settlement, frozen player wallet and audited agent reassignment](decisions/2026-10-15-account-disable-and-reassignment.md). Budget handoff implementation details remain to design. | Account/reassignment implementation in P03/P06/P07 |
+| D-02 | **Partially accepted 2026-10-15:** [eligible verified anonymization with non-identifying audit retained](decisions/2026-10-15-privacy-deletion-and-retention.md). Exact retention periods, backup handling and legal review are open. | Final schema/data lifecycle and release in P18 |
 | D-03 | Approve owner MFA enrollment, recovery, session expiry, and privileged-action reauthentication policy. | P03 implementation of recovery; P06 and production |
 | D-04 | Approve measurable availability, capacity, latency, reconnect, and recovery targets and measurement conditions. | P17 pass/fail and production readiness |
 | D-05 | Review deployment jurisdiction, legal/privacy requirements, and public-facing virtual-points disclosures. This does **not** authorize real money. | Staging/production launch |
@@ -28,7 +28,7 @@
 | D-08 | Choose API/realtime contract versioning, event ordering/replay, deployment shape and whether Redis is needed; PostgreSQL remains accounting source of truth. | P02/P09 integration design |
 | D-09 | Review authentic European wheel pocket order/visual geometry, original visual/audio references and asset rights, target device/browser matrix, smoothness budget and reduced-motion presentation. Do not treat animation physics as outcome generation. | P12 visual design and P14 acceptance |
 
-D-01–D-04 are explicitly unresolved in locked requirements. D-05–D-09 are proposed design/review checkpoints, **not** decisions already made. Record material approvals in `decisions/`; never guess values. The owner has confirmed a realistic-feeling European roulette machine as a product goal, including a smoothly spinning wheel and ball. UI reference images/videos may guide original visuals and interactions, but must not override approved game rules or introduce copyrighted assets. Asset ownership/licensing needs review before release.
+D-01 is now owner-approved; D-02 has an approved direction but **remains open for exact periods and legal/operations review**. D-03/D-04 remain unresolved in locked requirements. D-05–D-09 are proposed design/review checkpoints, **not** decisions already made. Record material approvals in `decisions/`; never guess values. The owner has confirmed a realistic-feeling European roulette machine as a product goal, including a smoothly spinning wheel and ball. UI reference images/videos may guide original visuals and interactions, but must not override approved game rules or introduce copyrighted assets. Asset ownership/licensing needs review before release.
 
 ## Dependency and milestone map
 
@@ -52,7 +52,7 @@ D-01–D-04 are explicitly unresolved in locked requirements. D-05–D-09 are pr
 
 ### P02 — Database and migrations
 
-- **P02-T01:** Model users/roles/agent ownership, sessions, wallet/ledger, rounds, bets, exposures, idempotency, audits, and terminal accounting states; document access, uniqueness, FK, and retention choices before creating migrations. **Gate:** reviewed entity/transaction diagram and approved dependencies (D-01/D-02 as relevant).
+- **P02-T01:** Design users/roles/agent ownership, sessions, wallet/ledger, rounds, bets, exposures, idempotency, audits, and terminal accounting states; document access, uniqueness, FKs and D-01 disablement/reassignment. Design separation of identifiers and configurable retention categories under D-02; mark exact retention/cleanup behavior as pending legal/owner review. **Gate:** reviewed entity/transaction diagram and open-decision list; do not finalize destructive retention migrations or cleanup without full D-02 approval.
 - **P02-T02:** Add SQLAlchemy 2 repositories and Alembic migrations in reviewable slices, not one giant migration. **Gate:** fresh DB migrate, rollback/reapply where safe, constraints reject invalid references/duplicate accounting keys; tests on PostgreSQL.
 - **P02-T03:** Test migration upgrades from prior version and backup/restore rehearsal for local/test DB. **Gate:** data and schema survive documented upgrade and restore without production data exposure.
 

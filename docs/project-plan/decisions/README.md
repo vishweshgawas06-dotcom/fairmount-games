@@ -10,3 +10,8 @@ Record significant decisions as individual dated files. Each decision should inc
 - Consequences and follow-up tasks
 
 Do not treat a proposed decision as approved.
+
+## Recorded V1 decisions
+
+- [D-01 — Account disablement, reassignment and point accounting](2026-10-15-account-disable-and-reassignment.md): owner accepted; implementation pending.
+- [D-02 — Personal-data deletion and historical retention](2026-10-15-privacy-deletion-and-retention.md): anonymization direction accepted; exact periods and legal/operational review remain open.
