@@ -4,8 +4,8 @@
 **Current task:** P01-T01 — Establish and verify the Python API foundation  
 **Implementation status:** Initial FastAPI liveness foundation committed; betting engine not started  
 **Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14  
-**Verification status:** Catalogue suite reported passing locally (8/8); PA-01–PA-23 reviewed; API foundation committed; new API tests, lint, and local endpoint verification pending  
-**Last updated:** 2026-10-14
+**Verification status:** Catalogue suite reported passing locally (8/8); PA-01–PA-23 reviewed; API foundation committed; owner-reported verification attempt blocked because local Python is 3.14.4 but project requires Python >=3.12,<3.14; API tests, lint, and endpoint remain unverified  
+**Last updated:** 2026-10-15
 
 ## Completed in repository
 
@@ -20,12 +20,12 @@
 - Owner-reported local test evidence on 2026-10-14: `python -m unittest discover -s tests -v` completed with 8 tests passed and 0 failures.
 - Reviewed PA-01 through PA-23 against locked requirements. Clarified PA-05 as a defensive invariant test because 1–4 coins of remaining cap capacity cannot occur through valid multiples-of-5 operations. Clarified PA-07/PA-08 so split bets are limited by constituent-number exposure; no separate exact-split cap is in the locked requirements. The matrix now maps scenarios to unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and authorization test layers.
 - Added `roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md` with proposed server components, transaction sequences, round state machine, and test layers.
-- Added Python project metadata, a minimal FastAPI liveness endpoint, API smoke tests, a Python test/lint workflow, and local setup instructions for P01-T01. These are committed but have not yet been executed locally or by CI.
+- Added Python project metadata, a minimal FastAPI liveness endpoint, API smoke tests, a Python test/lint workflow, and local setup instructions for P01-T01. Owner-reported local attempt on 2026-10-15: installation rejected Python 3.14.4 against the project's `<3.14` constraint; all 8 catalogue tests passed, API smoke tests could not import FastAPI, and Ruff/Uvicorn were unavailable. API/lint/endpoint verification remains blocked and unverified.
 
 ## Current verification gates
 
 - Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally.
-- Verify P01-T01 locally: install `python -m pip install -e ".[dev]"`, run `python -m unittest discover -s tests -v`, run `ruff check .`, start Uvicorn, and request `/health/live`.
+- Unblock P01-T01: owner reported on 2026-10-15 that install failed because active Python is 3.14.4, outside the declared `>=3.12,<3.14` range. Eight catalogue tests passed; API test import failed because FastAPI was not installed; Ruff and Uvicorn were unavailable. Run `py -0p`, create a `.venv` with Python 3.13 if installed (otherwise install Python 3.13), install `.[dev]`, then rerun full tests, Ruff, and `/health/live`.
 - Before betting-engine implementation, use the documented architecture/test plan and implement tests for cap enforcement, balance reservation, concurrency, cutoff, rollback, idempotency, rebet atomicity, settlement, and void/refund against the actual implementation and supported database.
 - Ensure future API/realtime authorization tests prove player-private bet data cannot be read by other players.
 - Resolve remaining non-blocking product/operations decisions: user/agent removal and point-accounting behavior; historical record retention/anonymization/deletion; owner MFA recovery/session policy; measurable performance/availability targets.
