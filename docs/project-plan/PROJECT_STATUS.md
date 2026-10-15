@@ -1,11 +1,11 @@
 # Project Status
 
-**Current phase:** P01 foundation verified; D-01 approved and D-02 direction approved (periods pending); next proposed task is P02-T01 conceptual schema design with separate permission
+**Current phase:** P02 conceptual design (no schema implementation)
 
-**Current task:** P01-T01 complete; no new implementation task authorized
+**Current task:** P02-T01 design draft delivered for owner/technical review; no implementation authorized
 **Implementation status:** Initial FastAPI liveness foundation committed; betting engine not started  
 **Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14  
-**Verification status:** Python 3.12.12 sandbox: 10/10 tests, Ruff, pip check and HTTP liveness passed; GitHub Python 3.12 pull-request CI passed on 2026-10-15
+**Verification status:** P01 foundation: 10/10 tests, Ruff, pip check and HTTP liveness passed locally; GitHub Python 3.12 pull-request CI passed. P02-T01 design review pending; no database tests or code.
 **Last updated:** 2026-10-15
 
 ## Delivery plan (owner-approved sequence)
@@ -32,9 +32,10 @@
 
 ## Current verification gates
 
-- Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally.
+- P02-T01: obtain owner/technical review of the conceptual model and open decisions. It is documentation-only and remains open; no PostgreSQL implementation or transaction claims.
+- Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally, and P01's full suite was 10/10.
 - P01-T01 local and CI checks passed; it is complete. Owner's Python 3.14.4 environment separately still needs Python 3.12/3.13 to reproduce locally. GitHub Actions reported advisory notices for Node.js 20-based action versions and the upcoming `ubuntu-latest` image migration; review them in a future CI maintenance task.
-- D-01 player/agent disablement, player wallet freeze, accepted-bet settlement and immediate audited agent reassignment were approved on 2026-10-15. D-02 verified anonymization direction was approved, while exact retention windows, backups and legal exceptions were deliberately deferred. [Decision records](decisions/README.md) capture scope and follow-ups. P02-T01 conceptual schema design is proposed, not yet authorized; P02 migrations/destructive cleanup are not authorized. P01-T02 frontend tooling and P01-T03 database environment remain future scoped tasks.
+- D-01 player/agent disablement, player wallet freeze, accepted-bet settlement and immediate audited agent reassignment were approved on 2026-10-15. D-02 verified anonymization direction was approved, while exact retention windows, backups and legal exceptions were deliberately deferred. [Decision records](decisions/README.md) capture scope and follow-ups. The owner separately authorized **P02-T01 conceptual design only**. [Draft entity/transaction model](database/CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md) and [review checklist](tasks/P02-T01.md) are awaiting owner/technical review; no migrations or gameplay code have been authorized. P01-T02 frontend tooling and P01-T03 database environment remain future scoped tasks.
 - Before betting-engine implementation, use the documented architecture/test plan and implement tests for cap enforcement, balance reservation, concurrency, cutoff, rollback, idempotency, rebet atomicity, settlement, and void/refund against the actual implementation and supported database.
 - Ensure future API/realtime authorization tests prove player-private bet data cannot be read by other players.
 - Resolve remaining non-blocking product/operations decisions: user/agent removal and point-accounting behavior; historical record retention/anonymization/deletion; owner MFA recovery/session policy; measurable performance/availability targets.

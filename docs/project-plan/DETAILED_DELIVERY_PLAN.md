@@ -52,7 +52,7 @@ D-01 is now owner-approved; D-02 has an approved direction but **remains open fo
 
 ### P02 — Database and migrations
 
-- **P02-T01:** Design users/roles/agent ownership, sessions, wallet/ledger, rounds, bets, exposures, idempotency, audits, and terminal accounting states; document access, uniqueness, FKs and D-01 disablement/reassignment. Design separation of identifiers and configurable retention categories under D-02; mark exact retention/cleanup behavior as pending legal/owner review. **Gate:** reviewed entity/transaction diagram and open-decision list; do not finalize destructive retention migrations or cleanup without full D-02 approval.
+- **P02-T01:** [Conceptual schema/transaction design task](tasks/P02-T01.md) is drafted for owner/technical review. It covers users/roles/ownership, sessions, wallet/ledger/budgets, rounds, bets, exposures, idempotency, audits, authorization and terminal accounting. D-02 retention/cleanup behavior stays pending legal/owner review. **Gate:** reviewed entity/transaction diagram and open-decision list; no migrations or destructive cleanup authorized.
 - **P02-T02:** Add SQLAlchemy 2 repositories and Alembic migrations in reviewable slices, not one giant migration. **Gate:** fresh DB migrate, rollback/reapply where safe, constraints reject invalid references/duplicate accounting keys; tests on PostgreSQL.
 - **P02-T03:** Test migration upgrades from prior version and backup/restore rehearsal for local/test DB. **Gate:** data and schema survive documented upgrade and restore without production data exposure.
 
