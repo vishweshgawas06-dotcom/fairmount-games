@@ -27,8 +27,9 @@
 | D-07 | Clarify any conflicting terminology in the cap matrix: PA-09's reference to a “split-selection cap” is not a separately approved exact-split cap. Follow the locked per-number split exposure rule unless the owner explicitly changes the specification. | Betting acceptance tests/code |
 | D-08 | Choose API/realtime contract versioning, event ordering/replay, deployment shape and whether Redis is needed; PostgreSQL remains accounting source of truth. | P02/P09 integration design |
 | D-09 | Review authentic European wheel pocket order/visual geometry, original visual/audio references and asset rights, target device/browser matrix, smoothness budget and reduced-motion presentation. Do not treat animation physics as outcome generation. | P12 visual design and P14 acceptance |
+| D-10 / POOL-01 | [Owner-approved account/point-transfer flow](decisions/2026-10-15-account-provisioning-and-point-flow.md): one owner, owner-managed players allowed, owner-issued pool and conserved transfers; owner-funded game reserve direction. **Exact pre-bet coverage/global limit is still unapproved.** | P02/P05 wallet/ledger design; approve reserve rule before P08/P11 acceptance |
 
-D-01 is now owner-approved; D-02 has an approved direction but **remains open for exact periods and legal/operations review**. D-03/D-04 remain unresolved in locked requirements. D-05–D-09 are proposed design/review checkpoints, **not** decisions already made. Record material approvals in `decisions/`; never guess values. The owner has confirmed a realistic-feeling European roulette machine as a product goal, including a smoothly spinning wheel and ball. UI reference images/videos may guide original visuals and interactions, but must not override approved game rules or introduce copyrighted assets. Asset ownership/licensing needs review before release.
+D-01 and the D-10 account/transfer flow are owner-approved; D-02 has an approved direction but **remains open for exact periods and legal/operations review**. The D-10 game-reserve funding direction is approved, but POOL-01 coverage/limit details remain open. D-03/D-04 remain unresolved in locked requirements. D-05–D-09 are proposed design/review checkpoints, **not** decisions already made. Record material approvals in `decisions/`; never guess values. The owner has confirmed a realistic-feeling European roulette machine as a product goal, including a smoothly spinning wheel and ball. UI reference images/videos may guide original visuals and interactions, but must not override approved game rules or introduce copyrighted assets. Asset ownership/licensing needs review before release.
 
 ## Dependency and milestone map
 
@@ -70,8 +71,8 @@ D-01 is now owner-approved; D-02 has an approved direction but **remains open fo
 
 ### P05 — Wallet and point ledger
 
-- **P05-T01:** Define immutable ledger types, wallet invariants, gameplay-vs-admin P/L, reference IDs and reconciliation query. **Gate:** model reviewed against approved total-return convention and negative-balance/duplicate-entry constraints.
-- **P05-T02:** Implement atomic, idempotent point allocations/adjustments with actor, target, reason, budget and audit context; player starts at zero. **Gate:** concurrent operations cannot double-spend or exceed agent budget; failure rolls back.
+- **P05-T01:** Define immutable ledger types for explicit owner issuance, paired owner/agent/player transfers, game reserve funding/stakes/payouts/refunds; wallet invariants, gameplay-vs-admin P/L, reference IDs and reconciliation. **Gate:** transfer conservation, owner-only issuance, approved total-return convention and negative-balance/duplicate-entry constraints reviewed; do not code unapproved POOL-01 global reserve restriction.
+- **P05-T02:** Implement atomic, idempotent owner issuance and funded wallet transfers with actor, source, target, reason and audit context; player starts at zero. **Gate:** concurrent transfers cannot double-spend source wallets, create points or partially move an unaffordable request; failure rolls back both sides.
 - **P05-T03:** Reconciliation, correction policy, and backup/restore accounting checks. **Gate:** wallet totals reconcile to ledger in seeded integration scenarios; no silent balance edits.
 
 ### P06 — Owner/admin operations
@@ -102,7 +103,7 @@ D-01 is now owner-approved; D-02 has an approved direction but **remains open fo
 
 ### P11 — Betting controls and acceptance
 
-- **P11-T01 (server):** Implement acceptance with full-balance check, valid stake/chips, canonical position, cutoff, per-number straight/split exposure, exact-selection caps, duplicate records, and atomic cap-limited partial acceptance. **Gate:** PA-01–PA-18, PA-20–PA-21 and relevant PostgreSQL concurrent requests; no balance-limited partial bet.
+- **P11-T01 (server):** Implement acceptance with full-balance check, valid stake/chips, canonical position, cutoff, per-number straight/split exposure, exact-selection caps, duplicate records, and atomic cap-limited partial acceptance. Separately approve POOL-01 funding/coverage and any global acceptance restriction before adding it. **Gate:** PA-01–PA-18, PA-20–PA-21, funded-reserve invariant (once approved) and relevant PostgreSQL concurrent requests; no balance-limited partial bet.
 - **P11-T02 (server):** Implement player-specific all-or-nothing rebet with idempotency. **Gate:** PA-19, duplicate retry, cutoff and concurrent wallet/cap tests.
 - **P11-T03 (client):** Draft chip placement/edit/cancel before submission, pending/confirmed distinction, immutable accepted bets, combined duplicate display and rebet UX. **Gate:** E2E insufficient balance, cap return, cutoff, retries, and disconnect behavior; no optimistic bet treated as accepted.
 - **P11-T04 (cross-service):** Wire bet results into P08 settlement and P09 private events. **Gate:** PA-22/PA-23 and player privacy end-to-end on a shared round. P00-T02 cannot be marked verified before these gates pass.

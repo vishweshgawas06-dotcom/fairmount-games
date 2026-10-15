@@ -22,11 +22,11 @@ This document records current requirements. Items explicitly listed as unresolve
 
 ## Roles and account management
 
-- Hierarchy: Owner/Admin → Agent → Player.
-- No public self-registration; accounts are created by authorized owner/admin or agent.
-- Player account starts at zero points and stores user ID, name, and mobile number.
+- Hierarchy: one owner with global owner/admin management authority → agents → their assigned players; owner-created players may remain owner-managed without an agent. There are no sub-agents. Owner authority does not override audit, security, accepted-bet finality or independent RNG.
+- No public self-registration; owner creates agents and may create players, agents may create only their assigned players. Agents cannot manage owner-managed or other agents' players.
+- Player account starts at zero points and stores user ID, name, and mobile number; username/password login is required. Agents log in with Agent ID/password. Owner can initiate secure password resets for agents/players; users/agents can change their own passwords. Passwords are never retrievable.
 - Owner can create/manage agents and users, adjust points with required reasons, disable/enable accounts, and inspect system records.
-- Agents can manage only their own users and cannot exceed their allocated point budget.
+- Agents can manage only their enabled, currently assigned players and cannot transfer more points than their agent-wallet balance. Their dashboard lists assigned enabled players whether online or offline.
 - Player cannot see overall profit/loss or administrative transaction history.
 - One active player session per account; a new login may invalidate the older session.
 - Reconnection must recover authoritative server state. A server-accepted bet remains valid; a bet not accepted by the server does not exist.
@@ -39,7 +39,8 @@ This document records current requirements. Items explicitly listed as unresolve
 
 ## Accounting
 
-- Maintain an auditable point ledger.
+- Maintain an auditable point ledger. Owner-only, reasoned issuance creates virtual points in the owner wallet; owner↔agent and owner↔player additions/removals and agent↔assigned-player additions/removals are atomic linked transfers between existing wallets. If the source cannot cover the full requested transfer, reject it entirely. The owner can transfer directly to any player. See [D-10](decisions/2026-10-15-account-provisioning-and-point-flow.md).
+- A separate owner-funded game reserve is the chosen direction for winning payouts, but its pre-bet coverage rule, funding thresholds and concurrent implementation remain **unapproved**; do not silently impose a new global cap or withhold accepted winnings. Transfers conserve points; issuance and gameplay must be distinctly accounted for.
 - Separate gameplay wins/losses from administrative allocations/adjustments.
 - Gameplay P/L = winnings minus losses, under the approved payout convention.
 - Every administrative point adjustment requires a reason and an audit record.
@@ -72,4 +73,4 @@ See [D-01 account disablement/reassignment](decisions/2026-10-15-account-disable
 
 ## Unresolved
 
-Do not guess exact historical-record retention periods, deletion eligibility/exceptions, backup lifecycle or jurisdiction-specific legal requirements; D-02 remains partially open and destructive cleanup is blocked. Owner MFA recovery/session policy and operational SLOs/performance targets also remain undecided. The cap/partial-acceptance behavior remains unimplemented and unverified. Catalogue fixture tests do not establish engine behavior.
+Do not guess exact historical-record retention periods, deletion eligibility/exceptions, backup lifecycle or jurisdiction-specific legal requirements; D-02 remains partially open and destructive cleanup is blocked. Owner MFA recovery/session policy and operational SLOs/performance targets also remain undecided. The D-10 game-reserve pre-bet coverage policy and any resulting global acceptance limit require separate owner approval before implementation. The cap/partial-acceptance behavior remains unimplemented and unverified. Catalogue fixture tests do not establish engine behavior.

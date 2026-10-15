@@ -15,3 +15,4 @@ Do not treat a proposed decision as approved.
 
 - [D-01 — Account disablement, reassignment and point accounting](2026-10-15-account-disable-and-reassignment.md): owner accepted; implementation pending.
 - [D-02 — Personal-data deletion and historical retention](2026-10-15-privacy-deletion-and-retention.md): anonymization direction accepted; exact periods and legal/operational review remain open.
+- [D-10 — Account provisioning, wallet transfers and game reserve](2026-10-15-account-provisioning-and-point-flow.md): account/transfer flow accepted; reserve capacity rule remains open.
