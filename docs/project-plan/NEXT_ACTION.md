@@ -2,13 +2,13 @@
 
 ## Active task
 
-**P01-T01 — Unblock and verify the initial Python API foundation locally.**
+**P01-T01 — Confirm Python API foundation in GitHub CI (local checks now pass).**
 
-The owner approved the [detailed delivery plan for P00–P19](DETAILED_DELIVERY_PLAN.md) on 2026-10-15 and emphasized a realistic-feeling European roulette machine with a smoothly spinning wheel and ball. P01-T01 remains the next verification task, subject to separate owner permission; approval of the plan is not blanket implementation approval. No gameplay implementation was started as part of planning.
+The owner approved the [detailed delivery plan for P00–P19](DETAILED_DELIVERY_PLAN.md) on 2026-10-15 and emphasized a realistic-feeling European roulette machine with a smoothly spinning wheel and ball. The owner separately approved verification of P01-T01. Local Python 3.12 tests, lint, and liveness now pass; CI evidence is still pending. No gameplay implementation was started.
 
 ## Objective
 
-The owner-approved roulette specification and catalogue fixture gates are recorded. The owner reported 8/8 catalogue tests passing locally. PA-01 through PA-23 have been reviewed, PA-05 clarified as a defensive invariant test, and PA-07/PA-08 aligned with the locked per-number split exposure rule. The architecture and verification plan is documented at [Betting Engine Architecture and Test Plan](roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md). The initial FastAPI foundation, smoke tests, and CI workflow are committed. On 2026-10-15, the owner reported that installation was rejected because the active Python is 3.14.4 but the project requires `>=3.12,<3.14`; the catalogue tests passed 8/8, while the API test could not import FastAPI and Ruff/Uvicorn were unavailable. First inspect installed Python versions with `py -0p`, then use Python 3.13 in a virtual environment (install Python 3.13 if absent), install dependencies, and rerun tests/lint/liveness. Do not implement gameplay in this task.
+The owner-approved roulette specification and catalogue fixture gates are recorded. The owner reported 8/8 catalogue tests passing locally. PA-01 through PA-23 have been reviewed, PA-05 clarified as a defensive invariant test, and PA-07/PA-08 aligned with the locked per-number split exposure rule. The architecture and verification plan is documented at [Betting Engine Architecture and Test Plan](roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md). The initial FastAPI foundation, smoke tests, and CI workflow are committed. The earlier owner-reported Python 3.14.4 verification block was resolved for this sandbox by testing with a temporary Python 3.12.12 environment on 2026-10-15: the complete 10-test suite, Ruff after five test-formatting corrections, and `/health/live` now pass. See [P01-T01 evidence](tasks/P01-T01.md). Next: obtain passing GitHub CI evidence for this branch; do not implement gameplay in this task.
 
 ## Verification artifacts
 
@@ -43,7 +43,7 @@ The catalogue tests validate catalogue invariants, not bet acceptance or settlem
 - Catalogue fixture suite reported passing locally: 8 tests, 0 failures, using `python -m unittest discover -s tests -v` from the repository root.
 - PA-01 through PA-23 reviewed; PA-05 clarified as an unreachable-state defensive invariant test; PA-07/PA-08 aligned with per-number split exposure rules. Test layers are specified for unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and player-privacy authorization behavior.
 - Architecture and test plan recorded in `roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md`.
-- Active next action: run `py -0p`; create and activate `.venv` using Python 3.13; install with `python -m pip install -e ".[dev]"`; run `python -m unittest discover -s tests -v` and `python -m ruff check .`; start Uvicorn with `python -m uvicorn fairmount_api.main:app --reload --app-dir services/api/src` and check `/health/live`. The 2026-10-15 attempt is blocked by Python 3.14.4 and missing uninstalled dependencies; only the 8 catalogue tests passed.
+- Local sandbox verification on 2026-10-15 using Python 3.12.12: editable install succeeded; 10/10 tests, Ruff and `/health/live` passed after test-formatting corrections. An upstream Starlette/httpx deprecation warning remains. Next action: observe the pull-request CI test/lint run and record its result before completing P01-T01. The owner's earlier Python 3.14.4 environment still needs a supported interpreter for their own local setup.
 - No engine code exists yet; passing catalogue tests do not authorize treating cap or settlement behavior as verified.
 
 ## Do not do yet
