@@ -2,11 +2,11 @@
 
 ## Active task
 
-**P01-T01 — Verify the initial Python API foundation locally.**
+**P01-T01 — Unblock and verify the initial Python API foundation locally.**
 
 ## Objective
 
-The owner-approved roulette specification and catalogue fixture gates are recorded. The owner reported 8/8 catalogue tests passing locally. PA-01 through PA-23 have been reviewed, PA-05 clarified as a defensive invariant test, and PA-07/PA-08 aligned with the locked per-number split exposure rule. The architecture and verification plan is documented at [Betting Engine Architecture and Test Plan](roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md). The initial FastAPI foundation, smoke tests, and CI workflow are now committed. Next, install the Python workspace dependencies, run the complete unittest suite and Ruff, and verify the liveness endpoint locally. Do not implement gameplay in this task.
+The owner-approved roulette specification and catalogue fixture gates are recorded. The owner reported 8/8 catalogue tests passing locally. PA-01 through PA-23 have been reviewed, PA-05 clarified as a defensive invariant test, and PA-07/PA-08 aligned with the locked per-number split exposure rule. The architecture and verification plan is documented at [Betting Engine Architecture and Test Plan](roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md). The initial FastAPI foundation, smoke tests, and CI workflow are committed. On 2026-10-15, the owner reported that installation was rejected because the active Python is 3.14.4 but the project requires `>=3.12,<3.14`; the catalogue tests passed 8/8, while the API test could not import FastAPI and Ruff/Uvicorn were unavailable. First inspect installed Python versions with `py -0p`, then use Python 3.13 in a virtual environment (install Python 3.13 if absent), install dependencies, and rerun tests/lint/liveness. Do not implement gameplay in this task.
 
 ## Verification artifacts
 
@@ -41,7 +41,7 @@ The catalogue tests validate catalogue invariants, not bet acceptance or settlem
 - Catalogue fixture suite reported passing locally: 8 tests, 0 failures, using `python -m unittest discover -s tests -v` from the repository root.
 - PA-01 through PA-23 reviewed; PA-05 clarified as an unreachable-state defensive invariant test; PA-07/PA-08 aligned with per-number split exposure rules. Test layers are specified for unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and player-privacy authorization behavior.
 - Architecture and test plan recorded in `roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md`.
-- Active next action: install with `python -m pip install -e ".[dev]"`, run `python -m unittest discover -s tests -v`, run `ruff check .`, then start Uvicorn and check `/health/live`.
+- Active next action: run `py -0p`; create and activate `.venv` using Python 3.13; install with `python -m pip install -e ".[dev]"`; run `python -m unittest discover -s tests -v` and `python -m ruff check .`; start Uvicorn with `python -m uvicorn fairmount_api.main:app --reload --app-dir services/api/src` and check `/health/live`. The 2026-10-15 attempt is blocked by Python 3.14.4 and missing uninstalled dependencies; only the 8 catalogue tests passed.
 - No engine code exists yet; passing catalogue tests do not authorize treating cap or settlement behavior as verified.
 
 ## Do not do yet
