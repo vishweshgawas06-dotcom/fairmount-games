@@ -2,13 +2,13 @@
 
 ## Active task
 
-**P01-T01 — Confirm Python API foundation in GitHub CI (local checks now pass).**
+**Owner review checkpoint — D-01/D-02 account removal and record-retention decisions before proposed P02-T01 schema design. Await owner permission for the next task.**
 
-The owner approved the [detailed delivery plan for P00–P19](DETAILED_DELIVERY_PLAN.md) on 2026-10-15 and emphasized a realistic-feeling European roulette machine with a smoothly spinning wheel and ball. The owner separately approved verification of P01-T01. Local Python 3.12 tests, lint, and liveness now pass; CI evidence is still pending. No gameplay implementation was started.
+The owner approved the [detailed delivery plan for P00–P19](DETAILED_DELIVERY_PLAN.md) on 2026-10-15 and emphasized a realistic-feeling European roulette machine with a smoothly spinning wheel and ball. The owner separately approved verification of P01-T01. Local Python 3.12 tests, lint, and liveness passed; [pull-request CI run 38693744680](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38693744680) also passed. P01-T01 is complete; pull request #1 is open for owner review and has not been merged. No gameplay implementation was started. P01-T02/P01-T03 remain future scoped tasks.
 
 ## Objective
 
-The owner-approved roulette specification and catalogue fixture gates are recorded. The owner reported 8/8 catalogue tests passing locally. PA-01 through PA-23 have been reviewed, PA-05 clarified as a defensive invariant test, and PA-07/PA-08 aligned with the locked per-number split exposure rule. The architecture and verification plan is documented at [Betting Engine Architecture and Test Plan](roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md). The initial FastAPI foundation, smoke tests, and CI workflow are committed. The earlier owner-reported Python 3.14.4 verification block was resolved for this sandbox by testing with a temporary Python 3.12.12 environment on 2026-10-15: the complete 10-test suite, Ruff after five test-formatting corrections, and `/health/live` now pass. See [P01-T01 evidence](tasks/P01-T01.md). Next: obtain passing GitHub CI evidence for this branch; do not implement gameplay in this task.
+The owner-approved roulette specification and catalogue fixture gates are recorded. The owner reported 8/8 catalogue tests passing locally. PA-01 through PA-23 have been reviewed, PA-05 clarified as a defensive invariant test, and PA-07/PA-08 aligned with the locked per-number split exposure rule. The architecture and verification plan is documented at [Betting Engine Architecture and Test Plan](roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md). The initial FastAPI foundation, smoke tests, and CI workflow are committed. The earlier owner-reported Python 3.14.4 verification block was resolved for this sandbox by testing with a temporary Python 3.12.12 environment on 2026-10-15: the complete 10-test suite, Ruff after five test-formatting corrections, and `/health/live` now pass. See [P01-T01 evidence](tasks/P01-T01.md). GitHub CI passed on Python 3.12; see [P01-T01 evidence](tasks/P01-T01.md). Next: request owner review of D-01/D-02, then scope and seek permission for P02-T01 schema design; do not implement gameplay as part of that decision review.
 
 ## Verification artifacts
 
@@ -43,9 +43,10 @@ The catalogue tests validate catalogue invariants, not bet acceptance or settlem
 - Catalogue fixture suite reported passing locally: 8 tests, 0 failures, using `python -m unittest discover -s tests -v` from the repository root.
 - PA-01 through PA-23 reviewed; PA-05 clarified as an unreachable-state defensive invariant test; PA-07/PA-08 aligned with per-number split exposure rules. Test layers are specified for unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and player-privacy authorization behavior.
 - Architecture and test plan recorded in `roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md`.
-- Local sandbox verification on 2026-10-15 using Python 3.12.12: editable install succeeded; 10/10 tests, Ruff and `/health/live` passed after test-formatting corrections. An upstream Starlette/httpx deprecation warning remains. Next action: observe the pull-request CI test/lint run and record its result before completing P01-T01. The owner's earlier Python 3.14.4 environment still needs a supported interpreter for their own local setup.
+- Local sandbox verification on 2026-10-15 using Python 3.12.12: editable install succeeded; 10/10 tests, Ruff and `/health/live` passed after test-formatting corrections. [GitHub pull-request CI run 38693744680](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38693744680) passed tests and Ruff on Python 3.12. P01-T01 complete. An upstream Starlette/httpx deprecation warning remains; CI reported advisory action/runner notices. The owner's earlier Python 3.14.4 environment still needs a supported interpreter for their own local setup.
+- Next owner checkpoint: decide D-01 user/agent removal and point treatment and D-02 historical retention/anonymization/deletion before P02 schema design. Scope P02-T01 only after this review and separate permission.
 - No engine code exists yet; passing catalogue tests do not authorize treating cap or settlement behavior as verified.
 
 ## Do not do yet
 
-Do not implement betting or payout code in P01-T01. First verify the foundation. Owner approval locks requirements; it does not waive verification gates.
+Do not begin P02 schema implementation, betting or payout code without a separately approved scoped task. P01-T01 verification is complete; owner approval of the delivery plan does not waive later phase gates.
