@@ -48,7 +48,7 @@ This document records current requirements. Items explicitly listed as unresolve
 
 - Premium original casino-inspired interface, deep green table and restrained gold accents.
 - Desktop and mobile support; mobile has a dedicated landscape layout with safe-area and viewport handling.
-- Smooth wheel/ball animation that visually lands on the server-provided result; animation must never determine the result.
+- Realistic-feeling European roulette machine: smoothly spinning wheel and ball with believable motion and landing, while visually landing on the server-provided result; animation must never determine the result. Owner reconfirmed the realistic-feel goal on 2026-10-15. Specific visual references, target-device performance thresholds, and reduced-motion presentation remain design review items.
 - Show balance, individual bets, winning numbers, and current-session game history to players.
 - Sound effects for wheel, ball, chips, buttons, and result; no background music/ambience; separate volume controls.
 - No hidden or unusable controls at supported viewport sizes.

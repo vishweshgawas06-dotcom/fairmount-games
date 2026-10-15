@@ -7,6 +7,13 @@
 **Verification status:** Catalogue suite reported passing locally (8/8); PA-01–PA-23 reviewed; API foundation committed; owner-reported verification attempt blocked because local Python is 3.14.4 but project requires Python >=3.12,<3.14; API tests, lint, and endpoint remain unverified  
 **Last updated:** 2026-10-15
 
+## Delivery plan (owner-approved sequence)
+
+- [Detailed delivery plan](DETAILED_DELIVERY_PLAN.md) prepared and owner-approved on 2026-10-15 with small task outlines, dependencies, owner decision checkpoints, and test/review gates for P00–P19. Individual implementation tasks still require separate permission; open decisions remain open.
+- Owner reconfirmed the goal of a realistic-feeling European roulette machine with a smoothly spinning wheel and ball. Visual specifics and device budgets remain design review checkpoints; the animation must follow the authoritative server result.
+- The owner reaffirmed the independent server-side RNG rule and requested readable code, appropriate error handling, standard accessible UI/UX, staged testing/debugging, permission checkpoints, Markdown status updates, and GitHub commit/push at completed stages. These are reflected in the workflow rules.
+- No implementation status or P01-T01 verification gate changed as a result of planning approval.
+
 ## Completed in repository
 
 - Initial repository baseline and development/security guidance.
