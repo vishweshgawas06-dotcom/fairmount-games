@@ -1,14 +1,14 @@
 # Project Status
 
-**Current phase:** P02 account schema and P03 identifier constraints complete; P03 role binding complete; fixed V1 player username trigger in verification
+**Current phase:** P02 account schema and P03 identifier constraints complete; P03 role binding complete; fixed V1 player username guard complete
 
-**Current task:** P03-T01d fixed player username trigger/tests implemented; PostgreSQL CI pending
+**Current task:** P03-T01d fixed player username guard complete; owner bootstrap/ID lifecycle decisions next
 
 **Implementation status:** FastAPI liveness, account/assignment schema and scoped identifier/role-binding and fixed-name constraints; no registration, login, MFA, wallet or betting engine
 
 **Specification status:** Username/Agent-ID format, reserved names, 24-hour activation and D-03 baseline approved; identifier reuse, manual owner recovery, D-02 retention, POOL-01 and D-06 remain open
 
-**Verification status:** P03-T01b passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157). P03-T01c local non-DB tests/Ruff and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed. P03-T01d PostgreSQL CI is pending; Docker is unavailable here.
+**Verification status:** P03-T01b passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157). P03-T01c local non-DB tests/Ruff and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed. P03-T01d [CI run 38864125620](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38864125620) passed; Docker is unavailable here.
 
 **Last updated:** 2026-10-16
 

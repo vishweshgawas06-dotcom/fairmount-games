@@ -1,10 +1,10 @@
 # Next Action
 
-## Active implementation — P03-T01d fixed player usernames
+## Completed checkpoint — P03-T01d fixed player usernames
 
-The owner superseded the earlier design-only restriction with permission to advance through the phases **in small tested and debugged steps**, asking for decisions where needed. [P03-T01c](tasks/P03-T01c.md) adds a PostgreSQL composite FK binding non-null login kind to account role, with migration rollback and insert/update/null-path tests. Local Ruff/non-DB tests and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed, including PostgreSQL legacy mismatch rollback and FK checks. No registration, credential, session or wallet behavior is added by this slice. P03-T01d enforces fixed player usernames only; its CI is pending.
+The owner superseded the earlier design-only restriction with permission to advance through the phases **in small tested and debugged steps**, asking for decisions where needed. [P03-T01c](tasks/P03-T01c.md) adds a PostgreSQL composite FK binding non-null login kind to account role, with migration rollback and insert/update/null-path tests. Local Ruff/non-DB tests and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed, including PostgreSQL legacy mismatch rollback and FK checks. No registration, credential, session or wallet behavior is added by this slice. P03-T01d enforces fixed player usernames only; [CI run 38864125620](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38864125620) passed.
 
-**Next:** verify [P03-T01d](tasks/P03-T01d.md) PostgreSQL trigger migration and update/delete/initial assignment tests in CI before marking complete. Then proceed to the next bounded prerequisite and ask the owner where a product/security decision is genuinely unresolved. [Provisioning design](auth/NEXT_PROVISIONING_SLICE_DESIGN.md) identifies remaining gates including fixed-name enforcement, account creation/activation atomicity, audit, bootstrap and authorization.
+**Next:** [P03-T01d](tasks/P03-T01d.md) is complete. Resolve the owner bootstrap and Agent-ID lifecycle decisions before deeper security/provisioning work, then proceed in bounded tested slices. [Provisioning design](auth/NEXT_PROVISIONING_SLICE_DESIGN.md) identifies remaining gates including fixed-name enforcement, account creation/activation atomicity, audit, bootstrap and authorization.
 
 ## Completed checkpoints
 
