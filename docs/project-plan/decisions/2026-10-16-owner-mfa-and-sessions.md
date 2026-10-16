@@ -1,6 +1,6 @@
 # D-03 — Owner MFA and browser-session policy
 
-**Status:** Owner-approved baseline on 2026-10-16 for MFA, timeouts, step-up and revocation; all-factors-lost recovery procedure remains unapproved. No authentication/MFA/session code exists yet.
+**Status:** Owner-approved baseline on 2026-10-16 for MFA, timeouts, step-up and revocation; all-factors-lost recovery procedure remains unapproved. Pure TOTP/recovery-code helpers are in P03-T01j, but there is no MFA enrollment, authentication or session service yet.
 
 ## Context and alternatives
 
@@ -14,7 +14,7 @@ There is one owner account with authority over all agent/player resources and po
 4. **Revocation:** disablement, password reset/change and owner MFA recovery immediately revoke **all affected account sessions**, including the initiating session; fresh login is required. Accepted roulette bets remain valid and settle/void under the approved global policy. WebSocket subscriptions and old cookies must lose access promptly.
 5. **Lost authenticator and all recovery codes:** no self-service email/SMS bypass. Stop privileged access. A possible manual ownership-verification process must be designed, threat-reviewed and explicitly approved separately; do not introduce a hidden superuser or code bypass. This can mean prolonged lockout if the owner loses all recovery methods.
 
-## Implementation and test implications (not yet authorized)
+## Implementation and test implications (staged work, not yet operational)
 
 - P03 must specify Argon2id password storage, TOTP secret encryption, hashed backup codes, single-use atomic consumption, protected enrollment, reset and recovery, server-clock skew/rate limiting, secure HttpOnly SameSite cookies, CSRF defenses, logout and session invalidation on concurrent requests. Never store or send reusable plaintext passwords by WhatsApp.
 - Test absolute versus idle expiry, two concurrent logins for each role, step-up age at 9/11 minutes, recovery-code replay/race, revoked HTTP/WebSocket sessions, disabled accounts, and settlement of already-accepted bets after revocation.

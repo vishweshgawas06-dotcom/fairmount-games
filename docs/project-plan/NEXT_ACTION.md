@@ -1,10 +1,10 @@
 # Next Action
 
-## Completed checkpoint — P03-T01i security-event journal
+## Active implementation — P03-T01j owner MFA primitives
 
 The owner granted permission to proceed through the plan in small tested/debugged steps and to ask when product/security decisions remain open. [P03-T01h](tasks/P03-T01h.md) adds a PostgreSQL pending/active credential-state table, structural checks, a one-way active-state guard, and DB tests. The [activation boundary](auth/ACTIVATION_STATE_DESIGN.md) states what the schema **cannot** guarantee. Local Ruff/non-DB tests and [CI run 38866772047](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866772047) passed. There is no activation, account-creation, owner bootstrap, login, MFA or wallet endpoint.
 
-**Next:** [P03-T01i](tasks/P03-T01i.md) security-event migration/tests passed [CI run 38867010258](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38867010258). The [audit boundary](auth/SECURITY_AUDIT_BOUNDARY.md) explains what cannot yet be inferred. The owner has now selected the [D-14 fixed `owner` login label](decisions/2026-10-16-owner-login-identifier.md). Next, design and test owner-only local bootstrap/activation and MFA prerequisites; clarify unresolved security/key-management decisions before an externally callable route. Never interpret an ENABLED account or a credential row as a logged-in owner/player.
+**Next:** [P03-T01i](tasks/P03-T01i.md) security-event migration/tests passed [CI run 38867010258](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38867010258). The owner selected the [D-14 fixed `owner` login label](decisions/2026-10-16-owner-login-identifier.md). [P03-T01j](tasks/P03-T01j.md) pure TOTP/recovery-code helpers and tests are implemented; verify Python 3.12 CI before completion. [Owner MFA boundary](auth/OWNER_MFA_BOUNDARY.md) identifies the required out-of-database key-management decision before storing seeds or exposing activation/login routes. Never interpret an ENABLED account or a credential row as a logged-in owner/player.
 
 ## Completed checkpoints
 

@@ -1,14 +1,14 @@
 # Project Status
 
-**Current phase:** P03 identity guards/crypto policy complete; credential-state DB slice complete; audit DB slice complete
+**Current phase:** P03 identity guards/crypto policy complete; credential-state DB slice complete; audit DB slice complete; pure owner MFA helpers in verification
 
-**Current task:** P03-T01i security-event journal/tests complete; owner bootstrap and activation security prerequisites next
+**Current task:** P03-T01j pure TOTP/recovery-code helpers implemented; Python 3.12 CI pending
 
 **Implementation status:** FastAPI liveness, account/assignment schema, scoped identity guards, pure crypto helpers and credential-state/audit schemas; no registration, login, MFA, wallet or betting engine
 
 **Specification status:** Username/Agent-ID format, reserved names, 24-hour activation, D-03 baseline, D-12 local owner bootstrap/fixed Agent IDs and D-13 12–128-character passphrases and D-14 fixed `owner` login approved; identifier reuse, manual owner recovery, D-02 retention, POOL-01 and D-06 remain open
 
-**Verification status:** P03-T01b passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157). P03-T01c local non-DB tests/Ruff and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed. P03-T01d [CI run 38864125620](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38864125620) passed; P03-T01e [CI run 38865633220](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38865633220) passed. P03-T01f [CI run 38865947836](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38865947836) passed; P03-T01g [CI run 38866281196](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866281196) passed. P03-T01h [CI run 38866772047](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866772047) passed. P03-T01i [CI run 38867010258](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38867010258) passed; Docker is unavailable here.
+**Verification status:** P03-T01b passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157). P03-T01c local non-DB tests/Ruff and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed. P03-T01d [CI run 38864125620](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38864125620) passed; P03-T01e [CI run 38865633220](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38865633220) passed. P03-T01f [CI run 38865947836](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38865947836) passed; P03-T01g [CI run 38866281196](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866281196) passed. P03-T01h [CI run 38866772047](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866772047) passed. P03-T01i [CI run 38867010258](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38867010258) passed; P03-T01j CI pending. Docker is unavailable here.
 
 **Last updated:** 2026-10-16
 
@@ -43,6 +43,7 @@
 
 - P03-T01a: owner approved the design contract. P03-T01b helpers/schema/DB tests passed PostgreSQL CI. The owner subsequently authorized continued staged implementation. [P03-T01c](tasks/P03-T01c.md) role binding passed [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464). Provisioning, activation/password flows and auth security remain future small steps requiring their own test gates and unresolved decisions.
 - P02-T02a: [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) passed migration round-trip, metadata parity, account-schema PostgreSQL integration tests, existing tests and Ruff; task complete for its narrow slice. D-02 login/mobile reuse and D-03 auth/MFA remain unresolved by nullable identity fields; no API authorization exists.
+- P03-T01j [owner MFA primitives](tasks/P03-T01j.md) implement pure TOTP/recovery-code functions only; seed encryption and key custody remain a security gate.
 - D-14 fixes [single-owner public login label](decisions/2026-10-16-owner-login-identifier.md) to `owner`; no owner login endpoint exists.
 - P03-T01i [minimal security-event journal](tasks/P03-T01i.md) adds structurally valid append-only rows; [CI run 38867010258](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38867010258) passed. No service writes events yet.
 - P03-T01h [credential-state DB boundary](tasks/P03-T01h.md) adds structural pending/active checks and a one-way active-state guard; [CI run 38866772047](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866772047) passed. No secret issuance, use or authentication service exists.
