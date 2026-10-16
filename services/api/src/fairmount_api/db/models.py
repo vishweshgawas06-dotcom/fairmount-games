@@ -139,6 +139,42 @@ class AccountCredential(Base):
     )
 
 
+SECURITY_EVENT_CHECK = """
+    event_type IN (
+        'OWNER_BOOTSTRAP_ISSUED', 'OWNER_BOOTSTRAP_REISSUED',
+        'INITIAL_CREDENTIAL_ISSUED', 'INITIAL_CREDENTIAL_CONSUMED',
+        'PASSWORD_CHANGED', 'OWNER_MFA_ENROLLED'
+    ) AND source IN ('LOCAL_CLI', 'DASHBOARD', 'SELF_SERVICE')
+    AND (actor_account_id IS NOT NULL OR
+         (source = 'LOCAL_CLI' AND event_type IN
+          ('OWNER_BOOTSTRAP_ISSUED', 'OWNER_BOOTSTRAP_REISSUED')))
+"""
+
+
+class SecurityEvent(Base):
+    __tablename__ = "security_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    event_type: Mapped[str] = mapped_column(String(48), nullable=False)
+    source: Mapped[str] = mapped_column(String(16), nullable=False)
+    actor_account_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="RESTRICT")
+    )
+    target_account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="RESTRICT"), nullable=False
+    )
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+
+    __table_args__ = (
+        CheckConstraint(SECURITY_EVENT_CHECK, name="ck_security_events_valid"),
+        Index("ix_security_events_target_time", "target_account_id", "occurred_at"),
+    )
+
+
 class AgentAssignment(Base):
     __tablename__ = "agent_assignments"
 

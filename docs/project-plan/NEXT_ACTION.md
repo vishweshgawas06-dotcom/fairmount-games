@@ -1,10 +1,10 @@
 # Next Action
 
-## Completed checkpoint — P03-T01h credential-state schema
+## Active implementation — P03-T01i security-event journal
 
 The owner granted permission to proceed through the plan in small tested/debugged steps and to ask when product/security decisions remain open. [P03-T01h](tasks/P03-T01h.md) adds a PostgreSQL pending/active credential-state table, structural checks, a one-way active-state guard, and DB tests. The [activation boundary](auth/ACTIVATION_STATE_DESIGN.md) states what the schema **cannot** guarantee. Local Ruff/non-DB tests and [CI run 38866772047](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866772047) passed. There is no activation, account-creation, owner bootstrap, login, MFA or wallet endpoint.
 
-**Next:** Design and implement the next bounded security prerequisite with tests: audited owner-only local bootstrap and protected activation must respect the approved MFA gate. Clarify any unresolved security/operations choice before an externally callable route is built. Never interpret an ENABLED account or a credential row as a logged-in owner/player.
+**Next:** [P03-T01i](tasks/P03-T01i.md) security-event migration/tests are implemented; verify PostgreSQL CI before marking complete. The [audit boundary](auth/SECURITY_AUDIT_BOUNDARY.md) explains what cannot yet be inferred. Then design and test the owner-only local bootstrap/activation prerequisites with the approved MFA gate, clarifying unresolved security decisions before any externally callable route. Never interpret an ENABLED account or a credential row as a logged-in owner/player.
 
 ## Completed checkpoints
 
