@@ -1,14 +1,14 @@
 # Project Status
 
-**Current phase:** P02 account schema complete; P03 identifier constraint slice in verification
+**Current phase:** P02 account schema complete; P03 identifier constraint slice complete
 
-**Current task:** P03-T01a contract approved; P03-T01b canonical helpers and DB migration implemented, PostgreSQL CI pending
+**Current task:** P03-T01a contract approved; P03-T01b canonical helpers and DB migration complete; next implementation requires permission
 
 **Implementation status:** FastAPI liveness, account/assignment schema and scoped identifier helpers/constraints; no registration, login, MFA, wallet or betting engine
 
 **Specification status:** Username/Agent-ID format, reserved names, 24-hour activation and D-03 baseline approved; identifier reuse, manual owner recovery, D-02 retention, POOL-01 and D-06 remain open
 
-**Verification status:** P02-T02a PostgreSQL CI passed; P03-T01b local non-DB tests/Ruff pass, PostgreSQL CI pending. Docker is unavailable here; no local DB execution claimed.
+**Verification status:** P02-T02a PostgreSQL CI passed; P03-T01b local non-DB tests/Ruff and [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157) passed. Docker is unavailable here; no local DB execution claimed.
 
 **Last updated:** 2026-10-16
 
@@ -41,9 +41,9 @@
 
 ## Current verification gates
 
-- P03-T01a: owner approved the design contract. P03-T01b is limited to helpers/schema/DB tests; PostgreSQL CI evidence is pending. Concurrent provisioning, role binding, activation/password flows and auth security tests belong to later separately authorized tasks.
+- P03-T01a: owner approved the design contract. P03-T01b is limited to helpers/schema/DB tests; PostgreSQL CI passed. Concurrent provisioning, role binding, activation/password flows and auth security tests belong to later separately authorized tasks.
 - P02-T02a: [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) passed migration round-trip, metadata parity, account-schema PostgreSQL integration tests, existing tests and Ruff; task complete for its narrow slice. D-02 login/mobile reuse and D-03 auth/MFA remain unresolved by nullable identity fields; no API authorization exists.
-- D-11 locks global case-insensitive ASCII 3–32-character player usernames, generated distinct unique Agent IDs, reserved operator names, and non-unique/unverified mobile contact data; username/Agent-ID reuse after anonymization remains deferred. Owner also chose fixed player usernames and one-time, 24-hour initial credentials. [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) is approved. P03-T01b adds a unique canonical login constraint but **no auth code**; PostgreSQL verification is pending. D-03 locks TOTP/recovery codes, role timeouts, one active session per account, 10-minute owner step-up and full revocation; manual all-factors-lost recovery remains open. Role-aware assignment/disabled-user checks need future server-side authorization tests.
+- D-11 locks global case-insensitive ASCII 3–32-character player usernames, generated distinct unique Agent IDs, reserved operator names, and non-unique/unverified mobile contact data; username/Agent-ID reuse after anonymization remains deferred. Owner also chose fixed player usernames and one-time, 24-hour initial credentials. [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) is approved. P03-T01b adds a unique canonical login constraint but **no auth code**; [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157) passed. D-03 locks TOTP/recovery codes, role timeouts, one active session per account, 10-minute owner step-up and full revocation; manual all-factors-lost recovery remains open. Role-aware assignment/disabled-user checks need future server-side authorization tests.
 - P01-T03: [Compose-based PostgreSQL](../../infrastructure/README.md) and [isolated test database check](../../infrastructure/check_postgres.py) passed in GitHub CI with volume cleanup; task complete. Docker is absent in this sandbox; local Compose setup remains unverified here.
 - Next implementation beyond P03-T01b requires separate permission. D-02/PRIV-01 reuse/retention choices remain open; there is no account registration or login endpoint.
 - P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No physical schema or transaction behavior is verified.

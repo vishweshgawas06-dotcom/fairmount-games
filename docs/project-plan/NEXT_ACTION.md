@@ -1,10 +1,10 @@
 # Next Action
 
-## Active task — P03-T01b identifier constraints, awaiting PostgreSQL CI
+## Completed checkpoint — P03-T01b identifier constraints
 
-The owner approved the [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) and separately authorized [P03-T01b](tasks/P03-T01b.md) on 2026-10-16: canonical player username/Agent-ID helpers, namespaced PostgreSQL validation/uniqueness migration and tests **only**. The migration and tests are implemented; run CI on this branch to verify PostgreSQL upgrade/downgrade/metadata parity and constraint behavior, then update task evidence and status. Docker is unavailable locally. No registration, credentials, sessions or wallets were authorized.
+The owner approved the [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) and separately authorized [P03-T01b](tasks/P03-T01b.md) on 2026-10-16: canonical player username/Agent-ID helpers, namespaced PostgreSQL validation/uniqueness migration and tests **only**. The migration and tests passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157): PostgreSQL upgrade/downgrade/metadata parity, constraint behavior, full suite and Ruff. Docker is unavailable locally. No registration, credentials, sessions or wallets were authorized.
 
-**After CI:** review the P03-T01b evidence; obtain fresh permission before any further implementation. Future provisioning must bind `login_kind` to `accounts.role`, enforce fixed usernames, resolve concurrent creation conflicts atomically and protect credentials. The database migration alone cannot register or authenticate an account.
+**Next:** review the P03-T01b evidence; obtain fresh permission before any further implementation. Future provisioning must bind `login_kind` to `accounts.role`, enforce fixed usernames, resolve concurrent creation conflicts atomically and protect credentials. The database migration alone cannot register or authenticate an account.
 
 ## Completed checkpoints
 
