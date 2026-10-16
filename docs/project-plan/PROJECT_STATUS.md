@@ -2,13 +2,13 @@
 
 **Current phase:** P02 conceptual design baseline approved; database implementation not started
 
-**Current task:** P01-T03 owner-authorized local PostgreSQL foundation; Compose/connection verification pending CI
+**Current task:** P01-T03 complete; P02-T02a first physical schema slice proposed, not authorized
 
 **Implementation status:** Initial FastAPI liveness foundation only; no schema, wallet or betting engine
 
 **Specification status:** Payout/settlement and legal-position catalogue approved; POOL-01/D-06/D-02 details remain open
 
-**Verification status:** P01-T01/API CI and P02-T01 conceptual review complete. P01-T03 local PostgreSQL Compose startup and connection check await GitHub CI; Docker is unavailable in this sandbox.
+**Verification status:** P01-T01 API CI and P02-T01 conceptual review complete. P01-T03 PostgreSQL Compose startup, isolated test DB check, tests/lint and teardown passed in GitHub CI; Docker is unavailable in this sandbox.
 
 **Last updated:** 2026-10-16
 
@@ -35,11 +35,12 @@
 - Added Python project metadata, a minimal FastAPI liveness endpoint, API smoke tests, a Python test/lint workflow, and local setup instructions for P01-T01. Owner's earlier Python 3.14.4 attempt was blocked; on 2026-10-15 a separate sandbox with Python 3.12.12 passed editable installation, 10/10 tests, Ruff, `pip check`, and HTTP 200 liveness. CI passed on pull request #1 on 2026-10-15.
 
 - P02-T01 conceptual entity/transaction sketch and ten-finding technical self-review approved as a design baseline by the owner on 2026-10-16. No PostgreSQL schema or transaction behavior has been verified.
-- P01-T03 PostgreSQL foundation files added with owner permission: localhost-only Compose, test-database connection check and CI setup/teardown. Docker is not available in this sandbox; GitHub CI connection evidence is pending.
+- P01-T03 PostgreSQL foundation completed with owner permission: localhost-only Compose, isolated test-database connection check and CI setup/teardown. [GitHub CI run 38859064842](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859064842) passed all named steps on Python 3.12. Docker is not available in this sandbox; no local Compose run claimed.
 
 ## Current verification gates
 
-- P01-T03: run the [Compose-based local PostgreSQL](../../infrastructure/README.md) startup and [isolated test database check](../../infrastructure/check_postgres.py) in CI, then record pass/fail and teardown. Docker is absent in this sandbox; no local Compose execution claimed.
+- P01-T03: [Compose-based PostgreSQL](../../infrastructure/README.md) and [isolated test database check](../../infrastructure/check_postgres.py) passed in GitHub CI with volume cleanup; task complete. Docker is absent in this sandbox; local Compose setup remains unverified here.
+- Next proposal P02-T02a: obtain separate permission for a small physical account/identity/assignment schema slice. Resolve field-level D-02/PRIV-01 choices before irreversible identity constraints; no implementation has begun.
 - P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No physical schema or transaction behavior is verified.
 - Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally, and P01's full suite was 10/10.
 - P01-T01 local and CI checks passed; it is complete. Owner's Python 3.14.4 environment separately still needs Python 3.12/3.13 to reproduce locally. GitHub Actions reported advisory notices for Node.js 20-based action versions and the upcoming `ubuntu-latest` image migration; review them in a future CI maintenance task.
