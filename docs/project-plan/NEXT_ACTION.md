@@ -1,10 +1,10 @@
 # Next Action
 
-## Active implementation — P03-T01h credential-state schema
+## Completed checkpoint — P03-T01h credential-state schema
 
-The owner granted permission to proceed through the plan in small tested/debugged steps and to ask when product/security decisions remain open. [P03-T01h](tasks/P03-T01h.md) adds a PostgreSQL pending/active credential-state table, structural checks, a one-way active-state guard, and DB tests. The [activation boundary](auth/ACTIVATION_STATE_DESIGN.md) states what the schema **cannot** guarantee. Local Ruff/non-DB tests pass; **PostgreSQL CI is pending**. There is no activation, account-creation, owner bootstrap, login, MFA or wallet endpoint.
+The owner granted permission to proceed through the plan in small tested/debugged steps and to ask when product/security decisions remain open. [P03-T01h](tasks/P03-T01h.md) adds a PostgreSQL pending/active credential-state table, structural checks, a one-way active-state guard, and DB tests. The [activation boundary](auth/ACTIVATION_STATE_DESIGN.md) states what the schema **cannot** guarantee. Local Ruff/non-DB tests and [CI run 38866772047](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866772047) passed. There is no activation, account-creation, owner bootstrap, login, MFA or wallet endpoint.
 
-**Next:** Push this bounded migration and verify clean CI (upgrade/downgrade/re-upgrade, metadata parity, PostgreSQL state/reissue/regression tests and Ruff); debug failures before marking complete. Next security slices must separately design owner-only local bootstrap, protected activation, audit, owner MFA enrollment and session authorization. Never interpret an ENABLED account or a credential row as a logged-in owner/player.
+**Next:** Design and implement the next bounded security prerequisite with tests: audited owner-only local bootstrap and protected activation must respect the approved MFA gate. Clarify any unresolved security/operations choice before an externally callable route is built. Never interpret an ENABLED account or a credential row as a logged-in owner/player.
 
 ## Completed checkpoints
 

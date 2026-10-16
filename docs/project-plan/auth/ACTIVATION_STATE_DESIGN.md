@@ -1,6 +1,6 @@
 # P03-T01h — Credential-state schema and activation boundary
 
-**Status:** Database-only implementation candidate, 2026-10-16; PostgreSQL verification pending. No activation/registration/owner setup endpoint exists.
+**Status:** Database-only schema completed 2026-10-16; [CI run 38866772047](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866772047) passed. No activation/registration/owner setup endpoint exists.
 
 ## Storage states
 
