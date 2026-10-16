@@ -14,6 +14,8 @@ import secrets
 from argon2 import PasswordHasher, Type
 from argon2.exceptions import InvalidHashError, VerificationError
 
+from fairmount_api.identity.password_policy import validate_new_password
+
 # Explicit resource parameters avoid accidental changes across library releases.
 # Benchmark these against deployment hardware before production authentication.
 PASSWORD_HASHER = PasswordHasher(
@@ -22,10 +24,8 @@ PASSWORD_HASHER = PasswordHasher(
 
 
 def hash_password(password: str) -> str:
-    """Hash a nonempty password using a fresh Argon2id salt each call."""
-    if not isinstance(password, str) or not password:
-        raise ValueError("Password must be a nonempty string")
-    return PASSWORD_HASHER.hash(password)
+    """Validate and hash a permanent password with a fresh Argon2id salt."""
+    return PASSWORD_HASHER.hash(validate_new_password(password))
 
 
 def verify_password(password: str, stored_hash: str) -> bool:

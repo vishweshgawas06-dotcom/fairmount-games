@@ -24,13 +24,13 @@ class CredentialPrimitiveTests(unittest.TestCase):
         self.assertFalse(verify_password("wrong", first))
 
     def test_invalid_password_inputs_and_hashes_fail_closed(self) -> None:
-        for value in ("", None, 5):
+        for value in ("", None, 5, "password", "password1234"):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 hash_password(value)
         for invalid in ("", "not-a-hash", "$argon2i$v=19$m=65536,t=3,p=4$bad$bad", None):
             with self.subTest(invalid=invalid):
                 self.assertFalse(verify_password("password", invalid))
-        self.assertFalse(verify_password(None, hash_password("password")))
+        self.assertFalse(verify_password(None, hash_password("a valid long passphrase")))
 
     def test_random_initial_secret_and_digest(self) -> None:
         first = generate_initial_secret()
