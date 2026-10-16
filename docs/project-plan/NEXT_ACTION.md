@@ -1,14 +1,14 @@
 # Next Action
 
-## Completed checkpoint — P03-T01b identifier constraints
+## Active review — P03-T01c design only
 
-The owner approved the [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) and separately authorized [P03-T01b](tasks/P03-T01b.md) on 2026-10-16: canonical player username/Agent-ID helpers, namespaced PostgreSQL validation/uniqueness migration and tests **only**. The migration and tests passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157): PostgreSQL upgrade/downgrade/metadata parity, constraint behavior, full suite and Ruff. Docker is unavailable locally. No registration, credentials, sessions or wallets were authorized.
+The owner authorized **documentation only** after P03-T01b. Review the [P03-T01c role-binding and provisioning proposal](auth/NEXT_PROVISIONING_SLICE_DESIGN.md) and its [design task](tasks/P03-T01c-design.md). It proposes a separate database-only migration to bind non-null identity login kind to account role, with PostgreSQL migration/constraint tests. **No P03-T01c code or migration is authorized or implemented.** The composite FK and fails-on-legacy-mismatch policy are proposals for owner review, not accepted decisions.
 
-**Next:** review the P03-T01b evidence; obtain fresh permission before any further implementation. Future provisioning must bind `login_kind` to `accounts.role`, enforce fixed usernames, resolve concurrent creation conflicts atomically and protect credentials. The database migration alone cannot register or authenticate an account.
+**Next:** owner reviews/corrects the design and, if desired, expressly authorizes a small implementation scope. Registration endpoints, activation credentials, sessions, wallets, fixed-name enforcement and deletion/reuse need their own design/permission and verification gates. The current P03-T01b database constraints alone do not register or authenticate anyone.
 
 ## Completed checkpoints
 
-[P03-T01a](tasks/P03-T01a.md) approved design; its contract covers fixed globally unique case-insensitive player usernames, generated Agent IDs, reserved names, shared/unverified mobile and single-use 24-hour initial credentials (not implemented). [P02-T02a](tasks/P02-T02a.md) account/identity/assignment schema passed [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) on PostgreSQL 16.9; no login or wallet code exists. [P01-T03](tasks/P01-T03.md) local PostgreSQL foundation was verified in CI.
+[P03-T01a](tasks/P03-T01a.md) approved contract: fixed globally unique case-insensitive player usernames, generated Agent IDs, reserved names, shared/unverified mobile and single-use 24-hour initial credentials (not implemented). [P03-T01b](tasks/P03-T01b.md) canonical ID helpers/DB constraints passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157). [P02-T02a](tasks/P02-T02a.md) account/identity/assignment schema passed [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) on PostgreSQL 16.9. Docker is unavailable locally; no login or wallet code exists.
 
 ## Other open decisions
 

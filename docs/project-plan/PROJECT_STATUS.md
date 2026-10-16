@@ -1,8 +1,8 @@
 # Project Status
 
-**Current phase:** P02 account schema complete; P03 identifier constraint slice complete
+**Current phase:** P02 account schema and P03 identifier constraints complete; role-binding design under review
 
-**Current task:** P03-T01a contract approved; P03-T01b canonical helpers and DB migration complete; next implementation requires permission
+**Current task:** P03-T01c role-binding/provisioning design draft for owner review; documentation-only permission, no new implementation
 
 **Implementation status:** FastAPI liveness, account/assignment schema and scoped identifier helpers/constraints; no registration, login, MFA, wallet or betting engine
 
@@ -41,7 +41,7 @@
 
 ## Current verification gates
 
-- P03-T01a: owner approved the design contract. P03-T01b is limited to helpers/schema/DB tests; PostgreSQL CI passed. Concurrent provisioning, role binding, activation/password flows and auth security tests belong to later separately authorized tasks.
+- P03-T01a: owner approved the design contract. P03-T01b helpers/schema/DB tests passed PostgreSQL CI. The owner authorized only a [P03-T01c design draft](auth/NEXT_PROVISIONING_SLICE_DESIGN.md), proposing a bounded role-binding DB slice. No P03-T01c implementation authorized; provisioning, activation/password flows and auth security tests require later separate tasks.
 - P02-T02a: [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) passed migration round-trip, metadata parity, account-schema PostgreSQL integration tests, existing tests and Ruff; task complete for its narrow slice. D-02 login/mobile reuse and D-03 auth/MFA remain unresolved by nullable identity fields; no API authorization exists.
 - D-11 locks global case-insensitive ASCII 3–32-character player usernames, generated distinct unique Agent IDs, reserved operator names, and non-unique/unverified mobile contact data; username/Agent-ID reuse after anonymization remains deferred. Owner also chose fixed player usernames and one-time, 24-hour initial credentials. [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) is approved. P03-T01b adds a unique canonical login constraint but **no auth code**; [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157) passed. D-03 locks TOTP/recovery codes, role timeouts, one active session per account, 10-minute owner step-up and full revocation; manual all-factors-lost recovery remains open. Role-aware assignment/disabled-user checks need future server-side authorization tests.
 - P01-T03: [Compose-based PostgreSQL](../../infrastructure/README.md) and [isolated test database check](../../infrastructure/check_postgres.py) passed in GitHub CI with volume cleanup; task complete. Docker is absent in this sandbox; local Compose setup remains unverified here.
