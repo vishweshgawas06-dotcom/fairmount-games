@@ -1,7 +1,7 @@
 """Account, private identity, assignment and canonical login-ID schema.
 
 These models do not authenticate users, authorize transfers, or resolve identifier reuse
-and retention after eligible anonymization. A composite FK binds login kind to account role.
+and retention after eligible anonymization. Credential rows alone never grant access.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     String,
+    Text,
     UniqueConstraint,
     text,
 )
@@ -96,6 +97,45 @@ class PrivateIdentity(Base):
             unique=True,
             postgresql_where=text("login_identifier IS NOT NULL"),
         ),
+    )
+
+
+# The check guards structural states, not expiry at request time or proof of secret possession.
+# The transition to a password needs an authenticated, atomic future service and audit.
+CREDENTIAL_STATE_CHECK = """
+    (password_hash IS NULL AND password_changed_at IS NULL
+     AND initial_secret_digest IS NOT NULL
+     AND initial_secret_digest COLLATE "C" ~ '^[0-9a-f]{64}$'
+     AND initial_secret_expires_at IS NOT NULL
+     AND initial_secret_expires_at = initial_secret_issued_at + INTERVAL '24 hours'
+     AND initial_secret_consumed_at IS NULL)
+    OR
+    (password_hash IS NOT NULL AND password_changed_at IS NOT NULL
+     AND password_hash LIKE '$argon2id$%'
+     AND initial_secret_digest IS NULL AND initial_secret_expires_at IS NULL
+     AND initial_secret_consumed_at IS NOT NULL
+     AND initial_secret_consumed_at >= initial_secret_issued_at
+     AND password_changed_at >= initial_secret_consumed_at)
+"""
+
+
+class AccountCredential(Base):
+    __tablename__ = "account_credentials"
+
+    account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="RESTRICT"), primary_key=True
+    )
+    initial_secret_digest: Mapped[str | None] = mapped_column(String(64))
+    initial_secret_issued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+    initial_secret_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    initial_secret_consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    password_hash: Mapped[str | None] = mapped_column(Text)
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        CheckConstraint(CREDENTIAL_STATE_CHECK, name="ck_account_credentials_state"),
     )
 
 
