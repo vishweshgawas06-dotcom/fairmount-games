@@ -10,11 +10,13 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -136,6 +138,66 @@ class AccountCredential(Base):
 
     __table_args__ = (
         CheckConstraint(CREDENTIAL_STATE_CHECK, name="ck_account_credentials_state"),
+    )
+
+
+class OwnerMFA(Base):
+    __tablename__ = "owner_mfa"
+
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    account_role: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'OWNER'")
+    )
+    key_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    nonce: Mapped[str] = mapped_column(String(16), nullable=False)
+    ciphertext: Mapped[str] = mapped_column(String(64), nullable=False)
+    last_accepted_step: Mapped[int | None] = mapped_column(BigInteger)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["account_id", "account_role"],
+            ["accounts.id", "accounts.role"],
+            name="fk_owner_mfa_role",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "account_role = 'OWNER' AND key_version > 0 "
+            "AND nonce COLLATE \"C\" ~ '^[A-Za-z0-9_-]{16}$' "
+            "AND ciphertext COLLATE \"C\" ~ '^[A-Za-z0-9_-]{64}$' "
+            "AND (last_accepted_step IS NULL OR last_accepted_step >= 0) "
+            "AND (confirmed_at IS NULL OR confirmed_at >= created_at) "
+            "AND (confirmed_at IS NOT NULL OR last_accepted_step IS NULL)",
+            name="ck_owner_mfa_structure",
+        ),
+    )
+
+
+class OwnerRecoveryCode(Base):
+    __tablename__ = "owner_recovery_codes"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    owner_account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("owner_mfa.account_id", ondelete="RESTRICT"), nullable=False
+    )
+    digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        CheckConstraint(
+            "digest COLLATE \"C\" ~ '^[0-9a-f]{64}$' "
+            "AND (consumed_at IS NULL OR consumed_at >= issued_at)",
+            name="ck_owner_recovery_code_structure",
+        ),
+        UniqueConstraint("owner_account_id", "digest", name="uq_owner_recovery_code_digest"),
     )
 
 

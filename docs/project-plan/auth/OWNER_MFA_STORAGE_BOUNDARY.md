@@ -1,0 +1,9 @@
+# P03-T01l — Owner MFA storage boundary
+
+**Status:** PostgreSQL-only slice in verification, 2026-10-16. No enrollment, verification, session or owner-access flow exists.
+
+`owner_mfa` binds by composite FK to the **single OWNER** account. It stores non-secret key version, AES-GCM nonce/ciphertext, creation/confirmation timestamps and the last accepted TOTP time-step. It has no seed plaintext or deployment key column. Before confirmation, a last-used step must be null. A confirmed row does not by itself prove the owner has ten recovery codes, passed activation or has a valid session: the future enrollment service must commit all required writes and audit atomically and gate access accordingly.
+
+`owner_recovery_codes` stores only each canonical code's lowercase SHA-256 digest, issue time and nullable consumption time, unique per owner. Its trigger permits one null → consumed-time transition per row, rejects later modifications/deletion and disallows TRUNCATE in normal database operation. This ensures structural single-use but does not prove the submitted plaintext code matched the digest; the future service must verify and conditionally consume under a transaction/lock, reject concurrent replay, revoke sessions where required, and audit. Ten codes are approved by the owner (D-03); the DB does not enforce an exact count because rotation/recovery lifecycles require a separately reviewed protocol.
+
+The encryption key remains **outside DB and Git** under D-15; P03-T01k's AES-GCM helper authenticates the owner UUID and key version. The DB checks format, not cryptographic validity or key availability. A restricted deployment key loader, secure backup/rotation runbook, audit, rate limits, step-up, CSRF/session design and live enrollment tests must precede any privileged owner endpoint. D-02 retention/deletion and all-factors-lost recovery remain open. No production MFA claim follows from schema integrity tests.
