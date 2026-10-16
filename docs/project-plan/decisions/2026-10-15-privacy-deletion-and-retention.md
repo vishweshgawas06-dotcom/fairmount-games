@@ -23,7 +23,8 @@ Player accounts store name/mobile and user ID; the game produces bet, wallet, le
 ## Explicitly open before final data lifecycle design
 
 - Periods for active-account personal data, disabled-account personal data, detailed player gameplay history, ledger/audit records, security logs and backups; start event for each timer and any legal holds.
-- Identity-verification/approval process, downstream copies, export rights, data minimization, and treatment of mobile number where it is used for login/contact.
+- Identity-verification/approval process, downstream copies, export rights, data minimization, and treatment of shared mobile numbers where they are used for contact/reset delivery.
+- [D-11](2026-10-16-identifier-policy.md) approves global case-insensitive player username uniqueness and non-unique mobile numbers, but **defers old username reuse after anonymization**; agent-ID reuse/retention also needs a decision. Neither identity reuse nor deletion jobs are implemented.
 - Jurisdiction-specific legal/privacy review and production-facing disclosure; no retention period is invented in this decision.
 
 ## Security/privacy implications and follow-up

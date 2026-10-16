@@ -24,11 +24,12 @@ This document records current requirements. Items explicitly listed as unresolve
 
 - Hierarchy: one owner with global owner/admin management authority → agents → their assigned players; owner-created players may remain owner-managed without an agent. There are no sub-agents. Owner authority does not override audit, security, accepted-bet finality or independent RNG.
 - No public self-registration; owner creates agents and may create players, agents may create only their assigned players. Agents cannot manage owner-managed or other agents' players.
-- Player account starts at zero points and stores user ID, name, and mobile number; username/password login is required. Agents log in with Agent ID/password. Owner can initiate secure password resets for agents/players; users/agents can change their own passwords. Passwords are never retrievable.
+- Player account starts at zero points and stores user ID, name, and mobile number; username/password login is required. Player usernames are globally unique across agents/owner-managed players and case-insensitive. Agent IDs are globally unique in a separate namespace. Login identifiers use simple ASCII letters, digits, underscore/hyphen; exact length/reserved names still need design. Mobile numbers may be shared and are not login authority. Username reuse after eligible anonymization remains undecided; see [D-11](decisions/2026-10-16-identifier-policy.md).
+- Agents log in with Agent ID/password. Owner can initiate secure password resets for agents/players; users/agents can change their own passwords. Passwords are never retrievable.
 - Owner can create/manage agents and users, adjust points with required reasons, disable/enable accounts, and inspect system records.
 - Agents can manage only their enabled, currently assigned players and cannot transfer more points than their agent-wallet balance. Their dashboard lists assigned enabled players whether online or offline.
 - Player cannot see overall profit/loss or administrative transaction history.
-- One active player session per account; a new login may invalidate the older session.
+- One active session per account for owner, agents and players; a new login invalidates the older session. Server-enforced idle/absolute expiry: owner 15 minutes/8 hours; agent 30 minutes/12 hours; player 30 minutes/24 hours. Disablement, password reset/change and owner MFA recovery revoke all affected sessions. See [D-03](decisions/2026-10-16-owner-mfa-and-sessions.md).
 - Reconnection must recover authoritative server state. A server-accepted bet remains valid; a bet not accepted by the server does not exist.
 - Passwords must never be retrievable in plaintext; use secure password hashing and reset flows.
 
@@ -58,7 +59,7 @@ This document records current requirements. Items explicitly listed as unresolve
 
 - Server validates every bet, balance change, role permission, and round transition.
 - Use transactional accounting, idempotency, database constraints, rate limits, structured logs, and audit trails.
-- Owner/admin MFA is required before production.
+- Owner MFA is required before production: TOTP authenticator plus single-use offline recovery codes; require MFA checked within 10 minutes for sensitive owner actions. If all factors and codes are lost, no self-service bypass; a separate manual recovery procedure still needs approval.
 - Secure cookies, HTTPS, strict CORS, secret management, and security testing are required.
 - Client is untrusted; hiding UI controls is not authorization.
 - Realtime messages must not permit users to forge balances, outcomes, or accepted bets.
@@ -73,4 +74,4 @@ See [D-01 account disablement/reassignment](decisions/2026-10-15-account-disable
 
 ## Unresolved
 
-Do not guess exact historical-record retention periods, deletion eligibility/exceptions, backup lifecycle or jurisdiction-specific legal requirements; D-02 remains partially open and destructive cleanup is blocked. Owner MFA recovery/session policy and operational SLOs/performance targets also remain undecided. The D-10 game-reserve pre-bet coverage policy and any resulting global acceptance limit require separate owner approval before implementation. The cap/partial-acceptance behavior remains unimplemented and unverified. Catalogue fixture tests do not establish engine behavior.
+Do not guess exact historical-record retention periods, deletion eligibility/exceptions, backup lifecycle, username/Agent-ID reuse after anonymization or jurisdiction-specific legal requirements; D-02/D-11 remain partially open and destructive cleanup is blocked. D-03 now locks baseline MFA/timeouts/step-up/revocation and one active session for every role, but a manual all-factors-lost owner recovery process is undecided. Operational SLOs/performance targets remain open. The D-10 game-reserve pre-bet coverage policy and any resulting global acceptance limit require separate owner approval before implementation. The cap/partial-acceptance behavior remains unimplemented and unverified. Catalogue fixture tests do not establish engine behavior.
