@@ -1,6 +1,6 @@
 # FairMount Games API
 
-Initial FastAPI foundation only. Gameplay, authentication, database connectivity, and betting logic are not implemented in this task.
+FastAPI liveness foundation only. P02-T02a introduces an account/identity/assignment **database schema** and local Alembic runner, but the API has no database session, login, authorization, gameplay or betting routes. `/health/live` remains process liveness, not database readiness.
 
 ## Planned module boundaries
 

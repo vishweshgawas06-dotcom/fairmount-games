@@ -26,6 +26,19 @@ On Windows PowerShell, use `Copy-Item .env.example .env`, edit `.env`, `py -3.12
 
 Compose publishes PostgreSQL to **127.0.0.1 only** and stores data in a named Docker volume. `fairmount_dev` is the development database. The check script connects to that database, creates `fairmount_test` **if missing**, and connects to it to run `SELECT current_database(), 1`. It refuses other database names, uses only localhost, and never drops a database or adds application tables. The smoke check does not establish readiness of the gameplay service or verify the schema.
 
+## P02-T02a account-schema migration (separate, owner-approved slice)
+
+After the isolated test database check succeeds, you may apply the **first account-only migration** to the test database:
+
+```sh
+# macOS/Linux; run with the project virtual environment active:
+FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade head
+FAIRMOUNT_DB_NAME=fairmount_test FAIRMOUNT_RUN_DB_TESTS=1 python -m unittest discover -s tests -v
+FAIRMOUNT_DB_NAME=fairmount_test python -m alembic check
+```
+
+On PowerShell set `$env:FAIRMOUNT_DB_NAME='fairmount_test'` and `$env:FAIRMOUNT_RUN_DB_TESTS='1'` in that shell before running the same `python -m alembic ...` and `python -m unittest ...` commands. For a fresh local development database, omit `FAIRMOUNT_DB_NAME` (defaults to `fairmount_dev`) and run `python -m alembic upgrade head`; **do not downgrade a database whose data you need**. CI alone runs `upgrade head → downgrade base → upgrade head` against its disposable `fairmount_test` database. Downgrade drops account tables and their data. See [P02-T02a boundaries](../docs/project-plan/tasks/P02-T02a.md): these tables do not provide login, wallet, betting or privacy-deletion behavior yet.
+
 ## Stop or reset
 
 ```sh

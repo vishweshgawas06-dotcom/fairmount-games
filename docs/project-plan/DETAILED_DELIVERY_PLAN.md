@@ -54,7 +54,8 @@ D-01 and the D-10 account/transfer flow are owner-approved; D-02 has an approved
 ### P02 — Database and migrations
 
 - **P02-T01 (design complete 2026-10-16):** [Conceptual schema/transaction design](tasks/P02-T01.md) and [technical review](database/P02_T01_DESIGN_REVIEW.md) were accepted as a planning baseline. They cover users/roles/ownership, sessions, wallet/ledger and reserve, rounds, bets, exposures, idempotency, audits, authorization and terminal accounting. D-02 retention, D-06 recovery and POOL-01 coverage remain open. **Gate passed for conceptual design only**; no physical schema, migrations or destructive cleanup authorized.
-- **P02-T02:** Add SQLAlchemy 2 repositories and Alembic migrations in reviewable slices, not one giant migration. **Gate:** fresh DB migrate, rollback/reapply where safe, constraints reject invalid references/duplicate accounting keys; tests on PostgreSQL.
+- **P02-T02a (owner-approved 2026-10-16; CI verification pending):** [First physical schema slice](tasks/P02-T02a.md) adds account/identity/assignment models, an Alembic migration and PostgreSQL constraints/tests only. No login, wallet or gameplay. **Gate:** clean CI test DB upgrade/downgrade/re-upgrade and real PostgreSQL integrity tests.
+- **P02-T02b and later (not authorized):** Add remaining SQLAlchemy 2 repositories/migrations in reviewable slices only after their decisions are resolved. **Gate:** fresh DB migration/recovery and relevant constraints/concurrency tested on PostgreSQL.
 - **P02-T03:** Test migration upgrades from prior version and backup/restore rehearsal for local/test DB. **Gate:** data and schema survive documented upgrade and restore without production data exposure.
 
 ### P03 — Authentication and sessions

@@ -2,13 +2,13 @@
 
 **Current phase:** P02 conceptual design baseline approved; database implementation not started
 
-**Current task:** P01-T03 complete; P02-T02a first physical schema slice proposed, not authorized
+**Current task:** P02-T02a owner-authorized first account schema slice; PostgreSQL CI evidence pending
 
-**Implementation status:** Initial FastAPI liveness foundation only; no schema, wallet or betting engine
+**Implementation status:** FastAPI liveness foundation plus draft accounts/private identity/assignment migration only; no login, wallet or betting engine
 
 **Specification status:** Payout/settlement and legal-position catalogue approved; POOL-01/D-06/D-02 details remain open
 
-**Verification status:** P01-T01 API CI and P02-T01 conceptual review complete. P01-T03 PostgreSQL Compose startup, isolated test DB check, tests/lint and teardown passed in GitHub CI; Docker is unavailable in this sandbox.
+**Verification status:** P01-T03 PostgreSQL Compose/test DB smoke passed in CI; P02-T02a migration/constraint tests have not yet run in CI. Docker is unavailable in this sandbox.
 
 **Last updated:** 2026-10-16
 
@@ -39,6 +39,7 @@
 
 ## Current verification gates
 
+- P02-T02a: clean GitHub CI must pass migration round-trip/metadata parity and account-schema PostgreSQL constraint tests. D-02 login/mobile reuse and D-03 auth/MFA are not resolved by nullable identity fields; no API authorization is implemented.
 - P01-T03: [Compose-based PostgreSQL](../../infrastructure/README.md) and [isolated test database check](../../infrastructure/check_postgres.py) passed in GitHub CI with volume cleanup; task complete. Docker is absent in this sandbox; local Compose setup remains unverified here.
 - Next proposal P02-T02a: obtain separate permission for a small physical account/identity/assignment schema slice. Resolve field-level D-02/PRIV-01 choices before irreversible identity constraints; no implementation has begun.
 - P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No physical schema or transaction behavior is verified.

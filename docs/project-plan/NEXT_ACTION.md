@@ -6,9 +6,9 @@
 
 P02-T01 [conceptual design](database/CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md) was approved as a planning baseline on 2026-10-16; that does not approve physical schema details or unresolved product decisions.
 
-## Proposed next small task — separate permission required
+## Active task — P02-T02a
 
-**P02-T02a — First physical schema slice (accounts/identity/assignments only).** Scope PostgreSQL/SQLAlchemy 2/Alembic bootstrap with account roles/status, separated private identity, and current agent assignment history; review single-owner/owner-managed player and authorization-related constraints. Add migration round-trip and PostgreSQL integration tests, then update documents. Do **not** build authentication flows, wallets, transfers, roulette rounds, bets, settlement or destructive retention/deletion. Review D-02 identifier/retention implications and D-03 session/MFA dependencies before finalizing fields. Ask the owner to authorize this implementation task separately.
+Owner authorized the [first account/identity/assignment schema slice](tasks/P02-T02a.md) on 2026-10-16. SQLAlchemy models and one Alembic migration are prepared with PostgreSQL-only tests. **Next:** observe clean GitHub CI migration upgrade/downgrade/re-upgrade, metadata check, constraint tests, existing tests/lint and teardown; fix failures and record actual evidence before completion. No authentication flow, wallets, transfers, roulette, settlement or destructive privacy cleanup are included. Docker is absent in this sandbox, so local PostgreSQL tests cannot be claimed.
 
 The [delivery plan](DETAILED_DELIVERY_PLAN.md) requires phase-specific evidence. `P01-T02` frontend workspace remains deferred until client work is scoped.
 

@@ -24,7 +24,15 @@ jobs:
           docker compose --env-file .env -f infrastructure/compose.yaml up -d --wait
       - name: Check isolated PostgreSQL test database
         run: python infrastructure/check_postgres.py
-      - name: Run unit tests
+      - name: Verify account migration round-trip and metadata
+        run: |
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade head
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic downgrade base
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade head
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic check
+      - name: Run unit and PostgreSQL integration tests
+        env:
+          FAIRMOUNT_RUN_DB_TESTS: "1"
         run: python -m unittest discover -s tests -v
       - name: Run Ruff
         run: ruff check .
