@@ -1,6 +1,6 @@
 # P03-T01i — Minimal security-event audit boundary
 
-**Status:** DB-only slice in verification, 2026-10-16. No service writes events yet.
+**Status:** DB-only slice complete 2026-10-16; [CI run 38867010258](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38867010258) passed. No service writes events yet.
 
 `security_events` is append-only in normal database operation. Each row records an event type, source, target account, optional authenticated actor account, server timestamp and opaque event UUID. The schema deliberately has **no free-text reason, request body, password, secret, digest, hash, phone number, TOTP seed or recovery code column**. Direct SQL permissions must still be restricted in deployment; a privileged DBA can change schema/triggers, and this is not a certified audit system.
 
