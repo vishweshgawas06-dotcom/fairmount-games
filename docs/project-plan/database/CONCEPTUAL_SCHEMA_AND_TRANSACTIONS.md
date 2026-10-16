@@ -1,6 +1,6 @@
 # P02-T01 — Conceptual PostgreSQL schema and transaction design
 
-**Status:** Proposed for owner/technical review, not approved for implementation.
+**Status:** Owner-approved conceptual design baseline for P02-T01 on 2026-10-16; physical schema/transactions and open product decisions are not approved for implementation.
 
 **Scope:** Entity/relationship and concurrency design only. No SQL, ORM model, migration, API, wallet, roulette or UI code is authorized by this document. The owner approved this *design task*, not its proposed schema choices. PostgreSQL is the planned accounting source of truth; Redis, if later used for fan-out, must not hold authoritative point or round state.
 
@@ -119,4 +119,4 @@ Disablement locks account/session and marks active sessions revoked; it blocks n
 | PRIV-01 | Identity schema and deletion workflow | Mobile uniqueness/reuse after anonymization, login effects, verification and irreversible de-identification plan. |
 | OPS-01 | Global settlement implementation and P17 | Size/latency targets and PostgreSQL locking strategy for atomic all-player settlement; test real scale, never silently switch to partial settlement. |
 
-**P02-T01 review gate:** Owner/technical reviewer confirms entity boundaries, transaction ordering and the open-decision register. Evidence is a reviewed document and explicit disposition of findings. This task does **not** claim migration viability, runtime concurrency safety, compliance, or that any database code/tests have been run. After review, request a separate, scoped task for PostgreSQL environment/schema implementation; do not advance to it automatically.
+**P02-T01 review gate:** Technical self-review findings are in [P02-T01 design review](P02_T01_DESIGN_REVIEW.md); the owner approved this conceptual baseline on 2026-10-16. The finding register remains open for later design/implementation tasks. This does **not** approve POOL-01, D-06, D-02 retention periods or a physical schema, nor prove migration viability, runtime concurrency safety or compliance. Request a separate scoped task for PostgreSQL environment/schema implementation; do not advance to it automatically.

@@ -1,6 +1,6 @@
 # P02-T01 — Conceptual design review
 
-**Status:** Technical self-review completed; owner review pending. This is not an independent review, schema approval, implementation permission or proof of PostgreSQL behavior.
+**Status:** Technical self-review completed; owner approved P02-T01 conceptual design baseline on 2026-10-16. This is not an independent review, physical schema approval, implementation permission or proof of PostgreSQL behavior.
 
 **Scope reviewed:** [Conceptual schema and transactions](CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md), [D-01](../decisions/2026-10-15-account-disable-and-reassignment.md), [D-02](../decisions/2026-10-15-privacy-deletion-and-retention.md), [D-10](../decisions/2026-10-15-account-provisioning-and-point-flow.md), the approved roulette specifications, and [P02-T01 task gates](../tasks/P02-T01.md).
 
@@ -22,5 +22,5 @@
 ## Review gate and next action
 
 - The conceptual record groups and transaction paths cover the known product rules at a **design level**, subject to the open items above. R-01 and R-06 are consistency corrections to the draft, not implemented fixes.
-- **Owner review still needed**: confirm whether this conceptual structure is a suitable baseline for future small implementation tasks, acknowledge that POOL-01 and D-06 remain blockers for betting/settlement, and do not mark those rules approved merely by approving the design baseline.
-- P02-T01 remains **open pending owner review**. Subsequent implementation would require a separately authorized scoped task, a standard PostgreSQL test environment and migration review. No database, concurrency, security or gameplay code/tests were produced here.
+- **Owner review recorded:** on 2026-10-16, the owner approved P02-T01 to proceed as a conceptual design baseline. POOL-01 and D-06 remain blockers for betting/settlement; approval of the baseline does not approve those rules.
+- P02-T01 is **complete at conceptual-design level only**. Subsequent implementation requires a separately authorized scoped task, a standard PostgreSQL test environment and migration review. No database, concurrency, security or gameplay code/tests were produced here.

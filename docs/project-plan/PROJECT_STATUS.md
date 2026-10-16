@@ -1,12 +1,16 @@
 # Project Status
 
-**Current phase:** P02 conceptual design (no schema implementation)
+**Current phase:** P02 conceptual design baseline approved; database implementation not started
 
-**Current task:** P02-T01 technical self-review documented; owner conceptual review pending; no implementation authorized
-**Implementation status:** Initial FastAPI liveness foundation committed; betting engine not started  
-**Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14  
-**Verification status:** P01 foundation: 10/10 tests, Ruff, pip check and HTTP liveness passed locally; GitHub Python 3.12 pull-request CI passed. P02-T01 design review pending; no database tests or code.
-**Last updated:** 2026-10-15
+**Current task:** P02-T01 complete as a design task; P01-T03 PostgreSQL test environment proposed, not authorized
+
+**Implementation status:** Initial FastAPI liveness foundation only; no schema, wallet or betting engine
+
+**Specification status:** Payout/settlement and legal-position catalogue approved; POOL-01/D-06/D-02 details remain open
+
+**Verification status:** P01 foundation: 10/10 tests, Ruff, pip check and HTTP liveness passed locally; GitHub Python 3.12 pull-request CI passed. P02-T01 is documentation review only; no database tests or code.
+
+**Last updated:** 2026-10-16
 
 ## Delivery plan (owner-approved sequence)
 
@@ -30,15 +34,17 @@
 - Added `roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md` with proposed server components, transaction sequences, round state machine, and test layers.
 - Added Python project metadata, a minimal FastAPI liveness endpoint, API smoke tests, a Python test/lint workflow, and local setup instructions for P01-T01. Owner's earlier Python 3.14.4 attempt was blocked; on 2026-10-15 a separate sandbox with Python 3.12.12 passed editable installation, 10/10 tests, Ruff, `pip check`, and HTTP 200 liveness. CI passed on pull request #1 on 2026-10-15.
 
+- P02-T01 conceptual entity/transaction sketch and ten-finding technical self-review approved as a design baseline by the owner on 2026-10-16. No PostgreSQL schema or transaction behavior has been verified.
+
 ## Current verification gates
 
-- P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Obtain owner review of the conceptual model and open decisions. This is documentation-only and remains open; no PostgreSQL implementation or transaction claims.
+- P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No PostgreSQL implementation or transaction claims.
 - Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally, and P01's full suite was 10/10.
 - P01-T01 local and CI checks passed; it is complete. Owner's Python 3.14.4 environment separately still needs Python 3.12/3.13 to reproduce locally. GitHub Actions reported advisory notices for Node.js 20-based action versions and the upcoming `ubuntu-latest` image migration; review them in a future CI maintenance task.
-- D-01 player/agent disablement and audited reassignment were approved; D-02 anonymization direction was approved while retention periods/backups/legal exceptions remain open. [D-10](decisions/2026-10-15-account-provisioning-and-point-flow.md) confirms single-owner provisioning, optional owner-managed players, owner-issued virtual points, conserved owner/agent/player transfers and owner-funded game-reserve direction. The exact POOL-01 coverage/global acceptance policy remains unapproved. The owner separately authorized **P02-T01 conceptual design only**. [Draft entity/transaction model](database/CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md) and [review checklist](tasks/P02-T01.md) await owner/technical review; no migrations or gameplay code have been authorized. P01-T02 frontend tooling and P01-T03 database environment remain future scoped tasks.
+- D-01 player/agent disablement and audited reassignment were approved; D-02 anonymization direction was approved while retention periods/backups/legal exceptions remain open. [D-10](decisions/2026-10-15-account-provisioning-and-point-flow.md) confirms single-owner provisioning, optional owner-managed players, owner-issued virtual points, conserved owner/agent/player transfers and owner-funded game-reserve direction. The exact POOL-01 coverage/global acceptance policy remains unapproved. The owner approved the **P02-T01 conceptual design baseline** on 2026-10-16. [Entity/transaction model](database/CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md), [review findings](database/P02_T01_DESIGN_REVIEW.md) and [task evidence](tasks/P02-T01.md) are recorded; no migrations or gameplay code have been authorized. P01-T02 frontend tooling and P01-T03 database environment remain future scoped tasks requiring separate permission.
 - Before betting-engine implementation, use the documented architecture/test plan and implement tests for cap enforcement, balance reservation, concurrency, cutoff, rollback, idempotency, rebet atomicity, settlement, and void/refund against the actual implementation and supported database.
 - Ensure future API/realtime authorization tests prove player-private bet data cannot be read by other players.
-- Resolve remaining non-blocking product/operations decisions: user/agent removal and point-accounting behavior; historical record retention/anonymization/deletion; owner MFA recovery/session policy; measurable performance/availability targets.
+- Resolve remaining product/operations decisions before their dependent work: POOL-01 reserve coverage/global acceptance policy; D-06 round recovery; D-02 retention windows/backup/deletion exceptions; D-03 owner MFA recovery/session policy; D-04 performance/availability targets. D-01 removal and D-10 owner/agent/player transfer flow are approved, though not implemented.
 
 ## Important status distinction
 
