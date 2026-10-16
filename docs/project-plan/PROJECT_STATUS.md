@@ -2,13 +2,13 @@
 
 **Current phase:** P02 account schema and P03 identifier constraints complete; P03 role binding complete; fixed player guard complete; Agent-ID guard complete
 
-**Current task:** P03-T01f pure credential primitives implemented, Python 3.12 CI pending
+**Current task:** P03-T01f pure credential primitives complete; credential persistence/activation/security design next
 
 **Implementation status:** FastAPI liveness, account/assignment schema, scoped identity guards and pure crypto helpers; no registration, login, MFA, wallet or betting engine
 
 **Specification status:** Username/Agent-ID format, reserved names, 24-hour activation, D-03 baseline and D-12 local owner bootstrap/fixed Agent IDs approved; identifier reuse, manual owner recovery, D-02 retention, POOL-01 and D-06 remain open
 
-**Verification status:** P03-T01b passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157). P03-T01c local non-DB tests/Ruff and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed. P03-T01d [CI run 38864125620](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38864125620) passed; P03-T01e [CI run 38865633220](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38865633220) passed. P03-T01f CI pending; Docker is unavailable here.
+**Verification status:** P03-T01b passed [CI run 38862897157](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38862897157). P03-T01c local non-DB tests/Ruff and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed. P03-T01d [CI run 38864125620](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38864125620) passed; P03-T01e [CI run 38865633220](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38865633220) passed. P03-T01f [CI run 38865947836](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38865947836) passed; Docker is unavailable here.
 
 **Last updated:** 2026-10-16
 
