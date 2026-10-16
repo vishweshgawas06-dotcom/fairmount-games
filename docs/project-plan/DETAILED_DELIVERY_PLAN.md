@@ -49,7 +49,7 @@ D-01 and the D-10 account/transfer flow are owner-approved; D-02 has an approved
 
 - **P01-T01 (existing, open):** Verify initial FastAPI liveness foundation. Use Python 3.12/3.13 (`py -0p` on Windows; inspect available interpreters on other systems), create a local virtual environment, install `.[dev]`, run `python -m unittest discover -s tests -v`, `python -m ruff check .`, start Uvicorn and check `/health/live`. **Gate:** reproducible install, full suite/lint/health and CI results recorded; liveness is not readiness.
 - **P01-T02 (proposed):** Establish reproducible frontend workspace/toolchain only when client work is scoped; pin package manager/runtime, minimal build/type/lint/test commands; no placeholder green CI. **Gate:** clean clone runs documented checks.
-- **P01-T03 (proposed):** Local PostgreSQL environment, safe example config, migration/test DB lifecycle and CI services (may coincide with P02). **Gate:** clean setup/teardown without secrets in Git.
+- **P01-T03 (owner-approved 2026-10-16; CI verification pending):** [Local PostgreSQL foundation task](tasks/P01-T03.md): safe localhost-only Compose, isolated test database and connection check. No migrations or gameplay. **Gate:** clean checkout starts/stops Compose, connects to test DB and passes Python tests/lint; keep secrets out of Git.
 
 ### P02 — Database and migrations
 

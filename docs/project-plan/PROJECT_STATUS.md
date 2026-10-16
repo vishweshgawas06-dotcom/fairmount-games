@@ -2,13 +2,13 @@
 
 **Current phase:** P02 conceptual design baseline approved; database implementation not started
 
-**Current task:** P02-T01 complete as a design task; P01-T03 PostgreSQL test environment proposed, not authorized
+**Current task:** P01-T03 owner-authorized local PostgreSQL foundation; Compose/connection verification pending CI
 
 **Implementation status:** Initial FastAPI liveness foundation only; no schema, wallet or betting engine
 
 **Specification status:** Payout/settlement and legal-position catalogue approved; POOL-01/D-06/D-02 details remain open
 
-**Verification status:** P01 foundation: 10/10 tests, Ruff, pip check and HTTP liveness passed locally; GitHub Python 3.12 pull-request CI passed. P02-T01 is documentation review only; no database tests or code.
+**Verification status:** P01-T01/API CI and P02-T01 conceptual review complete. P01-T03 local PostgreSQL Compose startup and connection check await GitHub CI; Docker is unavailable in this sandbox.
 
 **Last updated:** 2026-10-16
 
@@ -35,10 +35,12 @@
 - Added Python project metadata, a minimal FastAPI liveness endpoint, API smoke tests, a Python test/lint workflow, and local setup instructions for P01-T01. Owner's earlier Python 3.14.4 attempt was blocked; on 2026-10-15 a separate sandbox with Python 3.12.12 passed editable installation, 10/10 tests, Ruff, `pip check`, and HTTP 200 liveness. CI passed on pull request #1 on 2026-10-15.
 
 - P02-T01 conceptual entity/transaction sketch and ten-finding technical self-review approved as a design baseline by the owner on 2026-10-16. No PostgreSQL schema or transaction behavior has been verified.
+- P01-T03 PostgreSQL foundation files added with owner permission: localhost-only Compose, test-database connection check and CI setup/teardown. Docker is not available in this sandbox; GitHub CI connection evidence is pending.
 
 ## Current verification gates
 
-- P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No PostgreSQL implementation or transaction claims.
+- P01-T03: run the [Compose-based local PostgreSQL](../../infrastructure/README.md) startup and [isolated test database check](../../infrastructure/check_postgres.py) in CI, then record pass/fail and teardown. Docker is absent in this sandbox; no local Compose execution claimed.
+- P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No physical schema or transaction behavior is verified.
 - Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally, and P01's full suite was 10/10.
 - P01-T01 local and CI checks passed; it is complete. Owner's Python 3.14.4 environment separately still needs Python 3.12/3.13 to reproduce locally. GitHub Actions reported advisory notices for Node.js 20-based action versions and the upcoming `ubuntu-latest` image migration; review them in a future CI maintenance task.
 - D-01 player/agent disablement and audited reassignment were approved; D-02 anonymization direction was approved while retention periods/backups/legal exceptions remain open. [D-10](decisions/2026-10-15-account-provisioning-and-point-flow.md) confirms single-owner provisioning, optional owner-managed players, owner-issued virtual points, conserved owner/agent/player transfers and owner-funded game-reserve direction. The exact POOL-01 coverage/global acceptance policy remains unapproved. The owner approved the **P02-T01 conceptual design baseline** on 2026-10-16. [Entity/transaction model](database/CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md), [review findings](database/P02_T01_DESIGN_REVIEW.md) and [task evidence](tasks/P02-T01.md) are recorded; no migrations or gameplay code have been authorized. P01-T02 frontend tooling and P01-T03 database environment remain future scoped tasks requiring separate permission.
