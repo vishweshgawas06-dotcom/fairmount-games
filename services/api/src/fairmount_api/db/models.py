@@ -1,7 +1,7 @@
 """Account, private identity, assignment and canonical login-ID schema.
 
 These models do not authenticate users, authorize transfers, or resolve identifier reuse
-and retention after eligible anonymization. A future service must validate account role.
+and retention after eligible anonymization. A composite FK binds login kind to account role.
 """
 
 from __future__ import annotations
@@ -9,7 +9,16 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    String,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -36,6 +45,7 @@ class Account(Base):
     __table_args__ = (
         CheckConstraint("role IN ('OWNER', 'AGENT', 'PLAYER')", name="ck_accounts_role"),
         CheckConstraint("status IN ('ENABLED', 'DISABLED')", name="ck_accounts_status"),
+        UniqueConstraint("id", "role", name="uq_accounts_id_role"),
         Index(
             "uq_accounts_single_owner", "role", unique=True, postgresql_where=text("role = 'OWNER'")
         ),
@@ -70,6 +80,14 @@ class PrivateIdentity(Base):
     login_kind: Mapped[str | None] = mapped_column(String(16))
 
     __table_args__ = (
+        # MATCH SIMPLE skips this FK when login_kind is NULL; the original account_id
+        # FK still requires a parent account for those identity rows.
+        ForeignKeyConstraint(
+            ["account_id", "login_kind"],
+            ["accounts.id", "accounts.role"],
+            name="fk_private_identities_login_role",
+            ondelete="RESTRICT",
+        ),
         CheckConstraint(LOGIN_IDENTIFIER_CHECK, name="ck_private_identities_login_format"),
         Index(
             "uq_private_identities_login_namespace",

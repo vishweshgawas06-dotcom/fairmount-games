@@ -1,10 +1,10 @@
 # Next Action
 
-## Active review — P03-T01c design only
+## Active implementation — P03-T01c role binding
 
-The owner authorized **documentation only** after P03-T01b. Review the [P03-T01c role-binding and provisioning proposal](auth/NEXT_PROVISIONING_SLICE_DESIGN.md) and its [design task](tasks/P03-T01c-design.md). It proposes a separate database-only migration to bind non-null identity login kind to account role, with PostgreSQL migration/constraint tests. **No P03-T01c code or migration is authorized or implemented.** The composite FK and fails-on-legacy-mismatch policy are proposals for owner review, not accepted decisions.
+The owner superseded the earlier design-only restriction with permission to advance through the phases **in small tested and debugged steps**, asking for decisions where needed. [P03-T01c](tasks/P03-T01c.md) adds a PostgreSQL composite FK binding non-null login kind to account role, with migration rollback and insert/update/null-path tests. Local Ruff/non-DB tests pass; **PostgreSQL CI is pending**. No registration, credential, session or wallet behavior is added by this slice.
 
-**Next:** owner reviews/corrects the design and, if desired, expressly authorizes a small implementation scope. Registration endpoints, activation credentials, sessions, wallets, fixed-name enforcement and deletion/reuse need their own design/permission and verification gates. The current P03-T01b database constraints alone do not register or authenticate anyone.
+**Next:** push the P03-T01c implementation, verify the PostgreSQL migration/legacy mismatch, metadata parity, FK tests and complete CI; debug before marking complete. Then plan the next bounded prerequisite and ask the owner only where a product/security decision is genuinely unresolved. [Provisioning design](auth/NEXT_PROVISIONING_SLICE_DESIGN.md) identifies remaining gates including fixed-name enforcement, account creation/activation atomicity, audit, bootstrap and authorization.
 
 ## Completed checkpoints
 

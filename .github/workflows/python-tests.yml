@@ -24,10 +24,12 @@ jobs:
           docker compose --env-file .env -f infrastructure/compose.yaml up -d --wait
       - name: Check isolated PostgreSQL test database
         run: python infrastructure/check_postgres.py
-      - name: Verify account migration round-trip and metadata
+      - name: Verify migration round-trip, legacy mismatch and metadata
         run: |
           FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade head
           FAIRMOUNT_DB_NAME=fairmount_test python -m alembic downgrade base
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade 20261016_02
+          FAIRMOUNT_DB_NAME=fairmount_test python -m infrastructure.check_identity_role_migration
           FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade head
           FAIRMOUNT_DB_NAME=fairmount_test python -m alembic check
       - name: Run unit and PostgreSQL integration tests
