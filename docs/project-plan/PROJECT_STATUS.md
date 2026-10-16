@@ -2,11 +2,11 @@
 
 **Current phase:** P02 conceptual design baseline approved; database implementation not started
 
-**Current task:** D-11 identifier and D-03 MFA/session decision checkpoint recorded; proposed P03-T01a requires separate permission
+**Current task:** P03-T01a owner-authorized registration/identifier design drafted; owner contract review pending
 
-**Implementation status:** FastAPI liveness plus accounts/private identity/assignment migration; no login, MFA, wallet or betting engine
+**Implementation status:** FastAPI liveness plus accounts/private identity/assignment migration; no registration, login, MFA, wallet or betting engine
 
-**Specification status:** Identifier uniqueness/ASCII, shared mobile, MFA baseline and session policy approved; identifier reuse, manual owner recovery, D-02 retention, POOL-01 and D-06 remain open
+**Specification status:** Username/Agent-ID format, reserved names, 24-hour activation and D-03 baseline approved; identifier reuse, manual owner recovery, D-02 retention, POOL-01 and D-06 remain open
 
 **Verification status:** P02-T02a PostgreSQL 16.9 migration round-trip, metadata check and DB constraints passed in GitHub CI. Docker is unavailable in this sandbox; no local DB execution claimed.
 
@@ -41,8 +41,9 @@
 
 ## Current verification gates
 
+- P03-T01a: obtain owner review of the registration/identifier contract; this is documentation only. A future migration must test canonical uniqueness and concurrent collision handling on PostgreSQL, and a separate security task must test activation/password flows before claiming registration works.
 - P02-T02a: [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) passed migration round-trip, metadata parity, account-schema PostgreSQL integration tests, existing tests and Ruff; task complete for its narrow slice. D-02 login/mobile reuse and D-03 auth/MFA remain unresolved by nullable identity fields; no API authorization exists.
-- D-11 locks global case-insensitive ASCII player usernames, separate unique Agent IDs, and non-unique shared mobile numbers; reuse after anonymization remains deferred. D-03 locks TOTP/recovery codes, role timeouts, one active session per account, 10-minute owner step-up and full session revocation; manual all-factors-lost recovery remains open. These are documented decisions only, not passing auth tests or implemented constraints. Exact identifier length/reserved names require owner review before P03-T01a; role-aware assignment and disabled-user checks still need future server-side authorization testing.
+- D-11 locks global case-insensitive ASCII 3–32-character player usernames, generated distinct unique Agent IDs, reserved operator names, and non-unique/unverified mobile contact data; username/Agent-ID reuse after anonymization remains deferred. Owner also chose fixed player usernames and one-time, 24-hour initial credentials. [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) is drafted for owner review; no auth code or unique login constraint was added. D-03 locks TOTP/recovery codes, role timeouts, one active session per account, 10-minute owner step-up and full revocation; manual all-factors-lost recovery remains open. Role-aware assignment/disabled-user checks need future server-side authorization tests.
 - P01-T03: [Compose-based PostgreSQL](../../infrastructure/README.md) and [isolated test database check](../../infrastructure/check_postgres.py) passed in GitHub CI with volume cleanup; task complete. Docker is absent in this sandbox; local Compose setup remains unverified here.
 - Next proposal P02-T02a: obtain separate permission for a small physical account/identity/assignment schema slice. Resolve field-level D-02/PRIV-01 choices before irreversible identity constraints; no implementation has begun.
 - P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No physical schema or transaction behavior is verified.
