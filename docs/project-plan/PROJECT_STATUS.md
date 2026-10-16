@@ -2,13 +2,13 @@
 
 **Current phase:** P02 conceptual design baseline approved; database implementation not started
 
-**Current task:** P02-T02a owner-authorized first account schema slice; PostgreSQL CI evidence pending
+**Current task:** P02-T02a complete; next owner checkpoint D-02/PRIV-01 identifier policy and D-03 MFA/session recovery (permission required)
 
-**Implementation status:** FastAPI liveness foundation plus draft accounts/private identity/assignment migration only; no login, wallet or betting engine
+**Implementation status:** FastAPI liveness plus accounts/private identity/assignment migration; no login, wallet or betting engine
 
-**Specification status:** Payout/settlement and legal-position catalogue approved; POOL-01/D-06/D-02 details remain open
+**Specification status:** Payout/settlement and legal-position catalogue approved; POOL-01/D-06/D-02/D-03 details remain open
 
-**Verification status:** P01-T03 PostgreSQL Compose/test DB smoke passed in CI; P02-T02a migration/constraint tests have not yet run in CI. Docker is unavailable in this sandbox.
+**Verification status:** P02-T02a PostgreSQL 16.9 migration round-trip, metadata check and DB constraints passed in GitHub CI. Docker is unavailable in this sandbox; no local DB execution claimed.
 
 **Last updated:** 2026-10-16
 
@@ -36,10 +36,12 @@
 
 - P02-T01 conceptual entity/transaction sketch and ten-finding technical self-review approved as a design baseline by the owner on 2026-10-16. No PostgreSQL schema or transaction behavior has been verified.
 - P01-T03 PostgreSQL foundation completed with owner permission: localhost-only Compose, isolated test-database connection check and CI setup/teardown. [GitHub CI run 38859064842](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859064842) passed all named steps on Python 3.12. Docker is not available in this sandbox; no local Compose run claimed.
+- P02-T02a introduced SQLAlchemy account/private-identity/agent-assignment models and one Alembic migration. [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) passed PostgreSQL 16.9 migration round-trip/metadata parity, schema integration tests, existing suite, Ruff and cleanup. It does not implement login, wallets or roulette.
 
 ## Current verification gates
 
-- P02-T02a: clean GitHub CI must pass migration round-trip/metadata parity and account-schema PostgreSQL constraint tests. D-02 login/mobile reuse and D-03 auth/MFA are not resolved by nullable identity fields; no API authorization is implemented.
+- P02-T02a: [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) passed migration round-trip, metadata parity, account-schema PostgreSQL integration tests, existing tests and Ruff; task complete for its narrow slice. D-02 login/mobile reuse and D-03 auth/MFA remain unresolved by nullable identity fields; no API authorization exists.
+- Before further account/auth migration or login code, agree on D-02/PRIV-01 identifier uniqueness/reuse and D-03 MFA/session recovery. Role-aware assignment and disabled-user checks require future server-side authorization testing.
 - P01-T03: [Compose-based PostgreSQL](../../infrastructure/README.md) and [isolated test database check](../../infrastructure/check_postgres.py) passed in GitHub CI with volume cleanup; task complete. Docker is absent in this sandbox; local Compose setup remains unverified here.
 - Next proposal P02-T02a: obtain separate permission for a small physical account/identity/assignment schema slice. Resolve field-level D-02/PRIV-01 choices before irreversible identity constraints; no implementation has begun.
 - P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No physical schema or transaction behavior is verified.
