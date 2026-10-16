@@ -1,6 +1,6 @@
 # P03-T01a — Registration and identifier contract (design only)
 
-**Status:** Owner choices recorded 2026-10-16; proposal for a later scoped implementation review. No account-creation endpoint, login, uniqueness index, credential or session code is added by this task.
+**Status:** Approved by owner 2026-10-16 as the P03-T01a design contract. A separately authorized P03-T01b adds identifier helpers and DB constraints only; no registration, credential or session code is authorized.
 
 ## Authority and identity
 
@@ -36,6 +36,6 @@
 
 - D-02/D-11: username and Agent-ID reuse after anonymization/deletion, precise retention and backup policy, data minimization. No deletion job may be built yet.
 - D-03: TOTP and one-active-session baseline is approved; manual all-factors-lost owner recovery is not. Details of protected credential delivery, owner step-up, login/reset abuse controls and password lifecycle need separate threat review.
-- The P02-T02a `private_identities.login_identifier` field is currently nullable and **not** unique. A later scoped migration should introduce role/namespace-aware canonical identifiers and database-backed uniqueness with migration/collision tests; it must not reinterpret this contract as permission to implement login or wallets.
+- The P02-T02a `private_identities.login_identifier` field began nullable and non-unique. Separately authorized P03-T01b adds canonical, namespaced uniqueness and format constraints; it must not be interpreted as permission to implement login or wallets. Its CHECK does **not** bind `login_kind` to `accounts.role`; enforce this in a later provisioning design before accounts can register or log in.
 
 **P03-T01a gate:** owner-specified identifier/activation decisions are documented and reviewable. Marking this *design task* complete does not approve the future migration or authentication code; each receives a separate small task and PostgreSQL/security test plan.

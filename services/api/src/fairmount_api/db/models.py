@@ -1,7 +1,7 @@
-"""First physical schema slice: accounts, private identity, and assignment history.
+"""Account, private identity, assignment and canonical login-ID schema.
 
-These models do not authenticate users or authorize transfers. Product decisions about
-mobile/username reuse and retention remain open; no login uniqueness is imposed yet.
+These models do not authenticate users, authorize transfers, or resolve identifier reuse
+and retention after eligible anonymization. A future service must validate account role.
 """
 
 from __future__ import annotations
@@ -42,6 +42,22 @@ class Account(Base):
     )
 
 
+# Keep this DB check in sync with the P03-T01b migration and pure identifier helpers.
+LOGIN_IDENTIFIER_CHECK = """
+    (login_identifier IS NULL AND login_kind IS NULL)
+    OR (
+        login_identifier IS NOT NULL AND login_kind IS NOT NULL AND (
+            (login_kind = 'PLAYER'
+             AND login_identifier COLLATE "C" ~ '^[a-z][a-z0-9_-]{2,31}$'
+             AND login_identifier NOT IN ('admin', 'owner', 'support', 'system', 'root')
+             AND login_identifier NOT LIKE 'agt-%')
+            OR (login_kind = 'AGENT'
+                AND login_identifier COLLATE "C" ~ '^agt-[abcdefghjklmnpqrstuvwxyz23456789]{10}$')
+        )
+    )
+"""
+
+
 class PrivateIdentity(Base):
     __tablename__ = "private_identities"
 
@@ -51,6 +67,18 @@ class PrivateIdentity(Base):
     display_name: Mapped[str | None] = mapped_column(String(160))
     mobile_number: Mapped[str | None] = mapped_column(String(32))
     login_identifier: Mapped[str | None] = mapped_column(String(128))
+    login_kind: Mapped[str | None] = mapped_column(String(16))
+
+    __table_args__ = (
+        CheckConstraint(LOGIN_IDENTIFIER_CHECK, name="ck_private_identities_login_format"),
+        Index(
+            "uq_private_identities_login_namespace",
+            "login_kind",
+            "login_identifier",
+            unique=True,
+            postgresql_where=text("login_identifier IS NOT NULL"),
+        ),
+    )
 
 
 class AgentAssignment(Base):

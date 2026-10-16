@@ -1,14 +1,14 @@
 # Next Action
 
-## Active task — P03-T01a design review
+## Active task — P03-T01b identifier constraints, awaiting PostgreSQL CI
 
-The owner authorized [P03-T01a registration/identifier contract](tasks/P03-T01a.md) on 2026-10-16. The [design draft](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) records the choices: globally unique case-insensitive player usernames of 3–32 ASCII characters starting with a letter; generated unique `AGT-` plus 10 unambiguous-character Agent IDs; reserved operator names/`agt-` player prefix; fixed player usernames; mobile saved as unverified non-unique contact data; a server-generated, single-use temporary credential shown once and expiring after 24 hours. Owner may create owner-managed or assigned players; agents create only their assigned players.
+The owner approved the [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) and separately authorized [P03-T01b](tasks/P03-T01b.md) on 2026-10-16: canonical player username/Agent-ID helpers, namespaced PostgreSQL validation/uniqueness migration and tests **only**. The migration and tests are implemented; run CI on this branch to verify PostgreSQL upgrade/downgrade/metadata parity and constraint behavior, then update task evidence and status. Docker is unavailable locally. No registration, credentials, sessions or wallets were authorized.
 
-**Next:** owner reviews this combined contract and flags corrections. Do not mark the design task complete or implement registration, password/reset flows, sessions, DB uniqueness constraints or wallets without separately approved scoped tasks. The P02-T02a nullable/non-unique `login_identifier` schema remains unchanged. [D-11](decisions/2026-10-16-identifier-policy.md) records approved identifier choices but explicitly defers reuse after anonymization. [D-03](decisions/2026-10-16-owner-mfa-and-sessions.md) still lacks an approved manual all-factors-lost recovery process.
+**After CI:** review the P03-T01b evidence; obtain fresh permission before any further implementation. Future provisioning must bind `login_kind` to `accounts.role`, enforce fixed usernames, resolve concurrent creation conflicts atomically and protect credentials. The database migration alone cannot register or authenticate an account.
 
 ## Completed checkpoints
 
-[P02-T02a](tasks/P02-T02a.md) account/identity/assignment schema passed [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) on PostgreSQL 16.9; no login or wallet code exists. [P01-T03](tasks/P01-T03.md) local PostgreSQL foundation was verified in CI. Docker is unavailable in this sandbox.
+[P03-T01a](tasks/P03-T01a.md) approved design; its contract covers fixed globally unique case-insensitive player usernames, generated Agent IDs, reserved names, shared/unverified mobile and single-use 24-hour initial credentials (not implemented). [P02-T02a](tasks/P02-T02a.md) account/identity/assignment schema passed [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) on PostgreSQL 16.9; no login or wallet code exists. [P01-T03](tasks/P01-T03.md) local PostgreSQL foundation was verified in CI.
 
 ## Other open decisions
 

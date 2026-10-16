@@ -1,14 +1,14 @@
 # Project Status
 
-**Current phase:** P02 conceptual design baseline approved; database implementation not started
+**Current phase:** P02 account schema complete; P03 identifier constraint slice in verification
 
-**Current task:** P03-T01a owner-authorized registration/identifier design drafted; owner contract review pending
+**Current task:** P03-T01a contract approved; P03-T01b canonical helpers and DB migration implemented, PostgreSQL CI pending
 
-**Implementation status:** FastAPI liveness plus accounts/private identity/assignment migration; no registration, login, MFA, wallet or betting engine
+**Implementation status:** FastAPI liveness, account/assignment schema and scoped identifier helpers/constraints; no registration, login, MFA, wallet or betting engine
 
 **Specification status:** Username/Agent-ID format, reserved names, 24-hour activation and D-03 baseline approved; identifier reuse, manual owner recovery, D-02 retention, POOL-01 and D-06 remain open
 
-**Verification status:** P02-T02a PostgreSQL 16.9 migration round-trip, metadata check and DB constraints passed in GitHub CI. Docker is unavailable in this sandbox; no local DB execution claimed.
+**Verification status:** P02-T02a PostgreSQL CI passed; P03-T01b local non-DB tests/Ruff pass, PostgreSQL CI pending. Docker is unavailable here; no local DB execution claimed.
 
 **Last updated:** 2026-10-16
 
@@ -41,11 +41,11 @@
 
 ## Current verification gates
 
-- P03-T01a: obtain owner review of the registration/identifier contract; this is documentation only. A future migration must test canonical uniqueness and concurrent collision handling on PostgreSQL, and a separate security task must test activation/password flows before claiming registration works.
+- P03-T01a: owner approved the design contract. P03-T01b is limited to helpers/schema/DB tests; PostgreSQL CI evidence is pending. Concurrent provisioning, role binding, activation/password flows and auth security tests belong to later separately authorized tasks.
 - P02-T02a: [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) passed migration round-trip, metadata parity, account-schema PostgreSQL integration tests, existing tests and Ruff; task complete for its narrow slice. D-02 login/mobile reuse and D-03 auth/MFA remain unresolved by nullable identity fields; no API authorization exists.
-- D-11 locks global case-insensitive ASCII 3–32-character player usernames, generated distinct unique Agent IDs, reserved operator names, and non-unique/unverified mobile contact data; username/Agent-ID reuse after anonymization remains deferred. Owner also chose fixed player usernames and one-time, 24-hour initial credentials. [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) is drafted for owner review; no auth code or unique login constraint was added. D-03 locks TOTP/recovery codes, role timeouts, one active session per account, 10-minute owner step-up and full revocation; manual all-factors-lost recovery remains open. Role-aware assignment/disabled-user checks need future server-side authorization tests.
+- D-11 locks global case-insensitive ASCII 3–32-character player usernames, generated distinct unique Agent IDs, reserved operator names, and non-unique/unverified mobile contact data; username/Agent-ID reuse after anonymization remains deferred. Owner also chose fixed player usernames and one-time, 24-hour initial credentials. [P03-T01a contract](auth/REGISTRATION_IDENTIFIER_CONTRACT.md) is approved. P03-T01b adds a unique canonical login constraint but **no auth code**; PostgreSQL verification is pending. D-03 locks TOTP/recovery codes, role timeouts, one active session per account, 10-minute owner step-up and full revocation; manual all-factors-lost recovery remains open. Role-aware assignment/disabled-user checks need future server-side authorization tests.
 - P01-T03: [Compose-based PostgreSQL](../../infrastructure/README.md) and [isolated test database check](../../infrastructure/check_postgres.py) passed in GitHub CI with volume cleanup; task complete. Docker is absent in this sandbox; local Compose setup remains unverified here.
-- Next proposal P02-T02a: obtain separate permission for a small physical account/identity/assignment schema slice. Resolve field-level D-02/PRIV-01 choices before irreversible identity constraints; no implementation has begun.
+- Next implementation beyond P03-T01b requires separate permission. D-02/PRIV-01 reuse/retention choices remain open; there is no account registration or login endpoint.
 - P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Owner approved the conceptual baseline on 2026-10-16; this documentation task is complete, but findings remain to be addressed in future scoped tasks. No physical schema or transaction behavior is verified.
 - Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally, and P01's full suite was 10/10.
 - P01-T01 local and CI checks passed; it is complete. Owner's Python 3.14.4 environment separately still needs Python 3.12/3.13 to reproduce locally. GitHub Actions reported advisory notices for Node.js 20-based action versions and the upcoming `ubuntu-latest` image migration; review them in a future CI maintenance task.

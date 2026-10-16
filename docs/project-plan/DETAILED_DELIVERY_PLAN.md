@@ -61,8 +61,8 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 
 ### P03 — Authentication and sessions
 
-- **P03-T01a (design draft 2026-10-16):** [Registration/identifier contract](tasks/P03-T01a.md) defines owner/agent creation boundaries, exact username/Agent-ID formats, reserved names and temporary activation. **Gate:** owner reviews contract; no code or uniqueness migration in this task.
-- **P03-T01b and later (not authorized):** Account provisioning, identifier constraints, secure credential activation/password hashing/reset flows in small independently tested slices; no self-registration or plaintext retrieval. **Gate:** PostgreSQL collision/concurrency, duplicate/disabled accounts and token/secret exposure tests.
+- **P03-T01a (approved design 2026-10-16):** [Registration/identifier contract](tasks/P03-T01a.md) defines owner/agent creation boundaries, exact username/Agent-ID formats, reserved names and temporary activation. **Gate:** owner approved contract; no code was authorized in this task.
+- **P03-T01b (authorized narrow slice):** [Canonical identifier helpers and DB constraints](tasks/P03-T01b.md), migration and PostgreSQL tests only. **Gate:** CI upgrade/downgrade/metadata parity, canonical/invalid/duplicate tests. **Later tasks (not authorized):** Provisioning, role binding, concurrent registration, credential activation/password hashing/reset; no self-registration or plaintext retrieval. **Gate:** PostgreSQL collision/concurrency, duplicate/disabled accounts and token/secret exposure tests.
 - **P03-T02:** Login/logout, secure cookies, D-03 role-specific idle/absolute expiry, one active session per account for every role, new-login invalidation, reconnect/forced logout. **Gate:** session replay/stale-session tests on API and realtime connections.
 - **P03-T03:** Owner TOTP/recovery-code MFA and D-03-approved session/step-up policy; rate limits and audit. Manual all-factors-lost recovery is not approved and must not be improvised. **Gate:** MFA required for privileged access and tested failure/recovery paths before production.
 
