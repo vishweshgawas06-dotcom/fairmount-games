@@ -2,7 +2,7 @@
 
 ## Active task
 
-**P02-T01 — Owner/technical review of the conceptual schema and transaction design draft. No migration or implementation authorized.**
+**P02-T01 — Owner review of the conceptual schema and technical review findings. No migration or implementation authorized.**
 
 The owner approved the [detailed delivery plan for P00–P19](DETAILED_DELIVERY_PLAN.md) on 2026-10-15 and emphasized a realistic-feeling European roulette machine with a smoothly spinning wheel and ball. The owner separately approved verification of P01-T01. Local Python 3.12 tests, lint, and liveness passed; [pull-request CI run 38693744680](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38693744680) also passed. P01-T01 is complete; pull request #1 is open for owner review and has not been merged. No gameplay implementation was started. P01-T02/P01-T03 remain future scoped tasks.
 
@@ -46,7 +46,7 @@ The catalogue tests validate catalogue invariants, not bet acceptance or settlem
 - Local sandbox verification on 2026-10-15 using Python 3.12.12: editable install succeeded; 10/10 tests, Ruff and `/health/live` passed after test-formatting corrections. [GitHub pull-request CI run 38693744680](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38693744680) passed tests and Ruff on Python 3.12. P01-T01 complete. An upstream Starlette/httpx deprecation warning remains; CI reported advisory action/runner notices. The owner's earlier Python 3.14.4 environment still needs a supported interpreter for their own local setup.
 - The owner approved [D-01 account disablement/reassignment](decisions/2026-10-15-account-disable-and-reassignment.md) and the anonymization direction of [D-02 privacy deletion](decisions/2026-10-15-privacy-deletion-and-retention.md) on 2026-10-15. Exact retention periods, deletion exceptions and backups remain open by owner choice pending legal/operations review.
 - [D-10](decisions/2026-10-15-account-provisioning-and-point-flow.md) now records one owner, owner-created/agent-created players, owner-only issuance to owner wallet, funded owner/agent/player transfers, full-request rejection for an insufficient source, and owner-funded game reserve direction. Agent dashboard shows enabled assigned players; WhatsApp/phone requests are out of band. The **pre-bet reserve coverage/global acceptance rule remains open** (POOL-01); do not guess it.
-- With separate permission for **design only**, [P02-T01](tasks/P02-T01.md) has a [conceptual entity/transaction model](database/CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md) updated for D-10. Next: review proposed boundaries, constraints, lock ordering and POOL-01/D-06 operational gaps. Record owner/technical feedback before calling the design complete. No migrations or destructive cleanup.
+- With separate permission for **design only**, [P02-T01](tasks/P02-T01.md) has a [conceptual entity/transaction model](database/CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md) updated for D-10. A [technical self-review](database/P02_T01_DESIGN_REVIEW.md) identifies ten findings; draft lock ordering and one-session wording were clarified. **Next:** owner reviews the model, POOL-01/D-06 blockers and findings; record explicit feedback before calling the conceptual design complete. No migrations or destructive cleanup.
 - No engine code exists yet; passing catalogue tests do not authorize treating cap or settlement behavior as verified.
 
 ## Do not do yet

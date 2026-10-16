@@ -2,7 +2,7 @@
 
 **Current phase:** P02 conceptual design (no schema implementation)
 
-**Current task:** P02-T01 design draft delivered for owner/technical review; no implementation authorized
+**Current task:** P02-T01 technical self-review documented; owner conceptual review pending; no implementation authorized
 **Implementation status:** Initial FastAPI liveness foundation committed; betting engine not started  
 **Specification status:** Payout/settlement specification and canonical legal-position catalogue approved by owner on 2026-10-14  
 **Verification status:** P01 foundation: 10/10 tests, Ruff, pip check and HTTP liveness passed locally; GitHub Python 3.12 pull-request CI passed. P02-T01 design review pending; no database tests or code.
@@ -32,7 +32,7 @@
 
 ## Current verification gates
 
-- P02-T01: obtain owner/technical review of the conceptual model and open decisions. It is documentation-only and remains open; no PostgreSQL implementation or transaction claims.
+- P02-T01: [technical self-review](database/P02_T01_DESIGN_REVIEW.md) records ten findings and draft corrections to lock ordering/session wording. Obtain owner review of the conceptual model and open decisions. This is documentation-only and remains open; no PostgreSQL implementation or transaction claims.
 - Re-run the catalogue suite after any fixture/test changes; current reported evidence is 8/8 passing locally, and P01's full suite was 10/10.
 - P01-T01 local and CI checks passed; it is complete. Owner's Python 3.14.4 environment separately still needs Python 3.12/3.13 to reproduce locally. GitHub Actions reported advisory notices for Node.js 20-based action versions and the upcoming `ubuntu-latest` image migration; review them in a future CI maintenance task.
 - D-01 player/agent disablement and audited reassignment were approved; D-02 anonymization direction was approved while retention periods/backups/legal exceptions remain open. [D-10](decisions/2026-10-15-account-provisioning-and-point-flow.md) confirms single-owner provisioning, optional owner-managed players, owner-issued virtual points, conserved owner/agent/player transfers and owner-funded game-reserve direction. The exact POOL-01 coverage/global acceptance policy remains unapproved. The owner separately authorized **P02-T01 conceptual design only**. [Draft entity/transaction model](database/CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md) and [review checklist](tasks/P02-T01.md) await owner/technical review; no migrations or gameplay code have been authorized. P01-T02 frontend tooling and P01-T03 database environment remain future scoped tasks.
