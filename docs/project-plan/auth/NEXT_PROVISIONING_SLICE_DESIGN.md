@@ -1,6 +1,6 @@
 # P03-T01c — Role binding and provisioning design proposal
 
-**Status:** Role-binding design implemented under the owner’s subsequent broad step-by-step implementation permission (2026-10-16); PostgreSQL CI evidence pending. The later provisioning/security sections remain proposals, not accepted product/security choices. This proposal follows the approved [registration/identifier contract](REGISTRATION_IDENTIFIER_CONTRACT.md) and the completed [identifier constraint slice](../tasks/P03-T01b.md).
+**Status:** Role-binding design implemented under the owner’s subsequent broad step-by-step implementation permission (2026-10-16); PostgreSQL role-binding and legacy-mismatch checks passed [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464). The later provisioning/security sections remain proposals, not accepted product/security choices. This proposal follows the approved [registration/identifier contract](REGISTRATION_IDENTIFIER_CONTRACT.md) and the completed [identifier constraint slice](../tasks/P03-T01b.md).
 
 ## Why a further slice is needed
 

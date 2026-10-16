@@ -1,10 +1,10 @@
 # Next Action
 
-## Active implementation — P03-T01c role binding
+## Completed checkpoint — P03-T01c role binding
 
-The owner superseded the earlier design-only restriction with permission to advance through the phases **in small tested and debugged steps**, asking for decisions where needed. [P03-T01c](tasks/P03-T01c.md) adds a PostgreSQL composite FK binding non-null login kind to account role, with migration rollback and insert/update/null-path tests. Local Ruff/non-DB tests pass; **PostgreSQL CI is pending**. No registration, credential, session or wallet behavior is added by this slice.
+The owner superseded the earlier design-only restriction with permission to advance through the phases **in small tested and debugged steps**, asking for decisions where needed. [P03-T01c](tasks/P03-T01c.md) adds a PostgreSQL composite FK binding non-null login kind to account role, with migration rollback and insert/update/null-path tests. Local Ruff/non-DB tests and [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464) passed, including PostgreSQL legacy mismatch rollback and FK checks. No registration, credential, session or wallet behavior is added by this slice.
 
-**Next:** push the P03-T01c implementation, verify the PostgreSQL migration/legacy mismatch, metadata parity, FK tests and complete CI; debug before marking complete. Then plan the next bounded prerequisite and ask the owner only where a product/security decision is genuinely unresolved. [Provisioning design](auth/NEXT_PROVISIONING_SLICE_DESIGN.md) identifies remaining gates including fixed-name enforcement, account creation/activation atomicity, audit, bootstrap and authorization.
+**Next:** proceed to the next bounded prerequisite and ask the owner where a product/security decision is genuinely unresolved. [Provisioning design](auth/NEXT_PROVISIONING_SLICE_DESIGN.md) identifies remaining gates including fixed-name enforcement, account creation/activation atomicity, audit, bootstrap and authorization.
 
 ## Completed checkpoints
 
