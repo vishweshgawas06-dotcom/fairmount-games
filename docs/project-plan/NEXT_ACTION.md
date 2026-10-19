@@ -1,8 +1,8 @@
 # Next Action
 
-## Current checkpoint — P03-T02d internal owner session issuance (PostgreSQL CI pending)
+## Completed checkpoint — P03-T02d internal owner session issuance
 
-[P03-T02d](tasks/P03-T02d.md) binds owner password + MFA verification to digest-only session issuance, invalidates the prior owner session after successful proof, and writes success audit atomically. Local non-DB tests and Ruff pass; PostgreSQL CI is pending. **No public login exists.** Rate limits/failure audit, secure cookies/CSRF, authenticated owner step-up and API/realtime authorization still gate exposure.
+[P03-T02d](tasks/P03-T02d.md) binds owner password + MFA verification to digest-only session issuance, invalidates the prior owner session after successful proof, and writes success audit atomically. Local non-DB tests/Ruff and [PostgreSQL CI 39205689122](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39205689122) passed. **No public login exists.** Rate limits/failure audit, secure cookies/CSRF, authenticated owner step-up and API/realtime authorization still gate exposure.
 
 ## Earlier checkpoint — P03-T02c internal owner MFA proof
 
