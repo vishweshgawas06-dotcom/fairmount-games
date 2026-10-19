@@ -1,8 +1,8 @@
 # Next Action
 
-## Current checkpoint — POOL-01 and P05-T01a pure reserve policy (CI pending)
+## Completed checkpoint — POOL-01 and P05-T01a pure reserve policy
 
-The owner approved [POOL-01](decisions/2026-10-19-funded-reserve-solvency.md): fund worst total payouts **or full void refunds** across unsettled rounds after the candidate stake, prospectively reject only an underfunded new bet, never manipulate RNG or default on accepted bets. [P05-T01a](tasks/P05-T01a.md) adds a pure 37-outcome/int-point solvency helper and negative tests. It does **not** accept bets or move points. Local tests/Ruff pass; CI pending. P03 rate limits/failure audit, production-facing auth and P05/P08/P11 ledger/round/acceptance remain next.
+The owner approved [POOL-01](decisions/2026-10-19-funded-reserve-solvency.md): fund worst total payouts **or full void refunds** across unsettled rounds after the candidate stake, prospectively reject only an underfunded new bet, never manipulate RNG or default on accepted bets. [P05-T01a](tasks/P05-T01a.md) adds a pure 37-outcome/int-point solvency helper and negative tests. It does **not** accept bets or move points. Local tests/Ruff and [Python 3.12/PostgreSQL CI 39209862800](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39209862800) passed. P03 rate limits/failure audit, production-facing auth and P05/P08/P11 ledger/round/acceptance remain next.
 
 ## Earlier checkpoint — P03-T02h agent/player internal issuer
 

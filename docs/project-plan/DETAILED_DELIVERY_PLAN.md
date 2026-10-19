@@ -98,7 +98,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 
 ### P05 — Wallet and point ledger
 
-- **P05-T01a (pure policy CI pending 2026-10-19):** [POOL-01 solvency arithmetic](tasks/P05-T01a.md) checks 37 outcome totals/full refunds across unsettled rounds without mutating wallets or outcomes. **Gate:** pure tests and Ruff; no live bet acceptance.
+- **P05-T01a (pure policy complete 2026-10-19; [CI 39209862800](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39209862800)):** [POOL-01 solvency arithmetic](tasks/P05-T01a.md) checks 37 outcome totals/full refunds across unsettled rounds without mutating wallets or outcomes. **Gate:** pure tests and Ruff; no live bet acceptance.
 - **P05-T01:** Define immutable ledger types for explicit owner issuance, paired owner/agent/player transfers, game reserve funding/stakes/payouts/refunds; wallet invariants, gameplay-vs-admin P/L, reference IDs and reconciliation. **Gate:** transfer conservation, owner-only issuance, approved total-return convention and negative-balance/duplicate-entry constraints reviewed; implement approved POOL-01 only under tested atomic reserve accounting, not as an unverified hidden cap.
 - **P05-T02:** Implement atomic, idempotent owner issuance and funded wallet transfers with actor, source, target, reason and audit context; player starts at zero. **Gate:** concurrent transfers cannot double-spend source wallets, create points or partially move an unaffordable request; failure rolls back both sides.
 - **P05-T03:** Reconciliation, correction policy, and backup/restore accounting checks. **Gate:** wallet totals reconcile to ledger in seeded integration scenarios; no silent balance edits.
