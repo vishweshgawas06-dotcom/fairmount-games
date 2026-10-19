@@ -1,8 +1,8 @@
 # Next Action
 
-## Current checkpoint — P03-T02e internal owner step-up (PostgreSQL CI pending)
+## Completed checkpoint — P03-T02e internal owner step-up
 
-[P03-T02e](tasks/P03-T02e.md) adds a DB-time ten-minute MFA recency prerequisite and session-bound owner step-up with rollback-safe factor consumption. Local non-DB tests/Ruff pass; PostgreSQL CI pending. It exposes no route and does not grant an owner action. Next: rate limiting/failure audit, logout/revocation, secure cookies/CSRF and resource/realtime authorization.
+[P03-T02e](tasks/P03-T02e.md) adds a DB-time ten-minute MFA recency prerequisite and session-bound owner step-up with rollback-safe factor consumption. Local non-DB tests/Ruff and [PostgreSQL CI 39207020135](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39207020135) passed. It exposes no route and does not grant an owner action. Next: rate limiting/failure audit, logout/revocation, secure cookies/CSRF and resource/realtime authorization.
 
 ## Earlier checkpoint — P03-T02d internal owner session issuance
 
