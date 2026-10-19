@@ -1,6 +1,10 @@
 # Next Action
 
-## Completed checkpoint — P03-T02b internal session validation
+## Current checkpoint — P03-T02c internal owner MFA proof (PostgreSQL CI pending)
+
+[P03-T02c](tasks/P03-T02c.md) adds transaction-scoped owner TOTP replay protection, single-use recovery-code consumption, and an append-only success event. Local non-DB tests/Ruff pass; PostgreSQL migration and rollback tests await CI. **It issues no session or access grant**. Next are bound password+MFA login, rate limits/failure accounting, secure cookies/CSRF and API/realtime authorization.
+
+## Earlier checkpoint — P03-T02b internal session validation
 
 [P03-T02b](tasks/P03-T02b.md) resolves a future trusted session token against locked account/session rows and PostgreSQL time; it slides idle expiry or revokes invalid state, without issuing tokens or exposing routes. Local non-DB tests/Ruff and [PostgreSQL CI 39204678377](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39204678377) passed. Its returned data does not authorize a route. Next: secure issuance after mandatory owner MFA, rate limits, cookies/CSRF and realtime revocation.
 
