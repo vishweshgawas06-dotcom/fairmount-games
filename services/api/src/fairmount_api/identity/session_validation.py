@@ -1,7 +1,7 @@
 """Internal session resolution; never call this as a substitute for route authorization.
 
-No session issuer or HTTP cookie boundary exists yet. The caller must finish its
-resource-level authorization in the same transaction before acting on this result.
+An internal owner issuer exists, but no public login or HTTP cookie boundary exists.
+The caller must finish resource-level authorization in the same transaction.
 """
 
 from __future__ import annotations
