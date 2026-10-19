@@ -1,8 +1,8 @@
 # Project Status
 
-**Current phase:** P03 identity guards/crypto policy complete; credential-state DB slice complete; audit DB slice complete; pure owner MFA helpers complete; encryption primitive complete; MFA storage complete; restricted key loader complete; internal owner-bootstrap transactions complete; internal activation complete; MFA enrollment transaction in verification
+**Current phase:** P03 identity guards/crypto policy complete; credential-state DB slice complete; audit DB slice complete; pure owner MFA helpers complete; encryption primitive complete; MFA storage complete; restricted key loader complete; internal owner-bootstrap transactions complete; internal activation complete; MFA enrollment transaction complete
 
-**Current task:** P03-T01k owner-bound TOTP encryption primitive complete; MFA storage complete; restricted key loader complete; internal owner-bootstrap transactions complete; internal activation complete; MFA enrollment transaction in verification; key loading/MFA persistence next
+**Current task:** P03-T01k owner-bound TOTP encryption primitive complete; MFA storage complete; restricted key loader complete; internal owner-bootstrap transactions complete; internal activation complete; MFA enrollment transaction complete; key loading/MFA persistence next
 
 **Implementation status:** FastAPI liveness, account/assignment schema, scoped identity guards, pure crypto helpers and credential-state/audit schemas; no registration, login, MFA, wallet or betting engine
 
