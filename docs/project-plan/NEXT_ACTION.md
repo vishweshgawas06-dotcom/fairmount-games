@@ -1,8 +1,8 @@
 # Next Action
 
-## Current checkpoint — P03-T02g account-change revocation (PostgreSQL CI pending)
+## Completed checkpoint — P03-T02g account-change revocation
 
-[P03-T02g](tasks/P03-T02g.md) adds transactional PostgreSQL backstops for D-03 session revocation on disablement, password-hash change and encrypted owner MFA factor replacement. Local non-DB tests/Ruff pass; database trigger tests await CI. No public account mutation or login route exists. A future service still owes actor/scope/reason audit, MFA recovery-code rotation invalidation, rate limits, cookies/CSRF and realtime stale-session checks.
+[P03-T02g](tasks/P03-T02g.md) adds transactional PostgreSQL backstops for D-03 session revocation on disablement, password-hash change and encrypted owner MFA factor replacement. Local non-DB tests/Ruff and [PostgreSQL CI 39208206922](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39208206922) passed after fixing a superseded logout regression assertion. No public account mutation or login route exists. A future service still owes actor/scope/reason audit, MFA recovery-code rotation invalidation, rate limits, cookies/CSRF and realtime stale-session checks.
 
 ## Earlier checkpoint — P03-T02f internal logout
 
