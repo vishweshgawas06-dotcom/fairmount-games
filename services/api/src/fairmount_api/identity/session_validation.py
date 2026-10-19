@@ -32,6 +32,13 @@ class VerifiedSession:
     mfa_verified_at: datetime | None
 
 
+def session_token_digest(raw_token: str) -> str | None:
+    """Digest only a well-shaped generated bearer token; never persist the raw token."""
+    if not isinstance(raw_token, str) or _TOKEN_FORMAT.fullmatch(raw_token) is None:
+        return None
+    return hashlib.sha256(raw_token.encode("ascii")).hexdigest()
+
+
 def resolve_session(connection: Connection, raw_token: str) -> VerifiedSession | None:
     """Lock account then session; reject expired/revoked/disabled and slide idle expiry.
 
@@ -39,9 +46,9 @@ def resolve_session(connection: Connection, raw_token: str) -> VerifiedSession |
     row and account row remain locked until caller commits/rolls back. There is no
     HTTP authentication endpoint and no authorization policy in this module.
     """
-    if not isinstance(raw_token, str) or _TOKEN_FORMAT.fullmatch(raw_token) is None:
+    digest = session_token_digest(raw_token)
+    if digest is None:
         return None
-    digest = hashlib.sha256(raw_token.encode("ascii")).hexdigest()
     account_id = connection.scalar(
         select(AccountSession.account_id).where(AccountSession.token_digest == digest)
     )

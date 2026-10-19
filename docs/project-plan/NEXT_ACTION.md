@@ -1,6 +1,10 @@
 # Next Action
 
-## Completed checkpoint — P03-T02e internal owner step-up
+## Current checkpoint — P03-T02f internal logout (PostgreSQL CI pending)
+
+[P03-T02f](tasks/P03-T02f.md) implements token-presented session revocation and append-only, token-free audit. Local non-DB tests/Ruff pass; PostgreSQL tests await CI. There is **no HTTP logout route**; cookie clearing/CSRF, proactive revocation on account changes, rate limits/failure audit and realtime invalidation remain gates.
+
+## Earlier checkpoint — P03-T02e internal owner step-up
 
 [P03-T02e](tasks/P03-T02e.md) adds a DB-time ten-minute MFA recency prerequisite and session-bound owner step-up with rollback-safe factor consumption. Local non-DB tests/Ruff and [PostgreSQL CI 39207020135](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39207020135) passed. It exposes no route and does not grant an owner action. Next: rate limiting/failure audit, logout/revocation, secure cookies/CSRF and resource/realtime authorization.
 
