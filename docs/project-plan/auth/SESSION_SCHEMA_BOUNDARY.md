@@ -1,6 +1,6 @@
 # P03-T02a — Session schema boundary
 
-**Status:** PostgreSQL-only slice in verification, 2026-10-19. No login, cookie, session issuance or HTTP/WebSocket authorization route exists.
+**Status:** PostgreSQL-only slice verified in [CI 39204471202](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39204471202), 2026-10-19. No login, cookie, session issuance or HTTP/WebSocket authorization route exists.
 
 `account_sessions` stores an opaque session UUID, account/role composite FK, a SHA-256 digest of a future 256-bit random bearer token (never the raw token), issued/last-seen timestamps, role-specific idle/absolute deadlines, nullable revocation time and owner MFA verification time. PostgreSQL constraints enforce D-03 owner 15-minute idle/8-hour absolute, agent 30-minute/12-hour and player 30-minute/24-hour expiry; the idle deadline cannot exceed the absolute deadline. Owner rows require MFA evidence; agent/player rows cannot claim owner MFA. A partial unique index permits **at most one unrevoked session per account**, even if its deadline is already past, so future login must revoke the old row first in the same transaction. Token digests are globally unique.
 
