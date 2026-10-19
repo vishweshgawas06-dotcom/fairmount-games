@@ -91,7 +91,7 @@ class SessionLogoutTests(unittest.TestCase):
         self.assertEqual(self.logout_events(), 0)
         self.assertIsNotNone(resolve_session(self.connection, self.issued.token))
 
-    def test_expired_or_disabled_session_can_still_be_logged_out(self) -> None:
+    def test_expired_session_can_still_be_logged_out(self) -> None:
         self.connection.execute(
             update(AccountSession.__table__)
             .where(AccountSession.id == self.issued.session_id)
@@ -103,11 +103,16 @@ class SessionLogoutTests(unittest.TestCase):
                 absolute_expires_at=func.now() + text("interval '7 hours'"),
             )
         )
+        self.assertTrue(revoke_presented_session(self.connection, self.issued.token))
+        self.assertEqual(self.logout_events(), 1)
+        self.assertIsNone(resolve_session(self.connection, self.issued.token))
+
+    def test_disabled_session_is_already_revoked_by_database(self) -> None:
         self.connection.execute(
             update(Account.__table__).where(Account.id == self.owner_id).values(status="DISABLED")
         )
-        self.assertTrue(revoke_presented_session(self.connection, self.issued.token))
-        self.assertEqual(self.logout_events(), 1)
+        self.assertFalse(revoke_presented_session(self.connection, self.issued.token))
+        self.assertEqual(self.logout_events(), 0)
         self.assertIsNone(resolve_session(self.connection, self.issued.token))
 
 
