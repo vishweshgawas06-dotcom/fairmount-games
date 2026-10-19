@@ -2,7 +2,7 @@
 
 **Current phase:** P03 identity/credential/MFA storage and local owner setup complete; P03-T02a session-state schema passed PostgreSQL CI; P03-T02b internal validation passed PostgreSQL CI
 
-**Current task:** P03-T02b internal token-digest/DB-clock account/session validation; actual issuance, login MFA, rate limits, cookies, CSRF, API/realtime authorization still ahead
+**Current task:** P03-T02a/b session schema and internal DB-time validator complete; secure session issuance after login/MFA, rate limits, cookies, CSRF, API/realtime authorization still ahead
 
 **Implementation status:** FastAPI liveness, account/assignment/credential/audit/MFA/session-state schemas, scoped identity guards, pure crypto helpers, internal owner setup transactions, development-only CLI and internal session validator; no registration, login session issuance, authenticated MFA route, wallet or betting engine
 
