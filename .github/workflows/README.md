@@ -1,3 +1,3 @@
 # CI Workflows
 
-CI configuration will be added in P01 after the repository's actual application/package layout and test commands are established. Do not create a green placeholder workflow that gives a false impression of tested code.
+`python-tests.yml` runs on pull requests and pushes to `main`. It installs the project on Python 3.12, starts the [local PostgreSQL Compose service](../../infrastructure/README.md) in the GitHub runner, checks an isolated test-database connection, verifies P02-T02a's account-schema migration upgrade/downgrade/re-upgrade and PostgreSQL integration tests, then runs the remaining unittest suite and Ruff and removes the CI test volume. A workflow definition alone does not prove the checks pass: record the actual GitHub run evidence in the active task before marking it complete. Frontend, wallet, roulette, and concurrency tests are not yet implemented.

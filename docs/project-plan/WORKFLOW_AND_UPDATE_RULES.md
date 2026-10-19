@@ -2,13 +2,13 @@
 
 ## For every task
 
-1. Read the task and relevant locked requirements.
-2. Identify dependencies and unresolved decisions.
-3. Make the smallest change that satisfies the task.
-4. Run relevant automated checks; report commands and outcomes accurately.
-5. Review security, authorization, error handling, and regressions.
-6. Update the task, PROJECT_STATUS.md, NEXT_ACTION.md, and related docs.
-7. Commit with a clear, scoped message.
+1. Read the approved delivery plan, task brief, and relevant locked requirements. The owner granted permission to implement all phases in bounded, tested steps; do not ask for per-task permission. Ask the owner before making a genuinely unresolved product or security decision, and never implement a blocked dependent flow by guessing.
+2. Identify dependencies and unresolved decisions; do not guess at them.
+3. Make the smallest change that satisfies the task. Keep code readable, reviewable, and consistently formatted; add validation and appropriate error handling, with user-facing failure states where relevant. Aim for correctness, but never claim code is error-free without evidence.
+4. Run applicable formatting, lint, type checks, unit, integration, security, and UI/E2E tests; debug failures before advancing. Report the exact commands, environment, results, and anything not verified.
+5. Review security, authorization, accounting, error handling, accessibility, and regressions relevant to the change. For UI work, use an original, coherent design with accessible colors, typography, icons/SVGs, responsive layouts, and licensed assets; do not assume visual polish substitutes for usability.
+6. After each completed task/stage, update its task record, PROJECT_STATUS.md, NEXT_ACTION.md, and related Markdown documentation with accurate status and evidence. Do not mark a stage complete until its acceptance gate passes or an approved exception is recorded.
+7. Commit with a clear, scoped message and push the completed checkpoint to the authorized GitHub branch after reviewing the diff. Record push failures honestly and do not claim GitHub has a change until the push succeeds. Commit/push additional checkpoints when appropriate; never commit secrets or unreviewed generated artifacts.
 
 ## Never
 

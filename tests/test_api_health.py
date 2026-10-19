@@ -2,9 +2,8 @@
 
 import unittest
 
-from fastapi.testclient import TestClient
-
 from fairmount_api.main import app
+from fastapi.testclient import TestClient
 
 
 class ApiHealthTests(unittest.TestCase):

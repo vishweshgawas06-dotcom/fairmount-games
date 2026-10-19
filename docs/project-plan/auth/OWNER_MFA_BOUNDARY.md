@@ -1,0 +1,9 @@
+# Owner MFA boundary (P03-T01j)
+
+**Status:** Pure RFC 6238/recovery-code helpers, not a deployable MFA service. D-03 is the owner-approved baseline; D-14 fixes the public owner login label.
+
+A future owner-enrollment transaction must require proof of the pending owner activation credential or an authorized post-activation step-up, generate and encrypt a fresh TOTP seed under an out-of-database key, confirm a live code, atomically store the last accepted time-step, generate ten 80-bit offline recovery codes, store only their digests, display the seed/codes once through a protected channel, and audit completion. Management access must remain blocked until enrollment is complete. Decide how to handle partial delivery, recovery-code print failures, clock drift, key backup/rotation and disabled owner state before exposing the flow. Repeated enrollment or secret reveal must never bypass an activated factor.
+
+At login/step-up, verify password/account/session state and either a TOTP code or one unused recovery code. Use row locking/atomic updates to reject reused TOTP steps (including the allowed ±30s drift) and concurrent reuse of a recovery code; rate-limit and audit failed/successful attempts without logging codes. D-03 requires all affected sessions revoked after password change, MFA recovery or reset. All-factors-lost owner recovery is **not** self-service and remains unapproved. The pure helpers cannot grant access, encrypt a seed, enforce a lockout, consume a code or create a session.
+
+**Key-management direction selected:** [D-15](../decisions/2026-10-16-owner-mfa-key-custody.md) requires an owner-controlled deployment secret outside DB/Git with an offline backup and versioning. P03-T01k provides an owner-bound encryption helper; no real key, loader, encrypted seed row, enrollment or rotation runbook exists. Do not hard-code a fallback key.

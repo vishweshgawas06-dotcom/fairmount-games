@@ -4,6 +4,8 @@
 
 Work in small, verifiable tasks. Each task must identify its scope, acceptance criteria, tests/evidence, and documentation updates. Do not begin implementation when a blocking product decision is unresolved.
 
+For task-sized work, dependencies, decision checkpoints, and verification gates across all phases, see [Detailed delivery plan](DETAILED_DELIVERY_PLAN.md). The owner approved the delivery sequence on 2026-10-15; this is not blanket approval to implement individual tasks. Approved product rules remain in [Locked Requirements](LOCKED_REQUIREMENTS.md) and the owner-approved roulette specifications.
+
 ## Phases
 
 | Phase | Focus | Gate |
@@ -41,7 +43,7 @@ Work in small, verifiable tasks. Each task must identify its scope, acceptance c
 
 - European roulette: one zero, numbers 0–36.
 - One server-generated result per global round, shared by active players.
-- Betting is open from second 0 through second 49; betting closes at second 50. Seconds 50–59 are the result/settlement phase. Exact animation and settlement sequencing remains a decision to lock.
+- Betting is open during seconds 0–44; show the final-bet call at second 45 while bets remain open; server closes/freezes accepted bets and begins wheel/ball animation at second 50; reveal the persisted result and settle at second 60. See the owner-approved payout/settlement specification. Implementation-level clock and recovery details still need design review.
 - Chip denominations: 5, 10, 50, 100, 500 virtual points.
 - Outcome generation must not depend on bets or player balances.
 - Gameplay P/L is separate from administrative point adjustments.

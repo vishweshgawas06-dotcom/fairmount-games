@@ -18,7 +18,29 @@ jobs:
           cache: pip
       - name: Install project and development dependencies
         run: python -m pip install -e ".[dev]"
-      - name: Run unit tests
+      - name: Start local PostgreSQL test environment
+        run: |
+          cp .env.example .env
+          docker compose --env-file .env -f infrastructure/compose.yaml up -d --wait
+      - name: Check isolated PostgreSQL test database
+        run: python infrastructure/check_postgres.py
+      - name: Verify migration round-trip, legacy mismatch and metadata
+        run: |
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade head
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic downgrade base
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade 20261016_02
+          FAIRMOUNT_DB_NAME=fairmount_test python -m infrastructure.check_identity_role_migration
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade head
+          FAIRMOUNT_DB_NAME=fairmount_test python -m alembic check
+      - name: Run unit and PostgreSQL integration tests
+        env:
+          FAIRMOUNT_RUN_DB_TESTS: "1"
         run: python -m unittest discover -s tests -v
       - name: Run Ruff
         run: ruff check .
+      - name: Stop local PostgreSQL and remove CI test volume
+        if: always()
+        run: |
+          if [ -f .env ]; then
+            docker compose --env-file .env -f infrastructure/compose.yaml down --volumes --remove-orphans
+          fi

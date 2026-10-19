@@ -8,7 +8,7 @@
 
 ## Required loop
 
-1. Give the coding assistant one scoped task and its acceptance criteria.
+1. Work on one scoped task and its acceptance criteria at a time. Broad owner permission to proceed does not waive scope, security gates or unresolved-decision review.
 2. Ask it to inspect existing files before editing.
 3. Require a short change plan before multi-file work.
 4. Review the diff for unintended edits and requirements drift.
