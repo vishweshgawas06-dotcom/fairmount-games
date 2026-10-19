@@ -1,6 +1,6 @@
 # D-10 — Account provisioning, wallet transfers and game reserve
 
-**Status:** Owner-approved product flow on 2026-10-15; game-reserve capacity formula, sizing and operations remain proposed/unapproved. No implementation authorized by this decision.
+**Status:** Owner-approved product flow on 2026-10-15; the prospective reserve solvency/refund admission rule was separately approved as [POOL-01](2026-10-19-funded-reserve-solvency.md) on 2026-10-19. No live wallet/betting implementation is authorized by this decision alone.
 
 ## Context and alternatives
 
@@ -29,19 +29,19 @@ Owner wallet 10,000 → transfer 3,000 to agent B: owner 7,000; B 3,000. B trans
 
 ## Game reserve: approved direction, details still open
 
-Owner selected an **owner-funded game/house point pool** to pay roulette wins without manipulating results or withholding accepted winnings. Conceptually: fund pool by an audited owner-wallet transfer, move accepted stakes into it, pay winning total returns from it, and return voided stakes from it. Before accepting a new bet, assess whether the pool can honor **every possible** outcome of all accepted bets, including the proposed bet and all winning bet types across active players; otherwise reject the new bet under a disclosed prospective rule. This is a *design candidate*, not a final numerical cap, algorithm or existing product constraint. The exact coverage calculation, reserve timing, replenishment policy, response to insufficiency, lock strategy and owner approval of any global acceptance limit are **open**. Never change an outcome based on exposure, revoke an accepted bet, withhold a valid payout or silently issue points to hide a deficit.
+Owner selected an **owner-funded game/house point pool** to pay roulette wins without manipulating results or withholding accepted winnings. The separately approved [POOL-01](2026-10-19-funded-reserve-solvency.md) rule requires prospective coverage of the larger of every outcome's total payout or full void refunds for each unsettled round, summed across rounds, after the candidate stake moves into the reserve. Reject a candidate entirely for insufficient coverage; do not alter prior accepted bets. Exact transactional locking, projection integrity, incident response and operational funding runbooks still require design and tests. Never change an outcome based on exposure, revoke an accepted bet, withhold a valid payout or silently issue points to hide a deficit.
 
 ## Security and accounting implications
 
 - Hash passwords with Argon2id; restrict raw credentials to one-time delivery and secure reset flows. Privileged actions require owner MFA before production, session checks, per-resource authorization, rate limits, reason/audit and replay-safe idempotency. Design temporary agent/player credentials and forced changes without storing plaintext or exposing hashes.
 - Ledger transfers should record paired debit/credit effects with one transfer ID and preserve global conservation apart from explicit issuance. Each wallet projection reconciles to its own immutable ledger; no manual balance edits. Make concurrent transfer and agent reassignment tests mandatory.
 - Do not use mobile/WhatsApp requests as a substitute for authenticated operator authority. Capture minimal request/consent context in the audit without copying full chats or personal details into general logs.
-- The game pool and worst-case exposure check require atomic accounting alongside bet acceptance and cutoff; PostgreSQL is the source of truth. A global reserve/limit may change bet-acceptance behavior and therefore needs a separate explicit owner decision before implementation.
+- The game pool and worst-case exposure check require atomic accounting alongside bet acceptance and cutoff; PostgreSQL is the source of truth. [POOL-01](2026-10-19-funded-reserve-solvency.md) now approves the global prospective admission restriction, including full void-refund coverage; this does not waive the concurrency, idempotency, reconciliation and disclosure gates.
 
 ## Follow-up gates
 
-- P02-T01: update conceptual wallet/account/session/agent-assignment and game-pool sketch; keep exact reserve policy unapproved. Owner review of entire conceptual schema is still pending.
+- P02-T01 conceptual wallet/account/session/assignment baseline was approved on 2026-10-16. Update its reserve sketch under [POOL-01](2026-10-19-funded-reserve-solvency.md); the physical ledger/locking design and tests remain pending.
 - P03/P04: specify unique IDs/usernames, secure invitation/reset process, MFA (D-03), single-player session, and owner/agent scope tests. Owner-managed players must not appear in agent views.
 - P05: design paired transfers, issuance journal, game pool, cross-wallet reconciliation and source-of-points accounting. Test insufficient full-request rejection and D-01 frozen-wallet exceptions on PostgreSQL.
-- P08/P11: approve and test the pre-bet reserve coverage rule under multi-player concurrency and all 37 potential results **before** coding a global acceptance restriction. Existing 2,000 per-player/selection caps remain unchanged unless separately approved.
+- P08/P11: implement and test the [approved POOL-01](2026-10-19-funded-reserve-solvency.md) admission rule under multi-player concurrency, all 37 potential results and full void-refund exposure **before** exposing bet acceptance. Existing 2,000 per-player/selection caps remain unchanged unless separately approved.
 - P17/P18: measure reserve checks and settle scale, define alerts/funding runbooks, disclose game rules, and review virtual-point/privacy/legal obligations. No claim of financial/legal certification.

@@ -1,6 +1,10 @@
 # Next Action
 
-## Completed checkpoint — P03-T02h agent/player internal issuer
+## Current checkpoint — POOL-01 and P05-T01a pure reserve policy (CI pending)
+
+The owner approved [POOL-01](decisions/2026-10-19-funded-reserve-solvency.md): fund worst total payouts **or full void refunds** across unsettled rounds after the candidate stake, prospectively reject only an underfunded new bet, never manipulate RNG or default on accepted bets. [P05-T01a](tasks/P05-T01a.md) adds a pure 37-outcome/int-point solvency helper and negative tests. It does **not** accept bets or move points. Local tests/Ruff pass; CI pending. P03 rate limits/failure audit, production-facing auth and P05/P08/P11 ledger/round/acceptance remain next.
+
+## Earlier checkpoint — P03-T02h agent/player internal issuer
 
 [P03-T02h](tasks/P03-T02h.md) adds role-bound, password-checked internal AGENT/PLAYER session issuance for already-activated fixed IDs, with D-03 deadlines, one-session replacement and success audit. Local non-DB suite/Ruff and [PostgreSQL CI 39208494711](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39208494711) passed. There is **no public login** or provisioning/activation endpoint. Rate limits/failure audit, cookies/CSRF, resource/realtime authorization and approved recovery flows remain gates.
 
@@ -53,7 +57,7 @@ Docker is unavailable here; real PostgreSQL evidence comes from GitHub CI. PR #1
 
 - **D-02 / D-11:** Retention, deletion/backups, username/Agent-ID reuse after anonymization.
 - **D-03:** Manual owner recovery if both TOTP and all offline codes are lost; no self-service bypass.
-- **POOL-01:** Funded reserve coverage/global bet acceptance rule; RNG remains independent.
+- **POOL-01 approved:** Funded reserve prospective coverage of worst payout/full void refunds; pure policy implemented, atomic live acceptance still unimplemented. RNG remains independent.
 - **D-06 / OPS-01 / D-04:** Round recovery, atomic settlement under load, measurable operational targets.
 
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) and the [delivery plan](DETAILED_DELIVERY_PLAN.md). Planning approval is not production-readiness evidence.

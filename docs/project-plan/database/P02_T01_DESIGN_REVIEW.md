@@ -2,6 +2,8 @@
 
 **Status:** Technical self-review completed; owner approved P02-T01 conceptual design baseline on 2026-10-16. This is not an independent review, physical schema approval, implementation permission or proof of PostgreSQL behavior.
 
+**Later update (2026-10-19):** The owner approved [POOL-01](../decisions/2026-10-19-funded-reserve-solvency.md) after this historical review: funded worst total payout **or full void refund** coverage for each unsettled round, summed across rounds. R-04's product-decision blocker is now resolved, but its bookkeeping, locking, disclosure and PostgreSQL concurrency tests remain open. The finding table below preserves the original 2026-10-16 review state.
+
 **Scope reviewed:** [Conceptual schema and transactions](CONCEPTUAL_SCHEMA_AND_TRANSACTIONS.md), [D-01](../decisions/2026-10-15-account-disable-and-reassignment.md), [D-02](../decisions/2026-10-15-privacy-deletion-and-retention.md), [D-10](../decisions/2026-10-15-account-provisioning-and-point-flow.md), the approved roulette specifications, and [P02-T01 task gates](../tasks/P02-T01.md).
 
 ## Findings and disposition

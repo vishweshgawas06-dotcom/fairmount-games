@@ -2,7 +2,7 @@
 
 ## For every task
 
-1. Read the approved delivery plan, task brief, and relevant locked requirements. Ask the owner for permission before starting an implementation task or making an unresolved product decision.
+1. Read the approved delivery plan, task brief, and relevant locked requirements. The owner granted permission to implement all phases in bounded, tested steps; do not ask for per-task permission. Ask the owner before making a genuinely unresolved product or security decision, and never implement a blocked dependent flow by guessing.
 2. Identify dependencies and unresolved decisions; do not guess at them.
 3. Make the smallest change that satisfies the task. Keep code readable, reviewable, and consistently formatted; add validation and appropriate error handling, with user-facing failure states where relevant. Aim for correctness, but never claim code is error-free without evidence.
 4. Run applicable formatting, lint, type checks, unit, integration, security, and UI/E2E tests; debug failures before advancing. Report the exact commands, environment, results, and anything not verified.
