@@ -1,6 +1,10 @@
 # Next Action
 
-## Completed checkpoint — P03-T01q local owner setup CLI
+## Current checkpoint — P03-T02a session schema (PostgreSQL CI pending)
+
+[P03-T02a](tasks/P03-T02a.md) adds a constrained PostgreSQL session table for the approved D-03 expiry policy, one unrevoked session per account, and owner MFA evidence; [the session boundary](auth/SESSION_SCHEMA_BOUNDARY.md) explicitly forbids interpreting this as login or authorization. Local non-DB tests and Ruff passed; PostgreSQL migration/constraint verification awaits CI. Continue with token issuance and validation/revocation services, rate limiting and mandatory owner MFA before exposing login. This is not a production authentication system.
+
+## Earlier checkpoint — P03-T01q local owner setup CLI
 
 The owner granted permission to proceed through the plan in small tested/debugged steps and to ask when product/security decisions remain open. [P03-T01h](tasks/P03-T01h.md) adds a PostgreSQL pending/active credential-state table, structural checks, a one-way active-state guard, and DB tests. The [activation boundary](auth/ACTIVATION_STATE_DESIGN.md) states what the schema **cannot** guarantee. Local Ruff/non-DB tests and [CI run 38866772047](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38866772047) passed. There is no activation, account-creation, owner bootstrap, login, MFA or wallet endpoint.
 

@@ -1,7 +1,8 @@
 """Account, private identity, assignment and canonical login-ID schema.
 
 These models do not authenticate users, authorize transfers, or resolve identifier reuse
-and retention after eligible anonymization. Credential rows alone never grant access.
+and retention after eligible anonymization. Credential, MFA and session rows alone never
+grant access.
 """
 
 from __future__ import annotations
@@ -198,6 +199,66 @@ class OwnerRecoveryCode(Base):
             name="ck_owner_recovery_code_structure",
         ),
         UniqueConstraint("owner_account_id", "digest", name="uq_owner_recovery_code_digest"),
+    )
+
+
+SESSION_LIFETIME_CHECK = """
+    last_seen_at >= issued_at AND last_seen_at <= absolute_expires_at
+    AND (revoked_at IS NULL OR revoked_at >= issued_at)
+    AND (mfa_verified_at IS NULL OR
+         (mfa_verified_at >= issued_at AND mfa_verified_at <= last_seen_at))
+    AND (
+        (role_at_issue = 'OWNER'
+         AND absolute_expires_at = issued_at + INTERVAL '8 hours'
+         AND idle_expires_at = LEAST(last_seen_at + INTERVAL '15 minutes', absolute_expires_at)
+         AND mfa_verified_at IS NOT NULL)
+        OR (role_at_issue = 'AGENT'
+            AND absolute_expires_at = issued_at + INTERVAL '12 hours'
+            AND idle_expires_at = LEAST(last_seen_at + INTERVAL '30 minutes', absolute_expires_at)
+            AND mfa_verified_at IS NULL)
+        OR (role_at_issue = 'PLAYER'
+            AND absolute_expires_at = issued_at + INTERVAL '24 hours'
+            AND idle_expires_at = LEAST(last_seen_at + INTERVAL '30 minutes', absolute_expires_at)
+            AND mfa_verified_at IS NULL)
+    )
+"""
+
+
+class AccountSession(Base):
+    __tablename__ = "account_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    role_at_issue: Mapped[str] = mapped_column(String(16), nullable=False)
+    token_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    idle_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    absolute_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    mfa_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["account_id", "role_at_issue"],
+            ["accounts.id", "accounts.role"],
+            name="fk_account_sessions_role",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "token_digest COLLATE \"C\" ~ '^[0-9a-f]{64}$'",
+            name="ck_account_sessions_token_digest",
+        ),
+        CheckConstraint(SESSION_LIFETIME_CHECK, name="ck_account_sessions_lifetime"),
+        UniqueConstraint("token_digest", name="uq_account_sessions_token_digest"),
+        Index(
+            "uq_account_sessions_one_active",
+            "account_id",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
     )
 
 

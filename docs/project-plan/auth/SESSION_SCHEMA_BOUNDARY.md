@@ -1,0 +1,9 @@
+# P03-T02a — Session schema boundary
+
+**Status:** PostgreSQL-only slice in verification, 2026-10-19. No login, cookie, session issuance or HTTP/WebSocket authorization route exists.
+
+`account_sessions` stores an opaque session UUID, account/role composite FK, a SHA-256 digest of a future 256-bit random bearer token (never the raw token), issued/last-seen timestamps, role-specific idle/absolute deadlines, nullable revocation time and owner MFA verification time. PostgreSQL constraints enforce D-03 owner 15-minute idle/8-hour absolute, agent 30-minute/12-hour and player 30-minute/24-hour expiry; the idle deadline cannot exceed the absolute deadline. Owner rows require MFA evidence; agent/player rows cannot claim owner MFA. A partial unique index permits **at most one unrevoked session per account**, even if its deadline is already past, so future login must revoke the old row first in the same transaction. Token digests are globally unique.
+
+**Crucial limitations:** SQL cannot prove the MFA timestamp is genuine, that the bearer token was presented, or that an account is enabled. It does not compare expiry to a live clock or revoke on disablement/password change/MFA recovery by itself. Future services must generate tokens cryptographically, hash and set secure HttpOnly/SameSite cookies, validate sessions against PostgreSQL time on every HTTP and realtime request, enforce both deadlines and per-resource authorization, touch idle expiry atomically, revoke old sessions at new login, and revoke all affected sessions on D-03 events. Sensitive owner actions require MFA within the previous ten minutes—not merely a non-null `mfa_verified_at`. CSRF protection, rate limits, stale WebSocket invalidation, audit and cookie security need independent negative tests before routes exist.
+
+The DB constraints and migration round-trip are tests of storage shape only, not production authentication readiness. No gameplay, wallet or RNG logic is modified.
