@@ -1,6 +1,10 @@
 # Next Action
 
-## Completed checkpoint — P03-T02a session schema
+## Current checkpoint — P03-T02b internal session validation (PostgreSQL CI pending)
+
+[P03-T02b](tasks/P03-T02b.md) resolves a future trusted session token against locked account/session rows and PostgreSQL time; it slides idle expiry or revokes invalid state, without issuing tokens or exposing routes. Local non-DB tests/Ruff passed; PostgreSQL checks await CI. Its returned data does not authorize a route. Rate limits, actual login/MFA proof, issuer, cookies/CSRF and realtime revocation remain required.
+
+## Earlier checkpoint — P03-T02a session schema
 
 [P03-T02a](tasks/P03-T02a.md) adds a constrained PostgreSQL session table for the approved D-03 expiry policy, one unrevoked session per account, and owner MFA evidence; [the session boundary](auth/SESSION_SCHEMA_BOUNDARY.md) explicitly forbids interpreting this as login or authorization. Local non-DB tests/Ruff and [PostgreSQL CI 39204471202](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39204471202) passed, including migration round-trip/metadata. Continue with token issuance and validation/revocation services, rate limiting and mandatory owner MFA before exposing login. This is not a production authentication system.
 
