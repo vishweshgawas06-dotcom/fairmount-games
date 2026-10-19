@@ -1,8 +1,8 @@
 # Next Action
 
-## Current checkpoint — P03-T02h agent/player internal issuer (PostgreSQL CI pending)
+## Completed checkpoint — P03-T02h agent/player internal issuer
 
-[P03-T02h](tasks/P03-T02h.md) adds role-bound, password-checked internal AGENT/PLAYER session issuance for already-activated fixed IDs, with D-03 deadlines, one-session replacement and success audit. Local non-DB suite/Ruff passes; PostgreSQL verification awaits CI. There is **no public login** or provisioning/activation endpoint. Rate limits/failure audit, cookies/CSRF, resource/realtime authorization and approved recovery flows remain gates.
+[P03-T02h](tasks/P03-T02h.md) adds role-bound, password-checked internal AGENT/PLAYER session issuance for already-activated fixed IDs, with D-03 deadlines, one-session replacement and success audit. Local non-DB suite/Ruff and [PostgreSQL CI 39208494711](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39208494711) passed. There is **no public login** or provisioning/activation endpoint. Rate limits/failure audit, cookies/CSRF, resource/realtime authorization and approved recovery flows remain gates.
 
 ## Earlier checkpoint — P03-T02g account-change revocation
 
