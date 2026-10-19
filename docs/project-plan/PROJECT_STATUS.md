@@ -1,8 +1,8 @@
 # Project Status
 
-**Current phase:** P03 identity guards/crypto policy complete; credential-state DB slice complete; audit DB slice complete; pure owner MFA helpers complete; encryption primitive complete; MFA storage complete; restricted key loader complete; internal owner-bootstrap transactions complete; internal activation complete; MFA enrollment transaction complete
+**Current phase:** P03 identity guards/crypto policy complete; credential-state DB slice complete; audit DB slice complete; pure owner MFA helpers complete; encryption primitive complete; MFA storage complete; restricted key loader complete; internal owner-bootstrap transactions complete; internal activation complete; MFA enrollment transaction complete; local owner setup CLI in verification
 
-**Current task:** P03-T01k owner-bound TOTP encryption primitive complete; MFA storage complete; restricted key loader complete; internal owner-bootstrap transactions complete; internal activation complete; MFA enrollment transaction complete; key loading/MFA persistence next
+**Current task:** P03-T01k owner-bound TOTP encryption primitive complete; MFA storage complete; restricted key loader complete; internal owner-bootstrap transactions complete; internal activation complete; MFA enrollment transaction complete; local owner setup CLI in verification; key loading/MFA persistence next
 
 **Implementation status:** FastAPI liveness, account/assignment schema, scoped identity guards, pure crypto helpers and credential-state/audit schemas; no registration, login, MFA, wallet or betting engine
 
@@ -44,6 +44,7 @@
 - P03-T01a: owner approved the design contract. P03-T01b helpers/schema/DB tests passed PostgreSQL CI. The owner subsequently authorized continued staged implementation. [P03-T01c](tasks/P03-T01c.md) role binding passed [CI run 38863934464](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38863934464). Provisioning, activation/password flows and auth security remain future small steps requiring their own test gates and unresolved decisions.
 - P02-T02a: [CI run 38859943741](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38859943741) passed migration round-trip, metadata parity, account-schema PostgreSQL integration tests, existing tests and Ruff; task complete for its narrow slice. D-02 login/mobile reuse and D-03 auth/MFA remain unresolved by nullable identity fields; no API authorization exists.
 - P03-T01l [owner MFA storage boundary](tasks/P03-T01l.md) provides owner-bound encrypted seed fields and hashed recovery-code rows only; [CI run 38868491900](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38868491900) passed. Owner confirmed ten codes; no enrollment or code consumption service exists.
+- P03-T01q [local owner setup CLI](tasks/P03-T01q.md) requires owner-controlled TTY and commits before showing any one-time secret; CI pending. It is not a production adapter or login route.
 - P03-T01p [internal owner MFA enrollment](tasks/P03-T01p.md) encrypts/stores unconfirmed seed and atomically confirms with ten hashed recovery codes/audit; CI pending, no route/session.
 - P03-T01o [internal owner activation transaction](tasks/P03-T01o.md) checks expiry/possession and writes password/audit atomically, without a route, session or MFA grant; CI pending.
 - P03-T01n [internal owner bootstrap transaction](tasks/P03-T01n.md) issues/reissues pending owner secrets with audit inside a caller transaction; CI pending, no CLI or activation.

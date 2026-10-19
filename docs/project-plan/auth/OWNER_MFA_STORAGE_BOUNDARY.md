@@ -1,6 +1,6 @@
 # P03-T01l — Owner MFA storage boundary
 
-**Status:** PostgreSQL-only slice complete 2026-10-16; [CI run 38868491900](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38868491900) passed. P03-T01p adds *internal* enrollment/confirmation transactions, but no exposed UI/CLI, login/session or owner-access flow exists.
+**Status:** PostgreSQL-only slice complete 2026-10-16; [CI run 38868491900](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/38868491900) passed. P03-T01p adds *internal* enrollment/confirmation transactions, and P03-T01q adds a terminal-only local development CLI; no browser UI, login/session or owner-access flow exists.
 
 `owner_mfa` binds by composite FK to the **single OWNER** account. It stores non-secret key version, AES-GCM nonce/ciphertext, creation/confirmation timestamps and the last accepted TOTP time-step. It has no seed plaintext or deployment key column. Before confirmation, a last-used step must be null. A confirmed row does not by itself prove the owner has ten recovery codes, passed activation or has a valid session: the future enrollment service must commit all required writes and audit atomically and gate access accordingly.
 
