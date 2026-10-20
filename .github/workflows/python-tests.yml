@@ -2,7 +2,8 @@ name: Python checks
 
 on:
   push:
-    branches: [main]
+    # Keep branch checks available when a PR cannot produce a merge ref due to conflicts.
+    branches: [main, "arena/**"]
   pull_request:
 
 jobs:
