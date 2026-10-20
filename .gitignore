@@ -36,3 +36,6 @@ Thumbs.db
 postgres-data/
 redis-data/
 *.log
+
+# Build artifacts
+*.egg-info/

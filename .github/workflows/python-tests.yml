@@ -8,6 +8,24 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: fairmount
+          POSTGRES_PASSWORD: fairmount
+          POSTGRES_DB: fairmount_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fairmount -d fairmount_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      FAIRMOUNT_TEST_DATABASE_URL: postgresql+psycopg://fairmount:fairmount@localhost:5432/fairmount_test
+      # A missing database must fail the build, never silently skip the money-safety tests.
+      FAIRMOUNT_REQUIRE_DB: "1"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -18,7 +36,7 @@ jobs:
           cache: pip
       - name: Install project and development dependencies
         run: python -m pip install -e ".[dev]"
-      - name: Run unit tests
-        run: python -m unittest discover -s tests -v
       - name: Run Ruff
         run: ruff check .
+      - name: Run tests (unit, PostgreSQL, concurrency, property-based)
+        run: python -m pytest -q

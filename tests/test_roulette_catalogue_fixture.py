@@ -30,8 +30,12 @@ class RouletteCatalogueFixtureTests(unittest.TestCase):
     def test_red_black_sets_are_disjoint_and_cover_one_to_36(self):
         red = self.fixture["colors"]["red"]
         black = self.fixture["colors"]["black"]
-        self.assertEqual(red, [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36])
-        self.assertEqual(black, [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35])
+        self.assertEqual(
+            red, [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+        )
+        self.assertEqual(
+            black, [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35]
+        )
         self.assertEqual(len(red), 18)
         self.assertEqual(len(black), 18)
         self.assertEqual(len(set(red)), 18)
@@ -74,7 +78,9 @@ class RouletteCatalogueFixtureTests(unittest.TestCase):
         self.assertEqual(len(splits["vertical"]), 33)
         self.assertEqual(len(splits["zero"]), 3)
         self.assertEqual(len(splits["all"]), 60)
-        self.assertEqual(splits["all"], expected_horizontal + expected_vertical + [[0, 1], [0, 2], [0, 3]])
+        self.assertEqual(
+            splits["all"], expected_horizontal + expected_vertical + [[0, 1], [0, 2], [0, 3]]
+        )
 
     def test_street_catalogue(self):
         expected_numbered = [[n, n + 1, n + 2] for n in range(1, 37, 3)]
@@ -122,8 +128,14 @@ class RouletteCatalogueFixtureTests(unittest.TestCase):
             "six_lines": 11,
             "first_four": 1,
         })
-        self.assertEqual(counts["horizontal_splits"] + counts["vertical_splits"] + counts["zero_splits"], counts["total_splits"])
-        self.assertEqual(counts["numbered_streets"] + counts["zero_adjacent_streets"], counts["total_streets"])
+        self.assertEqual(
+            counts["horizontal_splits"] + counts["vertical_splits"] + counts["zero_splits"],
+            counts["total_splits"],
+        )
+        self.assertEqual(
+            counts["numbered_streets"] + counts["zero_adjacent_streets"],
+            counts["total_streets"],
+        )
 
 
 if __name__ == "__main__":

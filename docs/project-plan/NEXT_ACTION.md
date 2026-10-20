@@ -2,11 +2,18 @@
 
 ## Active task
 
-**P01-T01 — Unblock and verify the initial Python API foundation locally.**
+**P01-T01 close-out, then owner review of the engine core (added 2026-10-20) before starting P03 authentication.**
 
 ## Objective
 
-The owner-approved roulette specification and catalogue fixture gates are recorded. The owner reported 8/8 catalogue tests passing locally. PA-01 through PA-23 have been reviewed, PA-05 clarified as a defensive invariant test, and PA-07/PA-08 aligned with the locked per-number split exposure rule. The architecture and verification plan is documented at [Betting Engine Architecture and Test Plan](roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md). The initial FastAPI foundation, smoke tests, and CI workflow are committed. On 2026-10-15, the owner reported that installation was rejected because the active Python is 3.14.4 but the project requires `>=3.12,<3.14`; the catalogue tests passed 8/8, while the API test could not import FastAPI and Ruff/Uvicorn were unavailable. First inspect installed Python versions with `py -0p`, then use Python 3.13 in a virtual environment (install Python 3.13 if absent), install dependencies, and rerun tests/lint/liveness. Do not implement gameplay in this task.
+1. Create a Python 3.13 virtual environment (`py -0p`, then `py -3.13 -m venv .venv`), activate it, and install with `python -m pip install -e ".[dev]"`.
+2. Start a local PostgreSQL test database (for example `docker compose up -d test-db`, unverified) and set `FAIRMOUNT_TEST_DATABASE_URL=postgresql+psycopg://fairmount:fairmount@localhost:5433/fairmount_test` and `FAIRMOUNT_REQUIRE_DB=1`.
+3. Run `python -m ruff check .` and `python -m pytest -q`. Expected from the independent run: Ruff clean and 233 passed. Record the owner's actual results here.
+4. Run migrations on a dev database: set `DATABASE_URL`, then from `services/api` run `alembic upgrade head`.
+5. Confirm the two owner decisions listed under "Assumptions and open items" in PROJECT_STATUS.md (per-player number cap; payout convention).
+6. Check the GitHub Actions run on the first push; it now needs the PostgreSQL service defined in the workflow.
+
+Do not expose any engine function over HTTP until P03/P04 authentication and authorization exist.
 
 ## Verification artifacts
 
@@ -42,8 +49,8 @@ The catalogue tests validate catalogue invariants, not bet acceptance or settlem
 - PA-01 through PA-23 reviewed; PA-05 clarified as an unreachable-state defensive invariant test; PA-07/PA-08 aligned with per-number split exposure rules. Test layers are specified for unit, database/transaction, concurrency, cutoff, rebet, settlement/refund, and player-privacy authorization behavior.
 - Architecture and test plan recorded in `roulette/BETTING_ENGINE_ARCHITECTURE_AND_TEST_PLAN.md`.
 - Active next action: run `py -0p`; create and activate `.venv` using Python 3.13; install with `python -m pip install -e ".[dev]"`; run `python -m unittest discover -s tests -v` and `python -m ruff check .`; start Uvicorn with `python -m uvicorn fairmount_api.main:app --reload --app-dir services/api/src` and check `/health/live`. The 2026-10-15 attempt is blocked by Python 3.14.4 and missing uninstalled dependencies; only the 8 catalogue tests passed.
-- No engine code exists yet; passing catalogue tests do not authorize treating cap or settlement behavior as verified.
+- Engine core exists and is verified only in an independent sandbox (233 tests); treat it as unverified until the owner records local and GitHub Actions results.
 
 ## Do not do yet
 
-Do not implement betting or payout code in P01-T01. First verify the foundation. Owner approval locks requirements; it does not waive verification gates.
+Do not build HTTP betting endpoints, realtime, or UI before authentication and authorization. Owner approval locks requirements; it does not waive verification gates.
