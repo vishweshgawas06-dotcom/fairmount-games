@@ -1,5 +1,9 @@
 # Next Action
 
+## Current integration blocker — PR #1 versus merged engine core (2026-10-20)
+
+[Repository integration audit](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md) verified all 153 branch-tracked files against GitHub, clean local/remote alignment, 188 valid relative Markdown links, passing branch/main CI and local Ruff/34 runnable tests (67 DB tests skip here). PR #1 is **conflicting** with merged PR #2 on `main`: six textual conflicts and fundamentally different UUID versus BIGINT account/migration histories. Do not merge by dropping identity/security work or wiring the other engine's direct wallet adjustments/arbitrary round recovery into public routes. Port pure engine logic and tests first; reconcile UUID-based ledger/reserve/migrations and D-06 recovery before integrated CI/PR resolution. P03 rate limiting/auth gates remain open. Both branches passing independently is not integrated evidence.
+
 ## Completed checkpoint — POOL-01 and P05-T01a pure reserve policy
 
 The owner approved [POOL-01](decisions/2026-10-19-funded-reserve-solvency.md): fund worst total payouts **or full void refunds** across unsettled rounds after the candidate stake, prospectively reject only an underfunded new bet, never manipulate RNG or default on accepted bets. [P05-T01a](tasks/P05-T01a.md) adds a pure 37-outcome/int-point solvency helper and negative tests. It does **not** accept bets or move points. Local tests/Ruff and [Python 3.12/PostgreSQL CI 39209862800](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39209862800) passed. P03 rate limits/failure audit, production-facing auth and P05/P08/P11 ledger/round/acceptance remain next.
