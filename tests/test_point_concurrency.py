@@ -28,6 +28,7 @@ from fairmount_api.point_reconciliation import reconcile_points
 from fairmount_api.reserve_funding import fund_game_reserve
 from fairmount_api.roulette.admission import BetUnavailable, place_bet
 from fairmount_api.roulette.round_clock import open_round
+from fairmount_api.roulette.settlement import refund_void_round
 from sqlalchemy import create_engine, func, insert, select, text
 
 from infrastructure.local_db_url import local_database_url
@@ -265,6 +266,44 @@ class PointContentionTests(unittest.TestCase):
             ),
             1,
         )
+
+        # Independently delivered void attempts must serialize through the
+        # reserve and terminal round row: only the accepted bet is refunded.
+        void_barrier = Barrier(2)
+
+        def competing_void():
+            void_barrier.wait(timeout=10)
+            with self.engine.begin() as connection:
+                return refund_void_round(
+                    connection,
+                    round_id,
+                    incident_reason="test-only concurrent void delivery",
+                )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            voids = list(pool.map(lambda _: competing_void(), range(2)))
+        self.assertEqual({result.replayed for result in voids}, {False, True})
+        self.assertEqual([result.total_credited for result in voids], [10, 10])
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            with connection.begin():
+                report = reconcile_points(connection)
+                reserve_balance = connection.scalar(select(GameReserve.balance))
+                refund_count = connection.scalar(
+                    select(func.count())
+                    .select_from(PointOperation)
+                    .where(PointOperation.kind == "VOID_REFUND")
+                )
+                restored = [
+                    connection.scalar(
+                        select(AccountWallet.balance).where(AccountWallet.account_id == player)
+                    )
+                    for player in self.players[:2]
+                ]
+        self.assertTrue(report.balanced)
+        self.assertEqual((reserve_balance, refund_count), (340, 1))
+        self.assertEqual(restored, baseline_player_balances)
 
 
 if __name__ == "__main__":
