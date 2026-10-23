@@ -138,6 +138,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 
 ### P11 — Betting controls and acceptance
 
+- **P11-T01a (private admission, local gates passed 2026-10-23; PostgreSQL CI pending):** [Reserve-serialized POOL-01 acceptance](tasks/P11-T01a.md) checks all 37 results/full void refunds across persisted unsettled rounds and appends one candidate; no public route or settlement.
 - **P11-T01 (server):** Implement acceptance with full-balance check, valid stake/chips, canonical position, cutoff, per-number straight/split exposure, exact-selection caps, duplicate records, and atomic cap-limited partial acceptance. Apply owner-approved POOL-01 coverage (including void refunds) atomically after cap/wallet checks; do not release until funded-reserve races and reconciliation pass. **Gate:** PA-01–PA-18, PA-20–PA-21, approved funded-reserve invariant and relevant PostgreSQL concurrent requests; no balance-limited partial bet.
 - **P11-T02 (server):** Implement player-specific all-or-nothing rebet with idempotency. **Gate:** PA-19, duplicate retry, cutoff and concurrent wallet/cap tests.
 - **P11-T03 (client):** Draft chip placement/edit/cancel before submission, pending/confirmed distinction, immutable accepted bets, combined duplicate display and rebet UX. **Gate:** E2E insufficient balance, cap return, cutoff, retries, and disconnect behavior; no optimistic bet treated as accepted.
