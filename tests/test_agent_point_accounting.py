@@ -19,6 +19,10 @@ from fairmount_api.point_accounting import (
     issue_owner_points,
     transfer_owner_points,
 )
+from fairmount_api.reserve_funding import fund_game_reserve
+from fairmount_api.resource_reads import ResourceUnavailable, read_player_bets, read_wallet
+from fairmount_api.roulette.admission import place_bet
+from fairmount_api.roulette.round_clock import open_round
 from sqlalchemy import create_engine, func, insert, select, text, update
 
 from infrastructure.local_db_url import local_database_url
@@ -210,6 +214,99 @@ class AgentPointAccountingTests(unittest.TestCase):
         )
         with self.assertRaises(PointActionUnavailable):
             self.move(key="agent-disabled")
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+
+    def test_wallet_read_scopes_follow_enabled_current_assignment(self) -> None:
+        player_token = self.session(self.player, "PLAYER")
+        other_token = self.session(self.other_player, "PLAYER")
+        self.fund_agent()
+        self.move(amount=25)
+        self.assertEqual(read_wallet(self.connection, self.agent_token, self.player).balance, 25)
+        self.assertEqual(read_wallet(self.connection, player_token, self.player).balance, 25)
+        self.assertEqual(read_wallet(self.connection, self.agent_token, self.agent).balance, 75)
+        self.assertEqual(read_wallet(self.connection, self.owner_token, self.player).balance, 25)
+        for token, target in (
+            (player_token, self.other_player),
+            (other_token, self.player),
+            (self.agent_token, self.other_player),
+            (self.agent_token, self.unassigned),
+            (self.agent_token, self.other_agent),
+            (self.agent_token, self.owner),
+        ):
+            with self.subTest(target=target), self.assertRaises(ResourceUnavailable):
+                read_wallet(self.connection, token, target)
+        assignment = self.connection.scalar(
+            select(AgentAssignment.id).where(
+                AgentAssignment.player_account_id == self.player,
+                AgentAssignment.ended_at.is_(None),
+            )
+        )
+        self.connection.execute(
+            update(AgentAssignment.__table__)
+            .where(AgentAssignment.id == assignment)
+            .values(ended_at=func.now())
+        )
+        self.assign(self.player, self.other_agent)
+        with self.assertRaises(ResourceUnavailable):
+            read_wallet(self.connection, self.agent_token, self.player)
+        self.connection.execute(
+            update(Account.__table__)
+            .where(Account.id == self.player)
+            .values(status="DISABLED", disabled_at=func.now())
+        )
+        with self.assertRaises(ResourceUnavailable):
+            read_wallet(self.connection, player_token, self.player)
+        self.assertEqual(read_wallet(self.connection, self.owner_token, self.player).balance, 25)
+
+    def test_accepted_bet_history_has_no_cross_player_or_cross_agent_leak(self) -> None:
+        player_token = self.session(self.player, "PLAYER")
+        other_token = self.session(self.other_player, "PLAYER")
+        self.fund_agent()
+        issue_owner_points(
+            self.connection,
+            self.owner_token,
+            amount=340,
+            reason="fund protected history",
+            idempotency_key="more-supply",
+        )
+        fund_game_reserve(
+            self.connection,
+            self.owner_token,
+            amount=340,
+            reason="fund protected history",
+            idempotency_key="history-reserve",
+        )
+        self.move(amount=10)
+        round_id = open_round(self.connection)
+        bet = place_bet(
+            self.connection,
+            player_token,
+            round_id=round_id,
+            selection_key="straight:17",
+            requested=10,
+            idempotency_key="protected-history-bet",
+        )
+        for token in (self.agent_token, player_token, self.owner_token):
+            history = read_player_bets(self.connection, token, self.player)
+            self.assertEqual(len(history), 1)
+            self.assertEqual((history[0].id, history[0].accepted_stake), (bet.bet_id, 10))
+        for token, target in (
+            (other_token, self.player),
+            (player_token, self.other_player),
+            (self.agent_token, self.other_player),
+            (self.agent_token, self.unassigned),
+            (self.agent_token, self.agent),
+        ):
+            with self.subTest(target=target), self.assertRaises(ResourceUnavailable):
+                read_player_bets(self.connection, token, target)
+        self.connection.execute(
+            update(Account.__table__)
+            .where(Account.id == self.player)
+            .values(status="DISABLED", disabled_at=func.now())
+        )
+        with self.assertRaises(ResourceUnavailable):
+            read_player_bets(self.connection, self.agent_token, self.player)
+        self.assertEqual(len(read_player_bets(self.connection, self.owner_token, self.player)), 1)
         self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
 
 
