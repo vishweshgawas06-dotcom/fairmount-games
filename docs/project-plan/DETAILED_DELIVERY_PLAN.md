@@ -89,7 +89,8 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **P03-T02h (complete 2026-10-19; [CI 39208494711](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39208494711)):** [Agent/player issuer](tasks/P03-T02h.md) uses fixed role-bound IDs, activated password proof, D-03 deadlines and one-session replacement; no route.
 - **P03-T02 (remaining):** Public login/logout, rate limits/failure audit, secure cookies/CSRF, authorized account mutations, reconnect/forced logout. **Gate:** session replay/stale-session tests on API and realtime connections.
 - **P03-T02i (private auth-attempt guard complete; [CI 39921986980](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39921986980)):** [Pseudonymous failure audit and DB-serialized dual-key throttling](tasks/P03-T02i.md); no request-edge wiring, D-02 retention or trusted-proxy contract yet.
-- **P03-T02j (private guarded issuers, local gate passed; PostgreSQL CI pending):** [Owner/member login and owner MFA step-up adapters](tasks/P03-T02j.md) must commit denial and success; no HTTP route.
+- **P03-T02j (private guarded issuers complete; [CI 39922270205](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39922270205)):** [Owner/member login and owner MFA step-up adapters](tasks/P03-T02j.md) must commit denial and success; no HTTP route.
+- **P03-T02k (multi-connection throttle race, local gate passed; PostgreSQL CI pending):** [Six committed wrong-password attempts must yield five failures and one blocked callback](tasks/P03-T02k.md).
 - **P03-T03:** Owner TOTP/recovery-code MFA and D-03-approved session/step-up policy; rate limits and audit. Manual all-factors-lost recovery is not approved and must not be improvised. **Gate:** MFA required for privileged access and tested failure/recovery paths before production.
 
 ### P04 — Resource-level authorization

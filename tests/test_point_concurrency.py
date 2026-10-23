@@ -15,11 +15,14 @@ from fairmount_api.db.models import (
     Account,
     AccountSession,
     AccountWallet,
+    AuthAttemptBucket,
+    AuthFailureEvent,
     GameReserve,
     PointOperation,
     RouletteBet,
     RouletteRound,
 )
+from fairmount_api.identity.auth_attempts import guarded_authentication
 from fairmount_api.identity.session_validation import session_token_digest
 from fairmount_api.point_accounting import (
     PointActionUnavailable,
@@ -111,6 +114,43 @@ class PointContentionTests(unittest.TestCase):
         with cls.admin_engine.begin() as connection:
             connection.execute(text(f"DROP SCHEMA {cls.schema} CASCADE"))
         cls.admin_engine.dispose()
+
+    def test_auth_failure_window_serializes_six_committed_connections(self) -> None:
+        barrier = Barrier(6)
+
+        def wrong_password(_):
+            barrier.wait(timeout=10)
+
+            def reject(_connection):
+                raise ValueError("generic credential denial")
+
+            with self.engine.begin() as connection:
+                return guarded_authentication(
+                    connection,
+                    surface="MEMBER_LOGIN",
+                    identifier="PLAYER:missing-user",
+                    source_ip="203.0.113.85",
+                    pepper=b"separate-test-pepper-never-deploy-this-123",
+                    authenticate=reject,
+                    denied_by=(ValueError,),
+                )
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            outcomes = list(pool.map(wrong_password, range(6)))
+        self.assertEqual(sum(not item.throttled for item in outcomes), 5)
+        self.assertEqual(sum(item.throttled for item in outcomes), 1)
+        self.assertTrue(all(not item.allowed for item in outcomes))
+        with self.engine.begin() as connection:
+            events = (
+                connection.execute(
+                    select(AuthFailureEvent.outcome).order_by(AuthFailureEvent.occurred_at)
+                )
+                .scalars()
+                .all()
+            )
+            counts = sorted(connection.scalars(select(AuthAttemptBucket.failures)).all())
+        self.assertEqual(sorted(events), ["FAILED"] * 5 + ["THROTTLED"])
+        self.assertEqual(counts, [5, 5])
 
     def test_double_spend_and_simultaneous_idempotent_retry(self) -> None:
         barrier = Barrier(2)
