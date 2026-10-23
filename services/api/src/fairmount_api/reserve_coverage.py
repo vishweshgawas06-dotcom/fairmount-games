@@ -8,8 +8,12 @@ safety. The future DB service must atomically check and persist its inputs.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+
+from fairmount_api.roulette.caps import validate_stake
+from fairmount_api.roulette.catalogue import parse_selection_key
+from fairmount_api.roulette.payout import total_payout
 
 EUROPEAN_OUTCOMES = 37
 
@@ -41,6 +45,25 @@ class RoundExposure:
     def obligation(self) -> int:
         """Cover the larger of a number's total return and full-round void refunds."""
         return max(self.full_void_refund, max(self.payout_by_number))
+
+
+def project_round_exposure(bets: Iterable[tuple[str, int]]) -> RoundExposure:
+    """Project validated accepted bets (and any *candidate*) across all 37 outcomes.
+
+    The caller must read accepted bets from authoritative, locked state and append
+    the proposed cap/wallet-validated accepted candidate **exactly once**. This
+    function does not read a database, reserve funds or admit a bet. It rejects
+    invalid keys/stakes rather than trusting a client-computed payout vector.
+    """
+    payouts = [0] * EUROPEAN_OUTCOMES
+    refund = 0
+    for key, amount in bets:
+        selection = parse_selection_key(key)
+        stake = validate_stake(amount)
+        refund += stake
+        for number in selection.numbers:
+            payouts[number] += total_payout(stake, selection, number)
+    return RoundExposure(tuple(payouts), refund)
 
 
 def required_reserve(unsettled: Mapping[uuid.UUID, RoundExposure]) -> int:

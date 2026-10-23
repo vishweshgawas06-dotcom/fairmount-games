@@ -2,9 +2,9 @@
 
 **Current phase:** P03 identity/credential/MFA storage and local owner setup complete; P03-T02a–h and pure POOL-01 policy passed CI. Integration review now blocks PR #1 merge: incompatible engine-core schema from PR #2 merged to main.
 
-**Current task:** Reconcile merged PR #2 engine core with this branch's UUID identity/migration model without dropping either; [2026-10-20 audit and sequence](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md). P03 rate limits/failure audit, cookies/CSRF, provisioning and authorization still gate public routes; P05 funded ledger and D-06 recovery remain open.
+**Current task:** P08-T01 [pure roulette rules integration](tasks/P08-T01.md) awaits CI; next P05 UUID-based ledger and funded reserve design/transactions, preserving both projects; [audit and integration sequence](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md). P03 rate limits/failure audit, cookies/CSRF, provisioning and authorization still gate public routes; D-06 recovery remains open.
 
-**Implementation status:** FastAPI liveness, account/assignment/credential/audit/MFA/session-state schemas, scoped identity guards, pure crypto helpers, internal owner setup transactions, development-only CLI, internal session validator, MFA verifier, owner/member issuers, step-up and logout; no public registration/login, authenticated MFA route, wallet or betting engine
+**Implementation status:** FastAPI liveness, account/assignment/credential/audit/MFA/session-state schemas, scoped identity guards, pure crypto helpers, internal owner setup transactions, development-only CLI, internal session validator, MFA verifier, owner/member issuers, step-up and logout. Pure roulette catalogue/payout/cap rules and POOL-01 projection ported from PR #2; no public registration/login, authenticated MFA route, wallet, persisted round/bet service or betting endpoint
 
 **Specification status:** Username/Agent-ID format, reserved names, 24-hour activation, D-03 baseline, D-12 local owner bootstrap/fixed Agent IDs, D-13 12–128-character passphrases, D-14 fixed `owner` login, D-15 deployment-owned MFA key custody and POOL-01 funded-reserve payout/refund admission approved; identifier reuse, manual owner recovery, D-02 retention and D-06 remain open
 

@@ -37,6 +37,8 @@ jobs:
         env:
           FAIRMOUNT_RUN_DB_TESTS: "1"
         run: python -m unittest discover -s tests -v
+      - name: Run imported pure roulette-domain pytest cases
+        run: python -m pytest -q tests/test_roulette_domain.py tests/test_roulette_reserve_projection.py
       - name: Run Ruff
         run: ruff check .
       - name: Stop local PostgreSQL and remove CI test volume
