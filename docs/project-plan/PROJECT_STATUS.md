@@ -2,7 +2,7 @@
 
 **Current phase:** P03 identity/credential/MFA storage and local owner setup complete; P03-T02a–h and pure POOL-01 policy passed CI. Integration review now blocks PR #1 merge: incompatible engine-core schema from PR #2 merged to main.
 
-**Current task:** P08-T01 [pure roulette rules integration](tasks/P08-T01.md) passed [CI 39908224792](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39908224792). Next P05 UUID-based ledger and funded reserve design/transactions, preserving both projects; [audit and integration sequence](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md). P03 rate limits/failure audit, cookies/CSRF, provisioning and authorization still gate public routes; D-06 recovery remains open.
+**Current task:** P08-T01 [pure roulette rules integration](tasks/P08-T01.md) passed [CI 39908224792](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39908224792). Next implement the [P05 UUID funded-ledger design](database/UUID_FUNDED_LEDGER_DESIGN.md) as an incremental schema and verified transactions, preserving both projects; [audit and integration sequence](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md). P03 rate limits/failure audit, cookies/CSRF, provisioning and authorization still gate public routes; D-06 recovery remains open.
 
 **Implementation status:** FastAPI liveness, account/assignment/credential/audit/MFA/session-state schemas, scoped identity guards, pure crypto helpers, internal owner setup transactions, development-only CLI, internal session validator, MFA verifier, owner/member issuers, step-up and logout. Pure roulette catalogue/payout/cap rules and POOL-01 projection ported from PR #2; no public registration/login, authenticated MFA route, wallet, persisted round/bet service or betting endpoint
 
@@ -12,7 +12,7 @@
 
 **Integration audit verification:** Branch-only [CI 39393934428](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39393934428) passed on `8706a87`, including Python 3.12/PostgreSQL migrations, DB-enabled tests and Ruff. PR #1 remains conflicting with PR #2/main; this does not test a combined tree. See [audit](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md).
 
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-23
 
 ## Delivery plan (owner-approved sequence)
 
