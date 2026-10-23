@@ -88,7 +88,13 @@ class AgentPointAccountingTests(unittest.TestCase):
                 idle_expires_at=func.now()
                 + text("interval '15 minutes'" if is_owner else "interval '30 minutes'"),
                 absolute_expires_at=func.now()
-                + text("interval '7 hours 55 minutes'" if is_owner else "interval '12 hours'"),
+                + text(
+                    "interval '7 hours 55 minutes'"
+                    if is_owner
+                    else "interval '24 hours'"
+                    if role == "PLAYER"
+                    else "interval '12 hours'"
+                ),
                 mfa_verified_at=func.now() - text("interval '5 minutes'") if is_owner else None,
             )
         )
