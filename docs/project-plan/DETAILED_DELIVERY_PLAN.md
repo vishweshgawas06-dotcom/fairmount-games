@@ -122,7 +122,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 ### P08 — Authoritative roulette engine
 
 - **P08-T01 (pure integration complete 2026-10-23; [CI 39908224792](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39908224792)):** [Ported pure roulette catalogue/payout/cap rules](tasks/P08-T01.md) from merged PR #2 without its incompatible account/migration/wallet services, plus a POOL-01 round-exposure projector. **Gate passed:** fixture, payout table, cap and projection cases including 10 straight-up → 350 total; no API acceptance yet.
-- **P08-T02a (schema/clock slice, local gates passed 2026-10-23; PostgreSQL CI pending):** [UUID round, immutable accepted-bet linkage and one independent server result](tasks/P08-T02a.md), without live bet acceptance/reveal/settlement.
+- **P08-T02a (schema/clock slice complete 2026-10-23; [CI 39914613660](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39914613660)):** [UUID round, immutable accepted-bet linkage and one independent server result](tasks/P08-T02a.md), without live bet acceptance/reveal/settlement.
 - **P08-T02:** Implement persisted global 60-second round state machine, server cutoff/freeze at second 50, one independently generated outcome, reveal at second 60, worker ownership/recovery design (D-06). **Gate:** deterministic clock/failure-injection tests show one result, no post-cutoff acceptance, and no client-driven outcome.
 - **P08-T03:** Transactional settlement and terminal `SETTLED` vs `VOID_REFUNDED` recovery. **Gate:** real PostgreSQL retry/race tests prove no double payout, refund, or outcome regeneration; retain persisted outcome for audit.
 
