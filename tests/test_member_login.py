@@ -8,10 +8,13 @@ from fairmount_api.db.models import (
     Account,
     AccountCredential,
     AccountSession,
+    AuthAttemptBucket,
+    AuthFailureEvent,
     PrivateIdentity,
     SecurityEvent,
 )
 from fairmount_api.identity.credentials import hash_password
+from fairmount_api.identity.guarded_issuance import guarded_member_login
 from fairmount_api.identity.member_login import MemberLoginUnavailable, issue_member_session
 from fairmount_api.identity.session_validation import resolve_session
 from sqlalchemy import create_engine, func, insert, select, text, update
@@ -155,6 +158,50 @@ class MemberLoginTests(unittest.TestCase):
         self.assertEqual(
             self.connection.scalar(select(func.count()).select_from(AccountSession)), 1
         )
+
+    def test_guarded_member_login_throttles_proofs_before_creating_session(self) -> None:
+        self.member("AGENT")
+        pepper = b"only-a-test-secret-for-auth-guard!!"
+
+        def attempt(password, ip="203.0.113.25"):
+            return guarded_member_login(
+                self.connection,
+                role="AGENT",
+                identifier="AGT-AAAAAAAAAA",
+                password=password,
+                source_ip=ip,
+                pepper=pepper,
+            )
+
+        for _ in range(5):
+            denial = attempt("definitely not the password")
+            self.assertFalse(denial.allowed)
+            self.assertFalse(denial.throttled)
+        blocked = attempt(PASSWORD, ip="2001:db8::25")
+        self.assertFalse(blocked.allowed)
+        self.assertTrue(blocked.throttled)
+        self.assertIsNone(blocked.value)
+        self.assertEqual(
+            self.connection.scalar(select(func.count()).select_from(AccountSession)), 0
+        )
+        self.assertEqual(self.connection.scalar(select(func.count()).select_from(SecurityEvent)), 0)
+        self.assertEqual(
+            self.connection.scalar(select(func.count()).select_from(AuthFailureEvent)), 6
+        )
+        # Privileged test-only time warp: production uses clock_timestamp after locks.
+        self.connection.execute(
+            update(AuthAttemptBucket.__table__).values(
+                window_started_at=func.clock_timestamp() - text("interval '16 minutes'")
+            )
+        )
+        issued = attempt(PASSWORD)
+        self.assertTrue(issued.allowed)
+        self.assertFalse(issued.throttled)
+        self.assertIsNotNone(resolve_session(self.connection, issued.value.token))
+        self.assertEqual(
+            self.connection.scalar(select(func.count()).select_from(AuthFailureEvent)), 6
+        )
+        self.assertEqual(self.connection.scalar(select(func.count()).select_from(SecurityEvent)), 1)
 
 
 if __name__ == "__main__":
