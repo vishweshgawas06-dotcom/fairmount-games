@@ -3,6 +3,7 @@
 import os
 import secrets
 import unittest
+from datetime import timedelta
 
 from fairmount_api.db.models import (
     Account,
@@ -15,9 +16,15 @@ from fairmount_api.db.models import (
 )
 from fairmount_api.identity.session_validation import session_token_digest
 from fairmount_api.point_accounting import issue_owner_points, transfer_owner_points
+from fairmount_api.point_reconciliation import reconcile_points
 from fairmount_api.reserve_funding import fund_game_reserve
 from fairmount_api.roulette.admission import BetReplayConflict, BetUnavailable, place_bet
-from fairmount_api.roulette.round_clock import open_round
+from fairmount_api.roulette.round_clock import close_round, open_round
+from fairmount_api.roulette.settlement import (
+    SettlementUnavailable,
+    refund_void_round,
+    settle_round,
+)
 from sqlalchemy import create_engine, func, insert, select, text, update
 
 from infrastructure.local_db_url import local_database_url
@@ -36,7 +43,7 @@ class BetAdmissionTests(unittest.TestCase):
         cls.engine.dispose()
 
     def setUp(self) -> None:
-        self.connection = self.engine.connect()
+        self.connection = self.engine.connect().execution_options(isolation_level="REPEATABLE READ")
         self.transaction = self.connection.begin()
         self.owner = self.account("OWNER")
         self.player = self.account("PLAYER")
@@ -219,6 +226,87 @@ class BetAdmissionTests(unittest.TestCase):
             self.bet(key="after-close")
         self.assertTrue(self.bet().replayed)  # original confirmation remains replayable
         self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+
+    def advance_round_clock_fixture(self, seconds=61):
+        # Privileged test-only time warp; production cannot bypass round guard.
+        # Re-enable the guard before exercising the public service boundary.
+        opened = self.connection.scalar(select(func.clock_timestamp())) - timedelta(seconds=seconds)
+        self.connection.execute(text("ALTER TABLE roulette_rounds DISABLE TRIGGER tr_round_guard"))
+        self.connection.execute(
+            update(RouletteRound.__table__)
+            .where(RouletteRound.id == self.round)
+            .values(
+                opens_at=opened,
+                closes_at=opened + timedelta(seconds=50),
+                reveal_at=opened + timedelta(seconds=60),
+            )
+        )
+        self.connection.execute(text("ALTER TABLE roulette_rounds ENABLE TRIGGER tr_round_guard"))
+
+    def test_settlement_pays_disabled_winner_once_after_reveal(self):
+        self.seed()
+        self.bet()
+        with self.assertRaises(SettlementUnavailable):
+            settle_round(self.connection, self.round)
+        self.advance_round_clock_fixture()
+        self.assertEqual(close_round(self.connection, self.round, _test_rng=lambda: 17), 17)
+        self.connection.execute(
+            update(Account.__table__).where(Account.id == self.player).values(status="DISABLED")
+        )
+        first = settle_round(self.connection, self.round)
+        second = settle_round(self.connection, self.round)
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertEqual(
+            (first.total_staked, first.total_credited, first.replayed), (10, 350, False)
+        )
+        self.assertEqual((second.total_credited, second.replayed), (350, True))
+        self.assertEqual((self.wallet(self.player), self.reserve()), (440, 0))
+        self.assertEqual(
+            self.connection.scalar(
+                select(func.count())
+                .select_from(PointOperation)
+                .where(PointOperation.kind == "PAYOUT", PointOperation.context_id == self.round)
+            ),
+            1,
+        )
+        self.assertTrue(reconcile_points(self.connection).balanced)
+        with self.assertRaises(SettlementUnavailable):
+            refund_void_round(self.connection, self.round, incident_reason="cannot cancel a payout")
+
+    def test_losing_result_preserves_stakes_without_payout(self):
+        self.seed()
+        self.bet()
+        self.advance_round_clock_fixture()
+        close_round(self.connection, self.round, _test_rng=lambda: 36)
+        result = settle_round(self.connection, self.round)
+        self.assertEqual((result.total_staked, result.total_credited), (10, 0))
+        self.assertEqual((self.wallet(self.player), self.reserve()), (90, 350))
+        self.assertTrue(reconcile_points(self.connection).balanced)
+
+    def test_void_refunds_every_accepted_stake_even_if_player_disabled(self):
+        other = self.account("PLAYER")
+        other_token = self.session(other, "PLAYER")
+        self.seed(issued=1000, another_player=other)
+        self.bet()
+        self.bet(token=other_token, selection="straight:36", key="other")
+        self.connection.execute(
+            update(Account.__table__).where(Account.id == other).values(status="DISABLED")
+        )
+        result = refund_void_round(
+            self.connection, self.round, incident_reason="test-only incident for recovery primitive"
+        )
+        retry = refund_void_round(self.connection, self.round, incident_reason="duplicate delivery")
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertEqual((result.total_staked, result.total_credited), (20, 20))
+        self.assertTrue(retry.replayed)
+        self.assertEqual(
+            (self.wallet(self.player), self.wallet(other), self.reserve()), (100, 100, 340)
+        )
+        self.assertTrue(reconcile_points(self.connection).balanced)
+        with self.assertRaises(SettlementUnavailable):
+            settle_round(self.connection, self.round)
+        with self.assertRaises(BetUnavailable):
+            self.bet(key="after-void")
 
 
 if __name__ == "__main__":

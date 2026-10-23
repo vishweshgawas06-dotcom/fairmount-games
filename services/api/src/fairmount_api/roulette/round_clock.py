@@ -1,6 +1,7 @@
 """Internal PostgreSQL round clock and single independent result persistence.
 
-No public route, worker/failover, recovery or settlement is wired yet. Run inside
+No public route, worker/failover or recovery is wired yet; private terminal
+accounting primitives exist separately, but nothing schedules them. Run inside
 one caller-owned transaction; never expose the test-only RNG override to clients.
 """
 

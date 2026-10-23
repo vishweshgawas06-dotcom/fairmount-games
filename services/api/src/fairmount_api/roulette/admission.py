@@ -1,7 +1,8 @@
 """Private, PostgreSQL-serialized bet admission under owner-approved POOL-01.
 
 Caller owns the transaction and must commit before confirming acceptance. No
-public betting endpoint, recovery worker, settlement or reserve withdrawal yet.
+public betting endpoint, recovery worker or reserve withdrawal yet. Terminal
+accounting primitives exist separately but are not wired to a worker/route.
 """
 
 from __future__ import annotations
