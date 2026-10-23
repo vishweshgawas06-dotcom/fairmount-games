@@ -10,7 +10,14 @@ from threading import Barrier
 
 from alembic.operations import Operations
 from alembic.runtime.migration import MigrationContext
-from fairmount_api.db.models import Account, AccountSession, AccountWallet, PointOperation
+from fairmount_api.db.models import (
+    Account,
+    AccountSession,
+    AccountWallet,
+    GameReserve,
+    PointOperation,
+    RouletteBet,
+)
 from fairmount_api.identity.session_validation import session_token_digest
 from fairmount_api.point_accounting import (
     PointActionUnavailable,
@@ -18,6 +25,9 @@ from fairmount_api.point_accounting import (
     transfer_owner_points,
 )
 from fairmount_api.point_reconciliation import reconcile_points
+from fairmount_api.reserve_funding import fund_game_reserve
+from fairmount_api.roulette.admission import BetUnavailable, place_bet
+from fairmount_api.roulette.round_clock import open_round
 from sqlalchemy import create_engine, func, insert, select, text
 
 from infrastructure.local_db_url import local_database_url
@@ -160,6 +170,101 @@ class PointContentionTests(unittest.TestCase):
         self.assertEqual((report.current_supply, report.explicitly_issued), (100, 100))
         self.assertEqual(count, 3)  # issuance, one funded player, one same-key transfer
         self.assertEqual(owner_balance, 25)
+
+        # P11-T01b: owner funds reserve once, two independent players submit
+        # identical winning positions. Both can afford a full stake, but the
+        # reserve after a single stake covers 350 while two would owe 700.
+        tokens = []
+        with self.engine.begin() as connection:
+            issue_owner_points(
+                connection,
+                self.token,
+                amount=1000,
+                reason="additional supply",
+                idempotency_key="bet-seed",
+            )
+            fund_game_reserve(
+                connection,
+                self.token,
+                amount=340,
+                reason="fund one outcome",
+                idempotency_key="bet-reserve",
+            )
+            for n, player in enumerate(self.players[:2]):
+                transfer_owner_points(
+                    connection,
+                    self.token,
+                    member_account_id=player,
+                    amount=100,
+                    to_member=True,
+                    reason="player stake",
+                    idempotency_key=f"bet-player-{n}",
+                )
+                token = secrets.token_urlsafe(32)
+                connection.execute(
+                    insert(AccountSession.__table__).values(
+                        account_id=player,
+                        role_at_issue="PLAYER",
+                        token_digest=session_token_digest(token),
+                        issued_at=func.now(),
+                        last_seen_at=func.now(),
+                        idle_expires_at=func.now() + text("interval '30 minutes'"),
+                        absolute_expires_at=func.now() + text("interval '24 hours'"),
+                    )
+                )
+                tokens.append(token)
+            baseline_player_balances = [
+                connection.scalar(
+                    select(AccountWallet.balance).where(AccountWallet.account_id == player)
+                )
+                for player in self.players[:2]
+            ]
+            round_id = open_round(connection)
+
+        bet_barrier = Barrier(2)
+
+        def competing_bet(n):
+            bet_barrier.wait(timeout=10)
+            try:
+                with self.engine.begin() as connection:
+                    return place_bet(
+                        connection,
+                        tokens[n],
+                        round_id=round_id,
+                        selection_key="straight:17",
+                        requested=10,
+                        idempotency_key=f"bet-race-{n}",
+                    )
+            except BetUnavailable:
+                return None
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            admitted = list(pool.map(competing_bet, range(2)))
+        self.assertEqual(sum(bet is not None for bet in admitted), 1)
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            with connection.begin():
+                report = reconcile_points(connection)
+                reserve_balance = connection.scalar(select(GameReserve.balance))
+                bet_count = connection.scalar(select(func.count()).select_from(RouletteBet))
+                player_balances = [
+                    connection.scalar(
+                        select(AccountWallet.balance).where(AccountWallet.account_id == player)
+                    )
+                    for player in self.players[:2]
+                ]
+        self.assertTrue(report.balanced)
+        self.assertEqual((report.current_supply, report.explicitly_issued), (1100, 1100))
+        self.assertEqual((reserve_balance, bet_count), (350, 1))
+        self.assertEqual(sum(baseline_player_balances) - sum(player_balances), 10)
+        self.assertEqual(
+            sum(
+                before != after
+                for before, after in zip(baseline_player_balances, player_balances, strict=True)
+            ),
+            1,
+        )
 
 
 if __name__ == "__main__":
