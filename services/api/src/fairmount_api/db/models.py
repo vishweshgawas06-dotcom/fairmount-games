@@ -12,12 +12,14 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
     Integer,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -333,4 +335,149 @@ class AgentAssignment(Base):
             postgresql_where=text("ended_at IS NULL"),
         ),
         Index("ix_assignments_agent", "agent_account_id"),
+    )
+
+
+# Accounting rows are deliberately separate from private identity and login credentials.
+# The 20261023_01 migration supplies their append-only/paired-effect database triggers.
+class AccountWallet(Base):
+    __tablename__ = "account_wallets"
+
+    account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="RESTRICT"), primary_key=True
+    )
+    balance: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+
+    __table_args__ = (CheckConstraint("balance >= 0", name="ck_account_wallets_nonnegative"),)
+
+
+class GameReserve(Base):
+    __tablename__ = "game_reserve"
+
+    id: Mapped[int] = mapped_column(SmallInteger, primary_key=True, server_default=text("1"))
+    balance: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+
+    __table_args__ = (
+        CheckConstraint("id = 1", name="ck_game_reserve_singleton"),
+        CheckConstraint("balance >= 0", name="ck_game_reserve_nonnegative"),
+    )
+
+
+POINT_OPERATION_CHECK = """
+    kind IN ('OWNER_ISSUE', 'OWNER_TRANSFER', 'AGENT_TRANSFER',
+             'RESERVE_FUND', 'RESERVE_WITHDRAW', 'BET_STAKE',
+             'PAYOUT', 'VOID_REFUND', 'AGENT_DISABLE_RETURN')
+    AND amount > 0 AND length(btrim(reason)) > 0 AND length(idempotency_key) > 0
+    AND request_fingerprint COLLATE "C" ~ '^[0-9a-f]{64}$'
+    AND (
+        (kind = 'OWNER_ISSUE' AND actor_role = 'OWNER'
+         AND source_wallet_id IS NULL AND NOT source_reserve
+         AND target_wallet_id IS NOT NULL
+         AND target_wallet_id = actor_account_id AND NOT target_reserve)
+        OR (kind = 'OWNER_TRANSFER' AND actor_role = 'OWNER'
+            AND NOT source_reserve AND NOT target_reserve
+            AND source_wallet_id IS NOT NULL AND target_wallet_id IS NOT NULL
+            AND (source_wallet_id = actor_account_id OR target_wallet_id = actor_account_id))
+        OR (kind = 'AGENT_TRANSFER' AND actor_role = 'AGENT'
+            AND NOT source_reserve AND NOT target_reserve
+            AND source_wallet_id IS NOT NULL AND target_wallet_id IS NOT NULL
+            AND (source_wallet_id = actor_account_id OR target_wallet_id = actor_account_id))
+        OR (kind = 'AGENT_DISABLE_RETURN' AND actor_role = 'OWNER'
+            AND NOT source_reserve AND NOT target_reserve
+            AND source_wallet_id IS NOT NULL AND target_wallet_id = actor_account_id)
+        OR (kind = 'RESERVE_FUND' AND actor_role = 'OWNER'
+            AND source_wallet_id IS NOT NULL
+            AND source_wallet_id = actor_account_id
+            AND NOT source_reserve AND target_wallet_id IS NULL AND target_reserve)
+        OR (kind = 'RESERVE_WITHDRAW' AND actor_role = 'OWNER'
+            AND source_wallet_id IS NULL AND source_reserve
+            AND target_wallet_id IS NOT NULL AND target_wallet_id = actor_account_id
+            AND NOT target_reserve)
+        OR (kind = 'BET_STAKE' AND actor_role = 'PLAYER'
+            AND source_wallet_id IS NOT NULL AND source_wallet_id = actor_account_id
+            AND NOT source_reserve AND target_wallet_id IS NULL AND target_reserve
+            AND context_id IS NOT NULL)
+        OR (kind IN ('PAYOUT', 'VOID_REFUND') AND actor_role = 'OWNER'
+            AND source_wallet_id IS NULL AND source_reserve
+            AND target_wallet_id IS NOT NULL AND NOT target_reserve
+            AND context_id IS NOT NULL)
+    )
+    AND (source_wallet_id IS NULL OR target_wallet_id IS NULL
+         OR source_wallet_id <> target_wallet_id)
+"""
+
+
+class PointOperation(Base):
+    __tablename__ = "point_operations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    actor_account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    actor_role: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_wallet_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("account_wallets.account_id", ondelete="RESTRICT")
+    )
+    target_wallet_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("account_wallets.account_id", ondelete="RESTRICT")
+    )
+    source_reserve: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    target_reserve: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    context_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["actor_account_id", "actor_role"],
+            ["accounts.id", "accounts.role"],
+            name="fk_point_operations_actor_role",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(POINT_OPERATION_CHECK, name="ck_point_operations_shape"),
+        UniqueConstraint(
+            "actor_account_id", "idempotency_key", name="uq_point_operations_actor_key"
+        ),
+    )
+
+
+class PointLedgerEntry(Base):
+    __tablename__ = "point_ledger_entries"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    operation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("point_operations.id", ondelete="RESTRICT"), nullable=False
+    )
+    wallet_account_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("account_wallets.account_id", ondelete="RESTRICT")
+    )
+    reserve_id: Mapped[int | None] = mapped_column(
+        SmallInteger, ForeignKey("game_reserve.id", ondelete="RESTRICT")
+    )
+    delta: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "(wallet_account_id IS NOT NULL) <> (reserve_id IS NOT NULL) AND delta <> 0",
+            name="ck_point_ledger_entries_shape",
+        ),
+        UniqueConstraint(
+            "operation_id", "wallet_account_id", name="uq_point_ledger_entries_wallet"
+        ),
+        UniqueConstraint("operation_id", "reserve_id", name="uq_point_ledger_entries_reserve"),
     )

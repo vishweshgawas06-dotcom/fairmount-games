@@ -1,6 +1,6 @@
 # P05-T01 — UUID wallet, immutable ledger and funded reserve design
 
-**Status:** Engineering design checkpoint, 2026-10-23. No new database tables, wallet service, authorization or money-moving route yet. This refines [D-10](../decisions/2026-10-15-account-provisioning-and-point-flow.md), [D-01](../decisions/2026-10-15-account-disable-and-reassignment.md) and [POOL-01](../decisions/2026-10-19-funded-reserve-solvency.md); it does not replace their product rules.
+**Status:** Engineering design checkpoint, 2026-10-23. [P05-T01b](../tasks/P05-T01b.md) now adds structural tables/triggers; no wallet service, authorization or money-moving route yet. This refines [D-10](../decisions/2026-10-15-account-provisioning-and-point-flow.md), [D-01](../decisions/2026-10-15-account-disable-and-reassignment.md) and [POOL-01](../decisions/2026-10-19-funded-reserve-solvency.md); it does not replace their product rules.
 
 ## Data shape and migration order
 
