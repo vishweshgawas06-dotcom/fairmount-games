@@ -305,6 +305,75 @@ class PointContentionTests(unittest.TestCase):
         self.assertEqual((reserve_balance, refund_count), (340, 1))
         self.assertEqual(restored, baseline_player_balances)
 
+        # P11-T01f: admission racing a trusted void must be wholly accepted
+        # and refunded, or rejected before acceptance. Either order leaves
+        # the wallet/reserve at the pre-race values, with no live liability.
+        with self.engine.begin() as connection:
+            next_round = open_round(connection)
+        terminal_barrier = Barrier(2)
+
+        def last_bet():
+            terminal_barrier.wait(timeout=10)
+            try:
+                with self.engine.begin() as connection:
+                    return place_bet(
+                        connection,
+                        tokens[0],
+                        round_id=next_round,
+                        selection_key="straight:17",
+                        requested=10,
+                        idempotency_key="bet-against-void",
+                    )
+            except BetUnavailable:
+                return None
+
+        def last_void():
+            terminal_barrier.wait(timeout=10)
+            with self.engine.begin() as connection:
+                return refund_void_round(
+                    connection,
+                    next_round,
+                    incident_reason="test-only admission/void contention",
+                )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            bet_future = pool.submit(last_bet)
+            void_future = pool.submit(last_void)
+            raced_bet = bet_future.result()
+            raced_void = void_future.result()
+        expected_bets = int(raced_bet is not None)
+        self.assertEqual(raced_void.total_credited, 10 * expected_bets)
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            with connection.begin():
+                report = reconcile_points(connection)
+                reserve_balance = connection.scalar(select(GameReserve.balance))
+                final_bets = connection.scalar(
+                    select(func.count())
+                    .select_from(RouletteBet)
+                    .where(RouletteBet.round_id == next_round)
+                )
+                new_refunds = connection.scalar(
+                    select(func.count())
+                    .select_from(PointOperation)
+                    .where(
+                        PointOperation.kind == "VOID_REFUND",
+                        PointOperation.context_id == next_round,
+                    )
+                )
+                restored = [
+                    connection.scalar(
+                        select(AccountWallet.balance).where(AccountWallet.account_id == player)
+                    )
+                    for player in self.players[:2]
+                ]
+        self.assertTrue(report.balanced)
+        self.assertEqual(
+            (reserve_balance, final_bets, new_refunds), (340, expected_bets, expected_bets)
+        )
+        self.assertEqual(restored, baseline_player_balances)
+
 
 if __name__ == "__main__":
     unittest.main()
