@@ -80,6 +80,46 @@ def _authorize_target(
         raise ResourceUnavailable("Resource unavailable")
 
 
+def list_visible_player_ids(connection: Connection, raw_token: str) -> tuple[uuid.UUID, ...]:
+    """Current enabled player dashboard scope, checked under account/assignment locks.
+
+    Never derive a client-facing roster from historical assignments or a cached
+    owner/agent list. A later single-player read must still reauthorize itself.
+    """
+    actor = _actor(connection, raw_token)
+    if actor.role == "PLAYER":
+        return (actor.account_id,)
+    if actor.role == "OWNER":
+        return tuple(
+            connection.scalars(
+                select(Account.id)
+                .where(Account.role == "PLAYER", Account.status == "ENABLED")
+                .order_by(Account.id)
+                .with_for_update()
+            )
+        )
+    if actor.role != "AGENT":
+        raise ResourceUnavailable("Resource unavailable")
+    # Candidate assignment IDs are not authorization. Recheck each row *after*
+    # locking its player Account, then pin the current assignment until commit.
+    candidates = connection.scalars(
+        select(AgentAssignment.player_account_id)
+        .where(
+            AgentAssignment.agent_account_id == actor.account_id,
+            AgentAssignment.ended_at.is_(None),
+        )
+        .order_by(AgentAssignment.player_account_id)
+    ).all()
+    visible = []
+    for player_id in candidates:
+        try:
+            _authorize_target(connection, actor, player_id, player_only=True)
+        except ResourceUnavailable:
+            continue
+        visible.append(player_id)
+    return tuple(visible)
+
+
 def read_wallet(connection: Connection, raw_token: str, account_id: uuid.UUID) -> WalletView:
     """Owner any wallet; agent own/assigned enabled player; player own only."""
     actor = _actor(connection, raw_token)

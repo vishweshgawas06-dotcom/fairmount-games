@@ -20,7 +20,12 @@ from fairmount_api.point_accounting import (
     transfer_owner_points,
 )
 from fairmount_api.reserve_funding import fund_game_reserve
-from fairmount_api.resource_reads import ResourceUnavailable, read_player_bets, read_wallet
+from fairmount_api.resource_reads import (
+    ResourceUnavailable,
+    list_visible_player_ids,
+    read_player_bets,
+    read_wallet,
+)
 from fairmount_api.roulette.admission import place_bet
 from fairmount_api.roulette.round_clock import open_round
 from sqlalchemy import create_engine, func, insert, select, text, update
@@ -221,6 +226,39 @@ class AgentPointAccountingTests(unittest.TestCase):
         with self.assertRaises(PointActionUnavailable):
             self.move(key="agent-disabled")
         self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+
+    def test_dashboard_roster_excludes_disabled_and_reassigned_players(self) -> None:
+        player_token = self.session(self.player, "PLAYER")
+        self.assertEqual(
+            set(list_visible_player_ids(self.connection, self.owner_token)),
+            {self.player, self.other_player, self.unassigned},
+        )
+        self.assertEqual(list_visible_player_ids(self.connection, self.agent_token), (self.player,))
+        self.assertEqual(list_visible_player_ids(self.connection, player_token), (self.player,))
+        assignment = self.connection.scalar(
+            select(AgentAssignment.id).where(
+                AgentAssignment.player_account_id == self.player,
+                AgentAssignment.ended_at.is_(None),
+            )
+        )
+        self.connection.execute(
+            update(AgentAssignment.__table__)
+            .where(AgentAssignment.id == assignment)
+            .values(ended_at=func.now())
+        )
+        self.assign(self.player, self.other_agent)
+        self.assertEqual(list_visible_player_ids(self.connection, self.agent_token), ())
+        self.connection.execute(
+            update(Account.__table__)
+            .where(Account.id == self.player)
+            .values(status="DISABLED", disabled_at=func.now())
+        )
+        self.assertEqual(
+            set(list_visible_player_ids(self.connection, self.owner_token)),
+            {self.other_player, self.unassigned},
+        )
+        with self.assertRaises(ResourceUnavailable):
+            list_visible_player_ids(self.connection, player_token)
 
     def test_wallet_read_scopes_follow_enabled_current_assignment(self) -> None:
         player_token = self.session(self.player, "PLAYER")
