@@ -139,9 +139,7 @@ class AccountCredential(Base):
     password_hash: Mapped[str | None] = mapped_column(Text)
     password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    __table_args__ = (
-        CheckConstraint(CREDENTIAL_STATE_CHECK, name="ck_account_credentials_state"),
-    )
+    __table_args__ = (CheckConstraint(CREDENTIAL_STATE_CHECK, name="ck_account_credentials_state"),)
 
 
 class OwnerMFA(Base):
@@ -277,6 +275,49 @@ SECURITY_EVENT_CHECK = """
 """
 
 
+class AuthAttemptBucket(Base):
+    """HMAC-indexed bounded failure window, independent of account existence."""
+
+    __tablename__ = "auth_attempt_buckets"
+
+    key_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    failures: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+
+    __table_args__ = (
+        CheckConstraint("key_digest COLLATE \"C\" ~ '^[0-9a-f]{64}$'", name="ck_auth_buckets_key"),
+        CheckConstraint("failures >= 0", name="ck_auth_buckets_nonnegative"),
+    )
+
+
+class AuthFailureEvent(Base):
+    """Append-only, pseudonymous failure audit including nonexistent accounts."""
+
+    __tablename__ = "auth_failure_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    subject_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    surface: Mapped[str] = mapped_column(String(24), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("clock_timestamp()")
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "subject_digest COLLATE \"C\" ~ '^[0-9a-f]{64}$' AND "
+            "source_digest COLLATE \"C\" ~ '^[0-9a-f]{64}$' AND "
+            "surface IN ('OWNER_LOGIN','MEMBER_LOGIN','OWNER_MFA') AND "
+            "outcome IN ('FAILED','THROTTLED')",
+            name="ck_auth_failure_events_shape",
+        ),
+        Index("ix_auth_failure_events_time", "occurred_at"),
+    )
+
+
 class SecurityEvent(Base):
     __tablename__ = "security_events"
 
@@ -322,9 +363,7 @@ class AgentAssignment(Base):
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
-        CheckConstraint(
-            "player_account_id <> agent_account_id", name="ck_assignments_not_self"
-        ),
+        CheckConstraint("player_account_id <> agent_account_id", name="ck_assignments_not_self"),
         CheckConstraint(
             "ended_at IS NULL OR ended_at > started_at", name="ck_assignments_valid_interval"
         ),
@@ -538,7 +577,8 @@ class RouletteBet(Base):
         String(16), nullable=False, server_default=text("'PLAYER'")
     )
     operation_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("point_operations.id", ondelete="RESTRICT"),
+        UUID(as_uuid=True),
+        ForeignKey("point_operations.id", ondelete="RESTRICT"),
         nullable=False,
     )
     selection_key: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -547,8 +587,10 @@ class RouletteBet(Base):
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["player_account_id", "player_role"], ["accounts.id", "accounts.role"],
-            name="fk_roulette_bets_player_role", ondelete="RESTRICT",
+            ["player_account_id", "player_role"],
+            ["accounts.id", "accounts.role"],
+            name="fk_roulette_bets_player_role",
+            ondelete="RESTRICT",
         ),
         CheckConstraint(
             "player_role = 'PLAYER' AND accepted_stake >= 5 "
