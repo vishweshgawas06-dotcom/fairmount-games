@@ -1,8 +1,9 @@
 """Private atomic result settlement and full-round void refund primitives.
 
-Caller must own and commit the transaction. No scheduler, public route, recovery
-policy, or reserve withdrawal is installed. In particular, D-06 decides *when*
-a void is permitted; this module does not choose that policy or void on timeout.
+Caller must own and commit the transaction. No scheduler, public route or
+recovery policy is installed; a separate private owner-only surplus-withdrawal
+service preserves unresolved liabilities. D-06 decides *when* a void is
+permitted; this module does not choose that policy or void on timeout.
 """
 
 from __future__ import annotations
