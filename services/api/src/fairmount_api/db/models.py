@@ -481,3 +481,80 @@ class PointLedgerEntry(Base):
         ),
         UniqueConstraint("operation_id", "reserve_id", name="uq_point_ledger_entries_reserve"),
     )
+
+
+# Global European round accounting. No HTTP betting or autonomous worker exists yet.
+ROUND_STRUCTURE_CHECK = """
+    closes_at = opens_at + INTERVAL '50 seconds'
+    AND reveal_at = opens_at + INTERVAL '60 seconds'
+    AND state IN ('OPEN', 'CLOSED', 'SETTLED', 'VOID_REFUNDED')
+    AND ((winning_number IS NULL AND result_set_at IS NULL)
+         OR (winning_number BETWEEN 0 AND 36 AND result_set_at IS NOT NULL
+             AND result_set_at >= closes_at))
+    AND (state NOT IN ('CLOSED', 'SETTLED') OR winning_number IS NOT NULL)
+    AND (state <> 'OPEN' OR winning_number IS NULL)
+"""
+
+
+class RouletteRound(Base):
+    __tablename__ = "roulette_rounds"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    state: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'OPEN'"))
+    opens_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    closes_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reveal_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    winning_number: Mapped[int | None] = mapped_column(SmallInteger)
+    result_set_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        CheckConstraint(ROUND_STRUCTURE_CHECK, name="ck_roulette_rounds_structure"),
+        Index(
+            "uq_roulette_rounds_one_open",
+            "state",
+            unique=True,
+            postgresql_where=text("state = 'OPEN'"),
+        ),
+    )
+
+
+class RouletteBet(Base):
+    __tablename__ = "roulette_bets"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    round_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("roulette_rounds.id", ondelete="RESTRICT"), nullable=False
+    )
+    player_account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("account_wallets.account_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    player_role: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'PLAYER'")
+    )
+    operation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("point_operations.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    selection_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    accepted_stake: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["player_account_id", "player_role"], ["accounts.id", "accounts.role"],
+            name="fk_roulette_bets_player_role", ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "player_role = 'PLAYER' AND accepted_stake >= 5 "
+            "AND accepted_stake % 5 = 0 AND length(selection_key) > 0",
+            name="ck_roulette_bets_shape",
+        ),
+        Index("ix_roulette_bets_round_player", "round_id", "player_account_id"),
+        UniqueConstraint("operation_id", name="uq_roulette_bets_operation"),
+    )
