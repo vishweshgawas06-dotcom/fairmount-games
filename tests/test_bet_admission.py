@@ -283,6 +283,40 @@ class BetAdmissionTests(unittest.TestCase):
         self.assertEqual((self.wallet(self.player), self.reserve()), (90, 350))
         self.assertTrue(reconcile_points(self.connection).balanced)
 
+    def test_two_unsettled_rounds_share_liability_and_release_only_finished_round(self):
+        self.seed(issued=1000)
+        self.bet(key="first")
+        first_round = self.round
+        self.advance_round_clock_fixture()
+        close_round(self.connection, first_round, _test_rng=lambda: 17)
+        self.round = open_round(self.connection)
+        with self.assertRaises(BetUnavailable):
+            self.bet(key="unfunded-second")
+        fund_game_reserve(
+            self.connection,
+            self.owner_token,
+            amount=340,
+            reason="second-round protection",
+            idempotency_key="second-fund",
+        )
+        self.bet(key="second")
+        self.assertEqual(self.reserve(), 700)
+        first = settle_round(self.connection, first_round)
+        self.assertEqual((first.total_credited, self.reserve()), (350, 350))
+        self.assertEqual(
+            self.connection.scalar(
+                select(RouletteRound.state).where(RouletteRound.id == self.round)
+            ),
+            "OPEN",
+        )
+        # Only the still-open round's full-void and payout exposure remains.
+        voided = refund_void_round(
+            self.connection, self.round, incident_reason="test-only explicit void primitive"
+        )
+        self.assertEqual((voided.total_credited, self.reserve()), (10, 340))
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertTrue(reconcile_points(self.connection).balanced)
+
     def test_void_refunds_every_accepted_stake_even_if_player_disabled(self):
         other = self.account("PLAYER")
         other_token = self.session(other, "PLAYER")
