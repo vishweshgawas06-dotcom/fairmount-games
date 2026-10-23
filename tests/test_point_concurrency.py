@@ -5,6 +5,7 @@ import os
 import secrets
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from pathlib import Path
 from threading import Barrier
 
@@ -17,6 +18,7 @@ from fairmount_api.db.models import (
     GameReserve,
     PointOperation,
     RouletteBet,
+    RouletteRound,
 )
 from fairmount_api.identity.session_validation import session_token_digest
 from fairmount_api.point_accounting import (
@@ -27,9 +29,13 @@ from fairmount_api.point_accounting import (
 from fairmount_api.point_reconciliation import reconcile_points
 from fairmount_api.reserve_funding import fund_game_reserve
 from fairmount_api.roulette.admission import BetUnavailable, place_bet
-from fairmount_api.roulette.round_clock import open_round
-from fairmount_api.roulette.settlement import refund_void_round
-from sqlalchemy import create_engine, func, insert, select, text
+from fairmount_api.roulette.round_clock import close_round, open_round
+from fairmount_api.roulette.settlement import (
+    SettlementUnavailable,
+    refund_void_round,
+    settle_round,
+)
+from sqlalchemy import create_engine, func, insert, select, text, update
 
 from infrastructure.local_db_url import local_database_url
 
@@ -373,6 +379,84 @@ class PointContentionTests(unittest.TestCase):
             (reserve_balance, final_bets, new_refunds), (340, expected_bets, expected_bets)
         )
         self.assertEqual(restored, baseline_player_balances)
+
+        # P11-T01g: after a persisted, independently selected winner is
+        # revealable, concurrent settlement and trusted full void compete for
+        # one terminal round state. Never pay the winner *and* refund the stake.
+        with self.engine.begin() as connection:
+            final_round = open_round(connection)
+        with self.engine.begin() as connection:
+            place_bet(
+                connection,
+                tokens[0],
+                round_id=final_round,
+                selection_key="straight:17",
+                requested=10,
+                idempotency_key="bet-before-terminal-race",
+            )
+        with self.engine.begin() as connection:
+            opened = connection.scalar(select(func.clock_timestamp())) - timedelta(seconds=61)
+            # Privileged isolated-schema test fixture only; restore the trigger
+            # before running the actual transition and concurrent services.
+            connection.execute(text("ALTER TABLE roulette_rounds DISABLE TRIGGER tr_round_guard"))
+            connection.execute(
+                update(RouletteRound.__table__)
+                .where(RouletteRound.id == final_round)
+                .values(
+                    opens_at=opened,
+                    closes_at=opened + timedelta(seconds=50),
+                    reveal_at=opened + timedelta(seconds=60),
+                )
+            )
+            connection.execute(text("ALTER TABLE roulette_rounds ENABLE TRIGGER tr_round_guard"))
+            self.assertEqual(close_round(connection, final_round, _test_rng=lambda: 17), 17)
+
+        final_barrier = Barrier(2)
+
+        def competing_terminal(void):
+            final_barrier.wait(timeout=10)
+            try:
+                with self.engine.begin() as connection:
+                    if void:
+                        return refund_void_round(
+                            connection,
+                            final_round,
+                            incident_reason="test-only terminal race",
+                        )
+                    return settle_round(connection, final_round)
+            except SettlementUnavailable:
+                return None
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            settled_future = pool.submit(competing_terminal, False)
+            refunded_future = pool.submit(competing_terminal, True)
+            settled = settled_future.result()
+            refunded = refunded_future.result()
+        self.assertEqual(sum(result is not None for result in (settled, refunded)), 1)
+        paid = settled is not None
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            with connection.begin():
+                report = reconcile_points(connection)
+                state = connection.scalar(
+                    select(RouletteRound.state).where(RouletteRound.id == final_round)
+                )
+                balance = connection.scalar(select(GameReserve.balance))
+                player_balance = connection.scalar(
+                    select(AccountWallet.balance).where(AccountWallet.account_id == self.players[0])
+                )
+                operations = connection.execute(
+                    select(PointOperation.kind, PointOperation.amount).where(
+                        PointOperation.context_id == final_round,
+                        PointOperation.kind.in_(("PAYOUT", "VOID_REFUND")),
+                    )
+                ).all()
+        self.assertTrue(report.balanced)
+        self.assertEqual(state, "SETTLED" if paid else "VOID_REFUNDED")
+        self.assertEqual(balance, 0 if paid else 340)
+        self.assertEqual(player_balance, baseline_player_balances[0] + (340 if paid else 0))
+        self.assertEqual(operations, [("PAYOUT", 350)] if paid else [("VOID_REFUND", 10)])
 
 
 if __name__ == "__main__":
