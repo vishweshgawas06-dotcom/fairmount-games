@@ -15,9 +15,14 @@ from fairmount_api.db.models import (
     RouletteRound,
 )
 from fairmount_api.identity.session_validation import session_token_digest
-from fairmount_api.point_accounting import issue_owner_points, transfer_owner_points
+from fairmount_api.point_accounting import (
+    PointActionConflict,
+    PointActionUnavailable,
+    issue_owner_points,
+    transfer_owner_points,
+)
 from fairmount_api.point_reconciliation import reconcile_points
-from fairmount_api.reserve_funding import fund_game_reserve
+from fairmount_api.reserve_funding import fund_game_reserve, withdraw_surplus_reserve
 from fairmount_api.roulette.admission import BetReplayConflict, BetUnavailable, place_bet
 from fairmount_api.roulette.round_clock import close_round, open_round
 from fairmount_api.roulette.settlement import (
@@ -281,6 +286,90 @@ class BetAdmissionTests(unittest.TestCase):
         result = settle_round(self.connection, self.round)
         self.assertEqual((result.total_staked, result.total_credited), (10, 0))
         self.assertEqual((self.wallet(self.player), self.reserve()), (90, 350))
+        self.assertTrue(reconcile_points(self.connection).balanced)
+
+    def test_owner_withdraws_only_surplus_while_winner_and_void_are_covered(self):
+        self.seed()
+        self.bet()
+        with self.assertRaises(PointActionUnavailable):
+            withdraw_surplus_reserve(
+                self.connection,
+                self.owner_token,
+                amount=1,
+                reason="cannot touch owed reserve",
+                idempotency_key="shortfall",
+            )
+        fund_game_reserve(
+            self.connection,
+            self.owner_token,
+            amount=20,
+            reason="extra reserve",
+            idempotency_key="extra-reserve",
+        )
+        result = withdraw_surplus_reserve(
+            self.connection,
+            self.owner_token,
+            amount=20,
+            reason="return surplus",
+            idempotency_key="surplus",
+        )
+        replay = withdraw_surplus_reserve(
+            self.connection,
+            self.owner_token,
+            amount=20,
+            reason="return surplus",
+            idempotency_key="surplus",
+        )
+        self.assertEqual(result.operation_id, replay.operation_id)
+        self.assertTrue(replay.replayed)
+        with self.assertRaises(PointActionConflict):
+            withdraw_surplus_reserve(
+                self.connection,
+                self.owner_token,
+                amount=15,
+                reason="return surplus",
+                idempotency_key="surplus",
+            )
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertEqual((self.wallet(self.player), self.reserve()), (90, 350))
+        self.assertTrue(reconcile_points(self.connection).balanced)
+
+    def test_withdrawal_rejects_wrong_actor_and_covers_full_void_refund(self):
+        self.seed(issued=500, player_points=200, reserve=0)
+        self.bet(selection="red", amount=100)
+        self.bet(selection="black", amount=100, key="other-color")
+        with self.assertRaises(PointActionUnavailable):
+            withdraw_surplus_reserve(
+                self.connection,
+                self.player_token,
+                amount=1,
+                reason="unauthorized",
+                idempotency_key="not-owner",
+            )
+        with self.assertRaises(PointActionUnavailable):
+            withdraw_surplus_reserve(
+                self.connection,
+                self.owner_token,
+                amount=1,
+                reason="refund liability",
+                idempotency_key="refund-shortfall",
+            )
+        fund_game_reserve(
+            self.connection,
+            self.owner_token,
+            amount=25,
+            reason="extra refund coverage",
+            idempotency_key="refund-extra",
+        )
+        withdraw_surplus_reserve(
+            self.connection,
+            self.owner_token,
+            amount=25,
+            reason="return refund surplus",
+            idempotency_key="refund-surplus",
+        )
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertEqual((self.wallet(self.player), self.reserve()), (0, 200))
         self.assertTrue(reconcile_points(self.connection).balanced)
 
     def test_two_unsettled_rounds_share_liability_and_release_only_finished_round(self):
