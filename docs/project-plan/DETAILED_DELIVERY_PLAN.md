@@ -93,7 +93,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 ### P04 — Resource-level authorization
 
 - **P04-T01:** Define server-side role/action/resource matrix for owner, agent, and player; enumerate data each may read/write. **Gate:** owner-reviewed policy and threat cases.
-- **P04-T01a (private resource reads, local gate passed; PostgreSQL CI pending):** [Transaction-scoped wallet and accepted-bet visibility](tasks/P04-T01a.md) follows current assignment and enabled status; no public route or full P04 policy approval.
+- **P04-T01a (private resource reads complete; [CI 39921539552](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39921539552)):** [Transaction-scoped wallet and accepted-bet visibility](tasks/P04-T01a.md) follows current assignment and enabled status; no public route or full P04 policy approval.
 - **P04-T02:** Enforce checks at API and data access boundaries; never trust client-supplied player/agent IDs as authorization. **Gate:** cross-agent and cross-player ID tampering tests, including disabled accounts.
 - **P04-T03:** Protect realtime private subscriptions and audit privileged actions. **Gate:** another player's bets, balance, and history never appear in API or WebSocket payloads.
 
