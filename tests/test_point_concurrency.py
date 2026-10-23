@@ -27,7 +27,7 @@ from fairmount_api.point_accounting import (
     transfer_owner_points,
 )
 from fairmount_api.point_reconciliation import reconcile_points
-from fairmount_api.reserve_funding import fund_game_reserve
+from fairmount_api.reserve_funding import fund_game_reserve, withdraw_surplus_reserve
 from fairmount_api.roulette.admission import BetUnavailable, place_bet
 from fairmount_api.roulette.round_clock import close_round, open_round
 from fairmount_api.roulette.settlement import (
@@ -457,6 +457,83 @@ class PointContentionTests(unittest.TestCase):
         self.assertEqual(balance, 0 if paid else 340)
         self.assertEqual(player_balance, baseline_player_balances[0] + (340 if paid else 0))
         self.assertEqual(operations, [("PAYOUT", 350)] if paid else [("VOID_REFUND", 10)])
+
+        # P05-T02f: one additional 350-point liability cannot coexist with
+        # a ten-point withdrawal from a 340-point reserve. The reserve lock
+        # permits only one request to succeed, without consuming the other's
+        # stake or handing an accepted winner an unfunded promise.
+        with self.engine.begin() as connection:
+            if paid:
+                fund_game_reserve(
+                    connection,
+                    self.token,
+                    amount=340,
+                    reason="fund withdrawal contention",
+                    idempotency_key="race-refund",
+                )
+            withdraw_round = open_round(connection)
+            owner_before = connection.scalar(
+                select(AccountWallet.balance).where(AccountWallet.account_id == self.owner)
+            )
+        withdrawal_barrier = Barrier(2)
+
+        def competing_withdrawal():
+            withdrawal_barrier.wait(timeout=10)
+            try:
+                with self.engine.begin() as connection:
+                    return withdraw_surplus_reserve(
+                        connection,
+                        self.token,
+                        amount=10,
+                        reason="only unfunded surplus",
+                        idempotency_key="withdraw-race",
+                    )
+            except PointActionUnavailable:
+                return None
+
+        def competing_admission():
+            withdrawal_barrier.wait(timeout=10)
+            try:
+                with self.engine.begin() as connection:
+                    return place_bet(
+                        connection,
+                        tokens[0],
+                        round_id=withdraw_round,
+                        selection_key="straight:17",
+                        requested=10,
+                        idempotency_key="bet-withdraw-race",
+                    )
+            except BetUnavailable:
+                return None
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            bet_future = pool.submit(competing_admission)
+            withdrawal_future = pool.submit(competing_withdrawal)
+            competing_bet_result = bet_future.result()
+            withdrawn = withdrawal_future.result()
+        self.assertEqual(sum(result is not None for result in (competing_bet_result, withdrawn)), 1)
+        bet_won = competing_bet_result is not None
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            with connection.begin():
+                report = reconcile_points(connection)
+                reserve_balance = connection.scalar(select(GameReserve.balance))
+                owner_after = connection.scalar(
+                    select(AccountWallet.balance).where(AccountWallet.account_id == self.owner)
+                )
+                player_after = connection.scalar(
+                    select(AccountWallet.balance).where(AccountWallet.account_id == self.players[0])
+                )
+                accepted = connection.scalar(
+                    select(func.count())
+                    .select_from(RouletteBet)
+                    .where(RouletteBet.round_id == withdraw_round)
+                )
+        self.assertTrue(report.balanced)
+        self.assertEqual((reserve_balance, accepted), (350, 1) if bet_won else (330, 0))
+        self.assertEqual(owner_after, owner_before + (0 if bet_won else 10))
+        self.assertEqual(player_after, player_balance - (10 if bet_won else 0))
 
 
 if __name__ == "__main__":
