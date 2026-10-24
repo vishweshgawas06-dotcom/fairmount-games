@@ -140,6 +140,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 ### P09 — Realtime delivery
 
 - **P09-T01:** Version and implement public round event contract (phase, countdown, result/history) and authenticated private player updates; decide replay/sequence (D-08). **Gate:** public payloads contain no private bets/balances.
+- **P09-T01a (private result-safe snapshot, local gate passed; CI pending):** [Database-clock phase/reveal projection with no private bet or wallet data](tasks/P09-T01a.md); no HTTP or realtime event contract.
 - **P09-T02:** Reconnect/snapshot flow and load-aware fan-out; Redis only with an explicit role. **Gate:** reconnect sees server state, stale sessions cannot subscribe, missed events do not rewrite accepted bets.
 
 ### P10 — Player experience

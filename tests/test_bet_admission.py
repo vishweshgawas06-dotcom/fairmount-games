@@ -24,6 +24,7 @@ from fairmount_api.point_accounting import (
 from fairmount_api.point_reconciliation import reconcile_points
 from fairmount_api.reserve_funding import fund_game_reserve, withdraw_surplus_reserve
 from fairmount_api.roulette.admission import BetReplayConflict, BetUnavailable, place_bet
+from fairmount_api.roulette.public_snapshot import read_public_round_snapshot
 from fairmount_api.roulette.rebet import RebetConflict, RebetUnavailable, repeat_previous_bets
 from fairmount_api.roulette.recovery import advance_one_due_round, open_next_due_round
 from fairmount_api.roulette.round_clock import close_round, open_round
@@ -139,6 +140,53 @@ class BetAdmissionTests(unittest.TestCase):
 
     def reserve(self):
         return self.connection.scalar(select(GameReserve.balance).where(GameReserve.id == 1))
+
+    def test_public_snapshot_hides_saved_result_until_reveal_and_never_shows_private_bets(self):
+        initial = read_public_round_snapshot(self.connection)
+        self.assertEqual(
+            (initial.round_id, initial.phase, initial.winning_number), (self.round, "BETTING", None)
+        )
+        self.seed()
+        self.bet()
+        self.advance_round_clock_fixture(seconds=55)
+        close_round(self.connection, self.round, _test_rng=lambda: 17)
+        # The server has saved the result, but public readers cannot learn it
+        # early, whether or not they know the round UUID.
+        hidden = read_public_round_snapshot(self.connection)
+        self.assertEqual(
+            (hidden.phase, hidden.winning_number, hidden.recent), ("SPINNING", None, ())
+        )
+        self.assertEqual(
+            self.connection.scalar(
+                select(RouletteRound.winning_number).where(RouletteRound.id == self.round)
+            ),
+            17,
+        )
+        self.advance_round_clock_fixture(seconds=61)
+        revealed = read_public_round_snapshot(self.connection)
+        self.assertEqual((revealed.phase, revealed.winning_number), ("RESULT", 17))
+        self.assertEqual(
+            [(item.round_id, item.winning_number) for item in revealed.recent], [(self.round, 17)]
+        )
+        self.assertNotIn("player", repr(revealed).lower())
+        self.assertNotIn("stake", repr(revealed).lower())
+        settle_round(self.connection, self.round)
+        next_round = open_round(self.connection)
+        current = read_public_round_snapshot(self.connection)
+        self.assertEqual(
+            (current.round_id, current.phase, current.winning_number), (next_round, "BETTING", None)
+        )
+        self.assertEqual(current.recent[0].winning_number, 17)
+
+    def test_public_snapshot_reports_delayed_result_without_inventing_void(self):
+        self.advance_round_clock_fixture(seconds=61)
+        delayed = read_public_round_snapshot(self.connection)
+        self.assertEqual(
+            (delayed.phase, delayed.winning_number, delayed.recent), ("RESULT_DELAYED", None, ())
+        )
+        close_round(self.connection, self.round, _test_rng=lambda: 0)
+        displayed = read_public_round_snapshot(self.connection)
+        self.assertEqual((displayed.phase, displayed.winning_number), ("RESULT", 0))
 
     def test_funded_straight_up_and_replay_do_not_double_debit(self):
         self.seed()
