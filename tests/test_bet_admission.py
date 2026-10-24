@@ -24,6 +24,7 @@ from fairmount_api.point_accounting import (
 from fairmount_api.point_reconciliation import reconcile_points
 from fairmount_api.reserve_funding import fund_game_reserve, withdraw_surplus_reserve
 from fairmount_api.roulette.admission import BetReplayConflict, BetUnavailable, place_bet
+from fairmount_api.roulette.rebet import RebetConflict, RebetUnavailable, repeat_previous_bets
 from fairmount_api.roulette.recovery import advance_one_due_round, open_next_due_round
 from fairmount_api.roulette.round_clock import close_round, open_round
 from fairmount_api.roulette.settlement import (
@@ -248,6 +249,115 @@ class BetAdmissionTests(unittest.TestCase):
             )
         )
         self.connection.execute(text("ALTER TABLE roulette_rounds ENABLE TRIGGER tr_round_guard"))
+
+    def prepare_rebet_source(
+        self, *, issued=1000, player_points=100, reserve=340, source_bets=("straight:17",)
+    ):
+        self.seed(issued=issued, player_points=player_points, reserve=reserve)
+        for n, selection in enumerate(source_bets):
+            self.bet(selection=selection, amount=10, key=f"original-{n}")
+        source = self.round
+        self.advance_round_clock_fixture()
+        close_round(self.connection, source, _test_rng=lambda: 0)
+        settle_round(self.connection, source)
+        self.round = open_round(self.connection)
+        return source
+
+    def test_rebet_previous_player_set_is_full_and_replayable_after_cutoff(self):
+        source = self.prepare_rebet_source(source_bets=("straight:17", "straight:36"))
+        first = repeat_previous_bets(
+            self.connection,
+            self.player_token,
+            target_round_id=self.round,
+            idempotency_key="repeat-original",
+        )
+        self.assertEqual((first.source_round_id, first.target_round_id), (source, self.round))
+        self.assertEqual(len(first.bets), 2)
+        self.assertFalse(first.replayed)
+        self.assertTrue(all(bet.accepted == bet.requested == 10 for bet in first.bets))
+        # Test-only time warp closes the target; a retry must replay without
+        # creating another BET_STAKE or needing a still-open betting window.
+        self.advance_round_clock_fixture()
+        close_round(self.connection, self.round, _test_rng=lambda: 0)
+        replay = repeat_previous_bets(
+            self.connection,
+            self.player_token,
+            target_round_id=self.round,
+            idempotency_key="repeat-original",
+        )
+        self.assertTrue(replay.replayed)
+        self.assertEqual([bet.bet_id for bet in first.bets], [bet.bet_id for bet in replay.bets])
+        next_round = open_round(self.connection)
+        with self.assertRaises(RebetConflict):
+            repeat_previous_bets(
+                self.connection,
+                self.player_token,
+                target_round_id=next_round,
+                idempotency_key="repeat-original",
+            )
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertEqual((self.wallet(self.player), self.reserve()), (60, 380))
+        self.assertEqual(self.connection.scalar(select(func.count()).select_from(RouletteBet)), 4)
+        self.assertTrue(reconcile_points(self.connection).balanced)
+
+    def test_rebet_rejects_whole_set_on_full_wallet_or_cap_conflict(self):
+        self.prepare_rebet_source()
+        transfer_owner_points(
+            self.connection,
+            self.owner_token,
+            member_account_id=self.player,
+            amount=85,
+            to_member=False,
+            reason="test low wallet",
+            idempotency_key="remove-for-rebet",
+        )
+        with self.assertRaises(RebetUnavailable):
+            repeat_previous_bets(
+                self.connection,
+                self.player_token,
+                target_round_id=self.round,
+                idempotency_key="wallet-fail",
+            )
+        self.assertEqual(self.wallet(self.player), 5)
+        self.assertEqual(self.connection.scalar(select(func.count()).select_from(RouletteBet)), 1)
+
+    def test_rebet_rejects_cap_limited_partial_and_underfunded_bundle(self):
+        self.prepare_rebet_source(
+            issued=80000,
+            player_points=5000,
+            reserve=70000,
+            source_bets=("straight:17", "straight:36"),
+        )
+        self.bet(selection="straight:36", amount=1995, key="target-cap")
+        before = (self.wallet(self.player), self.reserve())
+        with self.assertRaises(RebetUnavailable):
+            repeat_previous_bets(
+                self.connection,
+                self.player_token,
+                target_round_id=self.round,
+                idempotency_key="cap-fail",
+            )
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertEqual((self.wallet(self.player), self.reserve()), before)
+        self.assertEqual(self.connection.scalar(select(func.count()).select_from(RouletteBet)), 3)
+
+        # Different fixture: a full-size repeated winner is legal under caps,
+        # but cannot double the already accepted 350-point liability.
+        # The separate test below checks this with a minimally funded reserve.
+
+    def test_rebet_reserve_rejection_keeps_existing_target_bet(self):
+        self.prepare_rebet_source()
+        self.bet(selection="straight:17", amount=10, key="target-existing")
+        before = (self.wallet(self.player), self.reserve())
+        with self.assertRaises(RebetUnavailable):
+            repeat_previous_bets(
+                self.connection,
+                self.player_token,
+                target_round_id=self.round,
+                idempotency_key="reserve-fail",
+            )
+        self.assertEqual((self.wallet(self.player), self.reserve()), before)
+        self.assertEqual(self.connection.scalar(select(func.count()).select_from(RouletteBet)), 2)
 
     def test_late_due_worker_reuses_result_then_settles_without_auto_void(self):
         self.seed()

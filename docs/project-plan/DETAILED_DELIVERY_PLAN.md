@@ -159,6 +159,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **P05-T02e (private reserve withdrawal complete; [CI 39917899544](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39917899544)):** [Owner-only, fresh-MFA, POOL-01 surplus return](tasks/P05-T02e.md); do not expose as a public route.
 - **P05-T02f (withdrawal/bet race complete; [CI 39918094115](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39918094115)):** [Only one of a withdrawal and a newly unfunded bet can succeed](tasks/P05-T02f.md).
 - **P11-T02 (server):** Implement player-specific all-or-nothing rebet with idempotency. **Gate:** PA-19, duplicate retry, cutoff and concurrent wallet/cap tests.
+- **P11-T02a (private rebet, local gate passed; PostgreSQL CI pending):** [Previous-round full accepted set, one atomic POOL-01/cap/wallet decision and replay](tasks/P11-T02a.md); no public route.
 - **P11-T03 (client):** Draft chip placement/edit/cancel before submission, pending/confirmed distinction, immutable accepted bets, combined duplicate display and rebet UX. **Gate:** E2E insufficient balance, cap return, cutoff, retries, and disconnect behavior; no optimistic bet treated as accepted.
 - **P11-T04 (cross-service):** Wire bet results into P08 settlement and P09 private events. **Gate:** PA-22/PA-23 and player privacy end-to-end on a shared round. P00-T02 cannot be marked verified before these gates pass.
 
