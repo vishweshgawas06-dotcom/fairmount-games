@@ -38,6 +38,7 @@ from fairmount_api.roulette.settlement import (
     refund_void_round,
     settle_round,
 )
+from fairmount_api.roulette.worker import OpenedRound, run_once
 from sqlalchemy import create_engine, func, insert, select, text, update
 
 from infrastructure.local_db_url import local_database_url
@@ -574,6 +575,62 @@ class PointContentionTests(unittest.TestCase):
         self.assertEqual((reserve_balance, accepted), (350, 1) if bet_won else (330, 0))
         self.assertEqual(owner_after, owner_before + (0 if bet_won else 10))
         self.assertEqual(player_after, player_balance - (10 if bet_won else 0))
+
+        # Simulate a worker crash after its committed late close. A *new*
+        # invocation must reuse that exact independently persisted number,
+        # settle exactly once, then open only one fresh current-time round.
+        with self.engine.begin() as connection:
+            opened = connection.scalar(select(func.clock_timestamp())) - timedelta(seconds=61)
+            connection.execute(text("ALTER TABLE roulette_rounds DISABLE TRIGGER tr_round_guard"))
+            connection.execute(
+                update(RouletteRound.__table__)
+                .where(RouletteRound.id == withdraw_round)
+                .values(
+                    opens_at=opened,
+                    closes_at=opened + timedelta(seconds=50),
+                    reveal_at=opened + timedelta(seconds=60),
+                )
+            )
+            connection.execute(text("ALTER TABLE roulette_rounds ENABLE TRIGGER tr_round_guard"))
+        first_step = run_once(self.engine)
+        self.assertEqual((first_step.action, first_step.round_id), ("RESULT_READY", withdraw_round))
+        self.assertIn(first_step.winning_number, range(37))
+        with self.engine.begin() as connection:
+            self.assertEqual(close_round(connection, withdraw_round), first_step.winning_number)
+            self.assertEqual(
+                connection.scalar(
+                    select(RouletteRound.state).where(RouletteRound.id == withdraw_round)
+                ),
+                "CLOSED",
+            )
+        second_step = run_once(self.engine)
+        self.assertEqual(
+            (second_step.action, second_step.winning_number), ("SETTLED", first_step.winning_number)
+        )
+        self.assertEqual(second_step.round_id, withdraw_round)
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            with connection.begin():
+                report = reconcile_points(connection)
+                paid_count = connection.scalar(
+                    select(func.count())
+                    .select_from(PointOperation)
+                    .where(
+                        PointOperation.kind == "PAYOUT",
+                        PointOperation.context_id == withdraw_round,
+                    )
+                )
+                result_state = connection.scalar(
+                    select(RouletteRound.state).where(RouletteRound.id == withdraw_round)
+                )
+        self.assertTrue(report.balanced)
+        self.assertEqual(result_state, "SETTLED")
+        self.assertEqual(paid_count, int(bet_won and first_step.winning_number == 17))
+        opened_step = run_once(self.engine)
+        self.assertIsInstance(opened_step, OpenedRound)
+        self.assertNotEqual(opened_step.id, withdraw_round)
+        self.assertIsNone(run_once(self.engine))
 
 
 if __name__ == "__main__":
