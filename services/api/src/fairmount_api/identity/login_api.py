@@ -1,4 +1,4 @@
-"""Opt-in direct-TLS owner/member login boundary; unavailable behind a proxy.
+"""Opt-in direct-TLS login/logout boundary; unavailable behind a proxy.
 
 Never enable in the HTTP preview. A deployment must prove that ASGI scheme and
 client peer are the real direct TLS connection (proxy headers disabled). Trusted
@@ -22,11 +22,14 @@ from fairmount_api.identity.http_boundary import (
     RequestBoundaryUnavailable,
     _origin_host,
     _single_header,
+    clear_session_cookies,
+    require_same_origin_session,
     set_session_cookies,
 )
 from fairmount_api.identity.member_login import IssuedMemberSession
 from fairmount_api.identity.mfa_keys import load_mfa_keyring
 from fairmount_api.identity.owner_login import IssuedOwnerSession
+from fairmount_api.identity.session_logout import revoke_presented_session
 from fairmount_api.readiness import _configured_engine, schema_ready
 
 router = APIRouter()
@@ -173,4 +176,36 @@ async def login(request: Request) -> JSONResponse:
     role = issued.role if isinstance(issued, IssuedMemberSession) else "OWNER"
     response = _reply(200, "authenticated")
     set_session_cookies(response, issued.token, role=role)
+    return response
+
+
+@router.post("/api/v1/auth/logout", tags=["auth"])
+def logout(request: Request) -> JSONResponse:
+    """CSRF-guarded, commit-before-clear bearer revocation in direct TLS mode.
+
+    An already-absent or revoked token is idempotently acknowledged; no account
+    existence or current-session details are disclosed. Never clear the cookie
+    on DB failure before the revocation transaction can commit.
+    """
+    try:
+        _direct_source(request)
+        raw_token = require_same_origin_session(
+            request, public_origin=os.environ["FAIRMOUNT_PUBLIC_ORIGIN"]
+        )
+    except RequestBoundaryUnavailable:
+        return _reply(403, "unavailable")
+    except (ValueError, KeyError):
+        return _reply(503, "unavailable")
+    engine = _configured_engine()
+    if engine is None:
+        return _reply(503, "unavailable")
+    try:
+        with engine.begin() as connection:
+            if not schema_ready(connection):
+                return _reply(503, "unavailable")
+            revoke_presented_session(connection, raw_token)
+    except SQLAlchemyError:
+        return _reply(503, "unavailable")
+    response = _reply(200, "signed_out")
+    clear_session_cookies(response)
     return response

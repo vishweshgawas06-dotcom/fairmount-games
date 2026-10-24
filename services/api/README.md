@@ -40,7 +40,7 @@ The read-only `/api/v1/roulette/round` endpoint and `/preview/` interface can sh
 
 ## Opt-in direct-TLS login boundary (not enabled in preview)
 
-`POST /api/v1/auth/login` can only run with explicit `FAIRMOUNT_AUTH_EDGE_MODE=direct-tls`, a canonical HTTPS `FAIRMOUNT_PUBLIC_ORIGIN`, a migrated `FAIRMOUNT_API_DATABASE_URL`, and restricted-file `FAIRMOUNT_AUTH_HMAC_KEY_FILE` (plus `FAIRMOUNT_MFA_KEY_FILE` for OWNER). It requires the **actual direct HTTPS ASGI peer**, exact Origin and Host, and rejects forwarding headers. Run a reviewed direct-TLS deployment with proxy-header trust disabled; **do not enable this mode behind Arena's preview proxy or any reverse proxy**. Reverse-proxy IP handling, full login→authorized resource→logout integration, CSRF on writes and production acceptance need later gates. The preview remains deliberately unable to authenticate.
+`POST /api/v1/auth/login` and the CSRF-guarded `POST /api/v1/auth/logout` can only run with explicit `FAIRMOUNT_AUTH_EDGE_MODE=direct-tls`, a canonical HTTPS `FAIRMOUNT_PUBLIC_ORIGIN`, a migrated `FAIRMOUNT_API_DATABASE_URL`, and restricted-file `FAIRMOUNT_AUTH_HMAC_KEY_FILE` (plus `FAIRMOUNT_MFA_KEY_FILE` for OWNER). It requires the **actual direct HTTPS ASGI peer**, exact Origin and Host, and rejects forwarding headers. Run a reviewed direct-TLS deployment with proxy-header trust disabled; **do not enable this mode behind Arena's preview proxy or any reverse proxy**. Reverse-proxy IP handling, full login→authorized resource→logout integration, CSRF on gameplay/point writes and production acceptance need later gates. The preview remains deliberately unable to authenticate.
 
 ## Opt-in round worker (not deployed)
 

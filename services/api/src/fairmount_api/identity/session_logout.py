@@ -1,7 +1,7 @@
-"""Internal bearer-possession logout; no HTTP endpoint or cookie clearing yet.
+"""Internal bearer-possession logout with an opt-in direct-TLS HTTP adapter.
 
-A future browser route MUST require CSRF protection and clear its cookie. The
-caller commits before acknowledging logout. Do not use this as action authority.
+The adapter requires same-origin CSRF, commits revocation before clearing its
+cookies, and stays disabled in the proxy preview. This is not action authority.
 """
 
 from __future__ import annotations
