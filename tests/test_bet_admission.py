@@ -33,6 +33,7 @@ from fairmount_api.roulette.settlement import (
     refund_void_round,
     settle_round,
 )
+from fairmount_api.roulette.worker_diagnostics import inspect_due_rounds
 from sqlalchemy import create_engine, func, insert, select, text, update
 
 from infrastructure.local_db_url import local_database_url
@@ -140,6 +141,35 @@ class BetAdmissionTests(unittest.TestCase):
 
     def reserve(self):
         return self.connection.scalar(select(GameReserve.balance).where(GameReserve.id == 1))
+
+    def test_worker_diagnostics_inventory_tracks_result_and_settlement_debts(self):
+        initial = inspect_due_rounds(self.connection)
+        self.assertEqual(
+            (initial.due_open, initial.due_closed, initial.oldest_due_at), (0, 0, None)
+        )
+        self.assertEqual((initial.latest_round_id, initial.latest_state), (self.round, "OPEN"))
+        self.seed()
+        self.bet()
+        self.advance_round_clock_fixture(seconds=61)
+        overdue = inspect_due_rounds(self.connection)
+        self.assertEqual((overdue.due_open, overdue.due_closed), (1, 0))
+        self.assertIsNotNone(overdue.oldest_due_at)
+        self.assertEqual(overdue.latest_round_id, self.round)
+        close_round(self.connection, self.round, _test_rng=lambda: 0)
+        saved = inspect_due_rounds(self.connection)
+        self.assertEqual((saved.due_open, saved.due_closed, saved.latest_state), (0, 1, "CLOSED"))
+        self.assertEqual(
+            saved.oldest_due_at,
+            self.connection.scalar(
+                select(RouletteRound.reveal_at).where(RouletteRound.id == self.round)
+            ),
+        )
+        settle_round(self.connection, self.round)
+        done = inspect_due_rounds(self.connection)
+        self.assertEqual((done.due_open, done.due_closed, done.oldest_due_at), (0, 0, None))
+        self.assertEqual(done.latest_state, "SETTLED")
+        self.assertNotIn("stake", repr(done).lower())
+        self.assertNotIn("player", repr(done).lower())
 
     def test_public_snapshot_hides_saved_result_until_reveal_and_never_shows_private_bets(self):
         initial = read_public_round_snapshot(self.connection)

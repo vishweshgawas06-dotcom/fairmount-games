@@ -186,6 +186,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **P15-T01:** End-to-end failure matrix: dropped connections, clock drift, cutoff races, retried requests, database/worker restarts and outage/restore. **Gate:** accepted bets survive player disconnect; accounting ends in exactly one terminal state.
 - **P15-T02:** Document incident handling, alarms, recovery worker limits and operator runbooks. **Gate:** repeatable drill with audit trail and no manual wallet patching.
 - **P15-T02a (API database/schema readiness; [CI 40084106805](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40084106805) passed):** [Distinct liveness and fail-closed database readiness](tasks/P15-T02a.md). Does not monitor the worker or imply game availability.
+- **P15-T02b (due-round diagnostics, local gate passed; PostgreSQL CI pending):** [Read-only OPEN/CLOSED backlog inventory and restricted operator CLI](tasks/P15-T02b.md). No supervisor, alert threshold or automatic void.
 
 ### P16 — Security and full test gate
 
