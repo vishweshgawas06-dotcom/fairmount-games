@@ -103,7 +103,6 @@ function setResult(number) {
   const color = pocketColor(number);
   orb.classList.add(color);
   $('result-copy').textContent = `${color[0].toUpperCase() + color.slice(1)} pocket · selected by the server.`;
-  $('wheel-ball').classList.add('revealed');
 }
 function showSnapshot(payload) {
   $('connection').classList.add('online');
@@ -134,11 +133,20 @@ function showSnapshot(payload) {
   if (number !== null && state.lastResultId !== round.id) {
     const target = targetAngle(number, state.angle);
     const ring = $('pocket-ring');
+    const ball = $('wheel-ball');
+    ball.classList.remove('revealed');
     if (reducedMotion.matches) ring.style.transition = 'none';
     else ring.style.transition = '';
     ring.style.transform = `rotate(${target}deg)`;
     state.angle = target;
     state.lastResultId = round.id;
+    // The ball must never appear over a different pocket during alignment.
+    if (reducedMotion.matches) ball.classList.add('revealed');
+    else ring.addEventListener('transitionend', event => {
+      if (event.propertyName === 'transform' && state.lastResultId === round.id && state.round?.id === round.id) {
+        ball.classList.add('revealed');
+      }
+    }, { once: true });
   }
 }
 function showUnavailable() {
