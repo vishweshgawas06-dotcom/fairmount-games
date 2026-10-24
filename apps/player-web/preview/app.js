@@ -163,6 +163,7 @@ function showUnavailable() {
   setResult(null);
   displayHistory([]);
 }
+let pollDelay = 2500;
 async function poll() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
@@ -170,11 +171,14 @@ async function poll() {
     const response = await fetch('/api/v1/roulette/round', { cache: 'no-store', signal: controller.signal });
     if (!response.ok) throw new Error('Round feed unavailable');
     showSnapshot(await response.json());
+    pollDelay = 2500;
   } catch {
     showUnavailable();
+    // An offline preview should not hammer the API or fill its access logs.
+    pollDelay = Math.min(pollDelay * 2, 30000);
   } finally {
     clearTimeout(timeout);
-    setTimeout(poll, 2500);
+    setTimeout(poll, pollDelay);
   }
 }
 buildWheel();
