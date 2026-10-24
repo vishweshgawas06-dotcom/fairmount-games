@@ -181,6 +181,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 
 - **P15-T01:** End-to-end failure matrix: dropped connections, clock drift, cutoff races, retried requests, database/worker restarts and outage/restore. **Gate:** accepted bets survive player disconnect; accounting ends in exactly one terminal state.
 - **P15-T02:** Document incident handling, alarms, recovery worker limits and operator runbooks. **Gate:** repeatable drill with audit trail and no manual wallet patching.
+- **P15-T02a (API database/schema readiness, local gate passed; CI pending):** [Distinct liveness and fail-closed database readiness](tasks/P15-T02a.md). Does not monitor the worker or imply game availability.
 
 ### P16 — Security and full test gate
 
@@ -202,6 +203,6 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **P19-T01:** Launch checklist: security and legal/privacy review, MFA, monitoring/on-call, capacity, backup/restore, rollback, operations ownership and explicit owner go/no-go. **Gate:** all release criteria evidenced; otherwise do not launch.
 - **P19-T02:** Controlled release and post-launch verification of health, accounting reconciliation, alerts and incident response. **Gate:** launch report and rollback decision documented.
 
-## First small next step (requires owner permission)
+## Current execution rule
 
-The owner approved this delivery sequence on 2026-10-15. Next, seek separate permission to verify **P01-T01 only** in a supported Python environment. No betting-engine, UI, database, or gameplay implementation is included in that verification task. A reference game is optional for later visual review, not a blocker now.
+The owner subsequently authorized continued staged implementation without routine permission requests. Test and document each bounded checkpoint, commit and push it on the session branch, and ask only for a consequential unresolved product/security decision. Do not claim production readiness while public routes, UI, operations gates and PR #1 merge conflicts remain.

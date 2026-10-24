@@ -1,6 +1,6 @@
 # FairMount Games API
 
-FastAPI liveness foundation only. P02-T02a introduces an account/identity/assignment **database schema** and local Alembic runner, but the API has no database session, login, authorization, gameplay or betting routes. `/health/live` remains process liveness, not database readiness.
+FastAPI health foundation only. P02-T02a introduced an account/identity/assignment **database schema** and local Alembic runner, but the API has no database session for gameplay, login, authorization or betting routes. `/health/live` is process liveness; `/health/ready` checks a separately configured PostgreSQL URL and exact migration revision, not worker or game availability.
 
 ## Planned module boundaries
 
@@ -27,7 +27,7 @@ Start the API:
 uvicorn fairmount_api.main:app --reload --app-dir services/api/src
 ```
 
-Check <http://127.0.0.1:8000/health/live>. It reports process liveness only and does not check database readiness.
+Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261023_03`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
 
 Run tests and lint:
 
