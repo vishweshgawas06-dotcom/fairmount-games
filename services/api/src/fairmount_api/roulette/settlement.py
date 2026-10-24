@@ -57,8 +57,9 @@ def refund_void_round(
 ) -> RoundAccounting:
     """Trusted recovery primitive only; caller supplies an audited incident.
 
-    Not a public/manual override. D-06 must define authorization and triggering
-    before a coordinator may call this. Includes disabled players' owed refunds.
+    Not a public/manual override. D-06a forbids void after result persistence;
+    exceptional authorization/triggering still requires a separate decision.
+    Includes disabled players' owed refunds.
     """
     if not isinstance(incident_reason, str) or not 0 < len(incident_reason.strip()) <= 300:
         raise SettlementUnavailable("Incident reason required")
@@ -84,7 +85,9 @@ def _finish_round(
     target = "VOID_REFUNDED" if void else "SETTLED"
     if row.state != target:
         if void:
-            if row.state not in ("OPEN", "CLOSED"):
+            # D-06a: a persisted winning number must ALWAYS be settled, even
+            # after a crash or delayed reveal. No refund may replace it.
+            if row.state != "OPEN" or row.winning_number is not None:
                 raise SettlementUnavailable("Round unavailable")
         elif (
             row.state != "CLOSED"

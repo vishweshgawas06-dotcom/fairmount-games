@@ -420,9 +420,9 @@ class PointContentionTests(unittest.TestCase):
         )
         self.assertEqual(restored, baseline_player_balances)
 
-        # P11-T01g: after a persisted, independently selected winner is
-        # revealable, concurrent settlement and trusted full void compete for
-        # one terminal round state. Never pay the winner *and* refund the stake.
+        # D-06a: once a result exists, settlement wins even if a trusted
+        # incident-void attempt arrives first. No worker may refund this bet
+        # rather than pay its persisted, independently selected winner.
         with self.engine.begin() as connection:
             final_round = open_round(connection)
         with self.engine.begin() as connection:
@@ -472,8 +472,9 @@ class PointContentionTests(unittest.TestCase):
             refunded_future = pool.submit(competing_terminal, True)
             settled = settled_future.result()
             refunded = refunded_future.result()
-        self.assertEqual(sum(result is not None for result in (settled, refunded)), 1)
-        paid = settled is not None
+        self.assertIsNotNone(settled)
+        self.assertIsNone(refunded)
+        self.assertEqual(settled.total_credited, 350)
         with self.engine.connect().execution_options(
             isolation_level="REPEATABLE READ"
         ) as connection:
@@ -493,24 +494,23 @@ class PointContentionTests(unittest.TestCase):
                     )
                 ).all()
         self.assertTrue(report.balanced)
-        self.assertEqual(state, "SETTLED" if paid else "VOID_REFUNDED")
-        self.assertEqual(balance, 0 if paid else 340)
-        self.assertEqual(player_balance, baseline_player_balances[0] + (340 if paid else 0))
-        self.assertEqual(operations, [("PAYOUT", 350)] if paid else [("VOID_REFUND", 10)])
+        self.assertEqual(state, "SETTLED")
+        self.assertEqual(balance, 0)
+        self.assertEqual(player_balance, baseline_player_balances[0] + 340)
+        self.assertEqual(operations, [("PAYOUT", 350)])
 
         # P05-T02f: one additional 350-point liability cannot coexist with
         # a ten-point withdrawal from a 340-point reserve. The reserve lock
         # permits only one request to succeed, without consuming the other's
         # stake or handing an accepted winner an unfunded promise.
         with self.engine.begin() as connection:
-            if paid:
-                fund_game_reserve(
-                    connection,
-                    self.token,
-                    amount=340,
-                    reason="fund withdrawal contention",
-                    idempotency_key="race-refund",
-                )
+            fund_game_reserve(
+                connection,
+                self.token,
+                amount=340,
+                reason="fund withdrawal contention",
+                idempotency_key="race-refund",
+            )
             withdraw_round = open_round(connection)
             owner_before = connection.scalar(
                 select(AccountWallet.balance).where(AccountWallet.account_id == self.owner)

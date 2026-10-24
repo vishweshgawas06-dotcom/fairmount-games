@@ -24,6 +24,7 @@ from fairmount_api.point_accounting import (
 from fairmount_api.point_reconciliation import reconcile_points
 from fairmount_api.reserve_funding import fund_game_reserve, withdraw_surplus_reserve
 from fairmount_api.roulette.admission import BetReplayConflict, BetUnavailable, place_bet
+from fairmount_api.roulette.recovery import advance_one_due_round, open_next_due_round
 from fairmount_api.roulette.round_clock import close_round, open_round
 from fairmount_api.roulette.settlement import (
     SettlementUnavailable,
@@ -248,6 +249,36 @@ class BetAdmissionTests(unittest.TestCase):
         )
         self.connection.execute(text("ALTER TABLE roulette_rounds ENABLE TRIGGER tr_round_guard"))
 
+    def test_late_due_worker_reuses_result_then_settles_without_auto_void(self):
+        self.seed()
+        self.bet()
+        self.assertIsNone(advance_one_due_round(self.connection))
+        self.assertIsNone(open_next_due_round(self.connection))
+        self.advance_round_clock_fixture()
+        first = advance_one_due_round(self.connection, _test_rng=lambda: 17)
+        self.assertEqual((first.action, first.winning_number), ("RESULT_READY", 17))
+        self.assertEqual(
+            self.connection.scalar(
+                select(RouletteRound.state).where(RouletteRound.id == self.round)
+            ),
+            "CLOSED",
+        )
+        with self.assertRaises(SettlementUnavailable):
+            refund_void_round(
+                self.connection, self.round, incident_reason="do not void known result"
+            )
+        second = advance_one_due_round(self.connection)
+        self.assertEqual(
+            (second.action, second.round_id, second.winning_number), ("SETTLED", self.round, 17)
+        )
+        self.assertIsNone(advance_one_due_round(self.connection))
+        self.assertEqual((self.wallet(self.player), self.reserve()), (440, 0))
+        new_round = open_next_due_round(self.connection)
+        self.assertNotEqual(new_round, self.round)
+        self.assertIsNone(open_next_due_round(self.connection))
+        self.connection.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertTrue(reconcile_points(self.connection).balanced)
+
     def test_settlement_pays_disabled_winner_once_after_reveal(self):
         self.seed()
         self.bet()
@@ -255,6 +286,10 @@ class BetAdmissionTests(unittest.TestCase):
             settle_round(self.connection, self.round)
         self.advance_round_clock_fixture()
         self.assertEqual(close_round(self.connection, self.round, _test_rng=lambda: 17), 17)
+        with self.assertRaises(SettlementUnavailable):
+            refund_void_round(
+                self.connection, self.round, incident_reason="result cannot be voided"
+            )
         self.connection.execute(
             update(Account.__table__).where(Account.id == self.player).values(status="DISABLED")
         )

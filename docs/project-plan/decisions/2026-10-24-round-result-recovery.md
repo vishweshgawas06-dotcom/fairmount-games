@@ -1,0 +1,11 @@
+# D-06a — Recovery of a missing roulette result after cutoff
+
+**Status:** Owner-approved 2026-10-24 for the missing-result case. The broader D-06 worker/deployment/audit design and exceptional manual void authorization remain open.
+
+The owner chose **retry independent result selection and settle**: once the server cutoff has passed, if an OPEN round has no persisted result when a worker resumes, select a new uniform single-zero pocket using the server-only independent cryptographic RNG, atomically persist it once, then reveal/settle (even if delayed by an outage). Do not derive the number from stakes, liabilities, reserve, balances, identities or elapsed delay. Do not automatically void a round because a worker crashed, missed the 60-second reveal, or the database was temporarily unavailable. Inform users of a delayed result rather than inventing an on-time outcome. Accepted obligations remain reserved.
+
+If a result **has** already been persisted, every recovery worker must reuse that precise outcome and settle it; never reroll, void it for a different outcome, or refund the stakes in addition to a winning payout. No terminal result is erased. A void/refund for a truly exceptional incident remains an explicitly separate, owner-authorized and audited future policy; the private recovery primitive is not a public operator button or timeout. This decision does not grant a void after a persisted result.
+
+**Engineering implications:** round close persists the single RNG result under the round row lock; settlement acquires reserve → round in a distinct transaction after the close commits, to avoid reversing lock order against admission. Multiple workers may retry the same idempotent transitions; one `OPEN → CLOSED → SETTLED` path wins. If a result cannot yet be persisted or payout cannot be completed, retain the unresolved round, preserve reserve obligations and alert—do not silently refund or skip it. Recovery tests must cover late close, retry/replay, concurrent workers, crash between committed close and settlement, and never-void-after-result.
+
+**Still open:** worker process supervision/deployment/failover, monitoring/audit/operational SLOs, read-only incident visibility, a separately approved exceptional void policy, and D-02 retention/backup lifecycle. Do not label D-06 fully closed or expose gameplay solely on this decision.
