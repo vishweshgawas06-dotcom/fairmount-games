@@ -65,7 +65,7 @@ Docker is unavailable here; real PostgreSQL evidence comes from GitHub CI. PR #1
 
 - **D-02 / D-11:** Retention, deletion/backups, username/Agent-ID reuse after anonymization.
 - **D-03:** Manual owner recovery if both TOTP and all offline codes are lost; no self-service bypass.
-- **POOL-01 approved:** Funded reserve prospective coverage of worst payout/full void refunds; pure policy implemented, atomic live acceptance still unimplemented. RNG remains independent.
-- **D-06 / OPS-01 / D-04:** Round recovery, atomic settlement under load, measurable operational targets.
+- **POOL-01 approved:** Funded reserve prospective coverage of worst payout/full void refunds; private atomic admission, terminal accounting and rebet passed PostgreSQL CI; no public route. RNG remains independent.
+- **D-06 / OPS-01 / D-04:** D-06a late selection/reuse/settlement is approved; opt-in worker is not deployed. Exceptional void authorization, sustained-load tests and measurable operational targets remain open.
 
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) and the [delivery plan](DETAILED_DELIVERY_PLAN.md). Planning approval is not production-readiness evidence.

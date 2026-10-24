@@ -1,8 +1,8 @@
 """Internal PostgreSQL round clock and single independent result persistence.
 
-No public route, worker/failover or recovery is wired yet; private terminal
-accounting primitives exist separately, but nothing schedules them. Run inside
-one caller-owned transaction; never expose the test-only RNG override to clients.
+No public route or deployed scheduler. An opt-in, not-supervised private
+worker calls recovery transitions separately. Run inside one caller-owned
+transaction; never expose the test-only RNG override to clients.
 """
 
 from __future__ import annotations
