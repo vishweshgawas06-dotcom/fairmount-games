@@ -140,12 +140,14 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 ### P09 — Realtime delivery
 
 - **P09-T01:** Version and implement public round event contract (phase, countdown, result/history) and authenticated private player updates; decide replay/sequence (D-08). **Gate:** public payloads contain no private bets/balances.
-- **P09-T01a (private result-safe snapshot; [CI 40084449705](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40084449705) passed):** [Database-clock phase/reveal projection with no private bet or wallet data](tasks/P09-T01a.md); no HTTP or realtime event contract.
+- **P09-T01a (private result-safe snapshot; [CI 40084449705](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40084449705) passed):** [Database-clock phase/reveal projection with no private bet or wallet data](tasks/P09-T01a.md); no event contract.
+- **P09-T01b (public read-only HTTP snapshot, local gates passed; CI pending):** [No private data or early result; generic 503 without a migrated DB](tasks/P09-T01b.md). D-08 realtime/versioning remains open.
 - **P09-T02:** Reconnect/snapshot flow and load-aware fan-out; Redis only with an explicit role. **Gate:** reconnect sees server state, stale sessions cannot subscribe, missed events do not rewrite accepted bets.
 
 ### P10 — Player experience
 
 - **P10-T01:** Original visual system, responsive table/wheel placeholders, login, round state, balance and current-session history against authorized contracts. **Gate:** desktop and mobile landscape layouts have usable controls and no leaked private data.
+- **P10-T01a (read-only player shell, local gates passed; CI pending):** [Original responsive viewing prototype](tasks/P10-T01a.md) with a display-only wheel/table and no fake results, wagers or login. Not P10/P12/P14 acceptance.
 - **P10-T02:** Connect authoritative round/reconnect states and clear pending/error/void feedback. **Gate:** E2E navigation, disconnect, empty balance, and result display tests.
 
 ### P11 — Betting controls and acceptance

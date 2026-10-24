@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Connection, Engine, create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -41,6 +41,11 @@ def _configured_engine() -> Engine | None:
         return None
 
 
+def schema_ready(connection: Connection) -> bool:
+    """Read the exact expected migration revision on this same connection."""
+    return connection.scalar(text("SELECT version_num FROM alembic_version")) == EXPECTED_REVISION
+
+
 def database_ready() -> bool:
     """True iff the explicit PostgreSQL URL reaches the exact expected schema."""
     engine = _configured_engine()
@@ -48,9 +53,6 @@ def database_ready() -> bool:
         return False
     try:
         with engine.connect() as connection:
-            return (
-                connection.scalar(text("SELECT version_num FROM alembic_version"))
-                == EXPECTED_REVISION
-            )
+            return schema_ready(connection)
     except SQLAlchemyError:
         return False

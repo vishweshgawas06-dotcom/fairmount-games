@@ -1,6 +1,6 @@
 # FairMount Games API
 
-FastAPI health foundation only. P02-T02a introduced an account/identity/assignment **database schema** and local Alembic runner, but the API has no database session for gameplay, login, authorization or betting routes. `/health/live` is process liveness; `/health/ready` checks a separately configured PostgreSQL URL and exact migration revision, not worker or game availability.
+FastAPI health and public read-only round snapshot foundation. P02-T02a introduced an account/identity/assignment **database schema** and local Alembic runner, but the API has no login, authorized wallet, wagering or payout routes. `/health/live` is process liveness; `/health/ready` checks a separately configured PostgreSQL URL and exact migration revision, not worker or game availability.
 
 ## Planned module boundaries
 
@@ -36,7 +36,7 @@ python -m unittest discover -s tests -v
 ruff check .
 ```
 
-The current health endpoint is not evidence of a deployed game. UUID wallet/reserve, private bet/settlement/recovery transactions and PostgreSQL tests have since been added, but there are **no public login, betting, reveal or payout routes**. P03/P04 edge security and broader D-06 operations still gate deployment.
+The read-only `/api/v1/roulette/round` endpoint and `/preview/` interface can show a persisted server result **only after reveal** when a migrated database and separately started worker exist. The preview has no fake result if no database is configured. This is not evidence of a deployed game. UUID wallet/reserve and private bet/settlement/recovery transactions have PostgreSQL tests, but there are **no public login, betting, transfer or payout routes**. P03/P04 edge security and broader D-06 operations still gate deployment.
 
 ## Opt-in round worker (not deployed)
 

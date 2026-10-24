@@ -1,15 +1,32 @@
 """FastAPI application entry point for FairMount Games."""
 
+from pathlib import Path
+
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from fairmount_api.readiness import database_ready
+from fairmount_api.roulette.public_api import router as public_round_router
 
 app = FastAPI(
     title="FairMount Games API",
     version="0.1.0",
-    description="Backend API for FairMount Games. Gameplay endpoints are not implemented yet.",
+    description="Read-only round snapshot; login and gameplay writes are not implemented.",
 )
+app.include_router(public_round_router)
+
+# Repository-only read-only interface. An installed API wheel can run without
+# the frontend tree; production UI hosting is a separate deployment gate.
+_preview_dir = Path(__file__).resolve().parents[4] / "apps/player-web/preview"
+if _preview_dir.is_dir():
+    app.mount(
+        "/preview", StaticFiles(directory=str(_preview_dir), html=True), name="player-preview"
+    )
+
+    @app.get("/", include_in_schema=False)
+    def preview_home() -> RedirectResponse:
+        return RedirectResponse("/preview/", status_code=307)
 
 
 @app.get("/health/live", tags=["health"])

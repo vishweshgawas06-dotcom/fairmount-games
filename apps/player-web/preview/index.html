@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b1716">
+  <meta name="description" content="FairMount Games read-only roulette round preview. No wagers or virtual points can be used here.">
+  <title>FairMount Games · Round preview</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a href="/preview/" class="brand" aria-label="FairMount Games, preview home"><span class="brand-mark">F<span>·</span>M</span><span class="brand-name">FAIRMOUNT <small>GAMES</small></span></a>
+      <div class="header-right"><span class="preview-tag">READ-ONLY PREVIEW</span><span class="connection" id="connection"><span class="signal"></span><span id="connection-text">Checking server</span></span></div>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="intro-title">
+        <div class="eyebrow"><span class="eyebrow-line"></span> THE EUROPEAN TABLE <span class="intro-dot">/</span> SINGLE ZERO</div>
+        <h1 id="intro-title">The table is yours <em>to watch.</em></h1>
+        <p>One round. One independently selected result. This view only displays what the server has revealed—never a simulated outcome.</p>
+      </section>
+
+      <div class="notice" role="note"><span class="notice-icon" aria-hidden="true">ⓘ</span><div><strong>Viewing mode only.</strong> Login, balances, point transfers and placing bets are not available in this preview. No wagers are accepted here.</div></div>
+
+      <section class="game-layout" aria-label="Roulette table preview">
+        <div class="wheel-panel">
+          <div class="section-head"><div><span class="section-index">01 / THE WHEEL</span><h2>A single outcome.</h2></div><span class="european-badge">37 POCKETS <span>·</span> SINGLE ZERO</span></div>
+          <div class="wheel-stage">
+            <div class="wheel-halo"></div>
+            <svg class="wheel-svg" viewBox="0 0 420 420" role="img" aria-labelledby="wheel-title wheel-desc">
+              <title id="wheel-title">European roulette wheel</title>
+              <desc id="wheel-desc">An illustrative 37-pocket wheel. It aligns to a pocket only after a server result is revealed.</desc>
+              <circle cx="210" cy="210" r="206" fill="#916e41" stroke="#e4c791" stroke-width="2"/>
+              <circle cx="210" cy="210" r="198" fill="#151f1d" stroke="#243831" stroke-width="8"/>
+              <g id="pocket-ring"></g>
+              <circle cx="210" cy="210" r="110" fill="#102820" stroke="#ba985c" stroke-width="4"/>
+              <circle cx="210" cy="210" r="97" fill="#153b2e" stroke="#47755f" stroke-width="1"/>
+              <circle cx="210" cy="210" r="72" fill="#173c2f" stroke="#d5b177" stroke-width="2"/>
+              <circle cx="210" cy="210" r="55" fill="#0a1d19" stroke="#ac8e59" stroke-width="1"/>
+              <text x="210" y="205" text-anchor="middle" fill="#e7c894" font-size="13" font-family="Georgia, serif" letter-spacing="4">FAIRMOUNT</text>
+              <text x="210" y="225" text-anchor="middle" fill="#a4b8ab" font-size="8" font-family="Arial, sans-serif" letter-spacing="3">EUROPEAN ROULETTE</text>
+            </svg>
+            <div class="wheel-ball" id="wheel-ball" aria-hidden="true"></div>
+          </div>
+          <p class="wheel-caption"><span class="caption-mark">◇</span> Decorative wheel · server result is authoritative <span class="caption-mark">◇</span></p>
+        </div>
+
+        <aside class="round-panel" aria-labelledby="round-title">
+          <div class="section-head"><div><span class="section-index">02 / ROUND STATUS</span><h2 id="round-title">The next reveal.</h2></div></div>
+          <div class="round-card">
+            <div class="card-label">CURRENT ROUND <span class="round-id" id="round-id">—</span></div>
+            <div class="round-phase"><span class="phase-dot" id="phase-dot"></span><span id="round-phase">WAITING FOR SERVER</span></div>
+            <p class="phase-explanation" id="phase-explanation">Connect a migrated PostgreSQL database and round worker to show real rounds.</p>
+            <div class="countdown-block"><div class="card-label" id="countdown-label">SERVER CLOCK</div><div class="countdown" id="countdown">—<span class="seconds"> </span></div></div>
+            <div class="result-block"><div class="card-label">REVEALED POCKET</div><div class="result-line"><span class="result-orb" id="result-orb">—</span><span id="result-copy">No result has been revealed.</span></div></div>
+          </div>
+          <div class="integrity-card"><div class="integrity-icon" aria-hidden="true">✦</div><div><strong>Outcome, not influence.</strong><p>Stakes and balances cannot affect the result. The server selects a pocket independently and holds it until the reveal.</p></div></div>
+        </aside>
+      </section>
+
+      <section class="lower-layout">
+        <div class="board-panel"><div class="section-head"><div><span class="section-index">03 / TABLE GUIDE</span><h2>Know the layout.</h2></div><span class="view-only">DISPLAY ONLY</span></div><div class="board-scroll"><div class="bet-board" id="bet-board" aria-label="European roulette number layout, illustrative only"></div></div><p class="board-note">This is an illustrative table, not a betting control. No stake is submitted or stored.</p></div>
+        <div class="history-panel"><div class="section-head"><div><span class="section-index">04 / RECENT RESULTS</span><h2>After the reveal.</h2></div></div><div id="history" class="history-empty">No revealed rounds to show.</div><p class="history-note">Only server-revealed outcomes appear here. Private player activity is never shown.</p></div>
+      </section>
+    </main>
+    <footer><span>FAIRMOUNT GAMES <span class="footer-dot">·</span> READ-ONLY INTERFACE PREVIEW</span><span>No login · No wagering · No virtual-point movement</span></footer>
+  </div>
+</body>
+</html>

@@ -39,6 +39,12 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Run imported pure roulette-domain pytest cases
         run: python -m pytest -q tests/test_roulette_domain.py tests/test_roulette_reserve_projection.py
+      - name: Set up Node for read-only preview tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify wheel presentation never invents a result
+        run: node --test apps/player-web/tests/*.test.mjs
       - name: Run Ruff
         run: ruff check .
       - name: Stop local PostgreSQL and remove CI test volume
