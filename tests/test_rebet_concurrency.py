@@ -88,6 +88,19 @@ class RebetContentionTests(unittest.TestCase):
         connection.execute(text("ALTER TABLE roulette_rounds ENABLE TRIGGER tr_round_guard"))
 
     def test_two_committed_retries_and_distinct_requests(self):
+        try:
+            self._exercise_contention()
+        except Exception as exc:
+            # CI's runner checks expose annotations even when zipped job logs
+            # cannot be downloaded in restricted environments.
+            detail = f"{type(exc).__name__}: {exc}".replace("%", "%25").replace("\n", "%0A")
+            print(
+                f"::error file=tests/test_rebet_concurrency.py,title=Rebet contention::{detail}",
+                flush=True,
+            )
+            raise
+
+    def _exercise_contention(self):
         with self.engine.begin() as connection:
             owner = connection.execute(
                 insert(Account.__table__).values(role="OWNER").returning(Account.id)
