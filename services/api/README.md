@@ -1,6 +1,6 @@
 # FairMount Games API
 
-FastAPI health and public read-only round snapshot foundation. P02-T02a introduced an account/identity/assignment **database schema** and local Alembic runner, but the API has no login, authorized wallet, wagering or payout routes. `/health/live` is process liveness; `/health/ready` checks a separately configured PostgreSQL URL and exact migration revision, not worker or game availability.
+FastAPI health and public read-only round snapshot foundation. P02-T02a introduced an account/identity/assignment **database schema** and local Alembic runner. The opt-in direct-TLS guarded login route is disabled in this proxy preview and cannot yet authorize a public wallet, wager or payout route. `/health/live` is process liveness; `/health/ready` checks a separately configured PostgreSQL URL and exact migration revision, not worker or game availability.
 
 ## Planned module boundaries
 
@@ -36,7 +36,11 @@ python -m unittest discover -s tests -v
 ruff check .
 ```
 
-The read-only `/api/v1/roulette/round` endpoint and `/preview/` interface can show a persisted server result **only after reveal** when a migrated database and separately started worker exist. The preview has no fake result if no database is configured. This is not evidence of a deployed game. UUID wallet/reserve and private bet/settlement/recovery transactions have PostgreSQL tests, but there are **no public login, betting, transfer or payout routes**. P03/P04 edge security and broader D-06 operations still gate deployment.
+The read-only `/api/v1/roulette/round` endpoint and `/preview/` interface can show a persisted server result **only after reveal** when a migrated database and separately started worker exist. The preview has no fake result if no database is configured. This is not evidence of a deployed game. UUID wallet/reserve and private bet/settlement/recovery transactions have PostgreSQL tests, but the opt-in login is **not enabled here** and there are no public betting, transfer or payout routes. P03/P04 edge security and broader D-06 operations still gate deployment.
+
+## Opt-in direct-TLS login boundary (not enabled in preview)
+
+`POST /api/v1/auth/login` can only run with explicit `FAIRMOUNT_AUTH_EDGE_MODE=direct-tls`, a canonical HTTPS `FAIRMOUNT_PUBLIC_ORIGIN`, a migrated `FAIRMOUNT_API_DATABASE_URL`, and restricted-file `FAIRMOUNT_AUTH_HMAC_KEY_FILE` (plus `FAIRMOUNT_MFA_KEY_FILE` for OWNER). It requires the **actual direct HTTPS ASGI peer**, exact Origin and Host, and rejects forwarding headers. Run a reviewed direct-TLS deployment with proxy-header trust disabled; **do not enable this mode behind Arena's preview proxy or any reverse proxy**. Reverse-proxy IP handling, full login→authorized resource→logout integration, CSRF on writes and production acceptance need later gates. The preview remains deliberately unable to authenticate.
 
 ## Opt-in round worker (not deployed)
 

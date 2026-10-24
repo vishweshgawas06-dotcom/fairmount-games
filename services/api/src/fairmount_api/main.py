@@ -6,15 +6,17 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from fairmount_api.identity.login_api import router as direct_login_router
 from fairmount_api.readiness import database_ready
 from fairmount_api.roulette.public_api import router as public_round_router
 
 app = FastAPI(
     title="FairMount Games API",
     version="0.1.0",
-    description="Read-only round snapshot; login and gameplay writes are not implemented.",
+    description="Read-only round snapshot and opt-in direct-TLS login; no gameplay writes.",
 )
 app.include_router(public_round_router)
+app.include_router(direct_login_router)
 
 # Repository-only read-only interface. An installed API wheel can run without
 # the frontend tree; production UI hosting is a separate deployment gate.
