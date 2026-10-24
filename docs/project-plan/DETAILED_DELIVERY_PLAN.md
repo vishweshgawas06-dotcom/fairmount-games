@@ -91,6 +91,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **P03-T02i (private auth-attempt guard complete; [CI 39921986980](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39921986980)):** [Pseudonymous failure audit and DB-serialized dual-key throttling](tasks/P03-T02i.md); no request-edge wiring, D-02 retention or trusted-proxy contract yet.
 - **P03-T02j (private guarded issuers complete; [CI 39922270205](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39922270205)):** [Owner/member login and owner MFA step-up adapters](tasks/P03-T02j.md) must commit denial and success; no HTTP route.
 - **P03-T02k (multi-connection throttle race complete; [CI 39922517116](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39922517116)):** [Six committed wrong-password attempts must yield five failures and one blocked callback](tasks/P03-T02k.md).
+- **P03-T02l (auth HMAC key custody, local gate passed; CI pending):** [Separate restricted-file key loader](tasks/P03-T02l.md); no public route or approved rotation/retention yet.
 - **P03-T03:** Owner TOTP/recovery-code MFA and D-03-approved session/step-up policy; rate limits and audit. Manual all-factors-lost recovery is not approved and must not be improvised. **Gate:** MFA required for privileged access and tested failure/recovery paths before production.
 
 ### P04 — Resource-level authorization
@@ -131,7 +132,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **D-06a (owner-approved 2026-10-24):** [Retry missing independent result and settle even late; never auto-void or void a persisted result](decisions/2026-10-24-round-result-recovery.md). Broader worker/exceptional-void policy remains open.
 - **P08-T02b (private recovery step complete; [CI 40081815264](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40081815264)):** [Due close/settle transitions and non-backfilled next round](tasks/P08-T02b.md); no autonomous process.
 - **P08-T02c (opt-in poller complete; [CI 40082114187](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40082114187)):** [Committed late close/restart/settle and stateless worker entry point](tasks/P08-T02c.md); not deployed.
-- **P08-T02d (two-poller singleton race, local gate passed; PostgreSQL CI pending):** [Independent connections cannot open duplicate rounds](tasks/P08-T02d.md).
+- **P08-T02d (two-poller singleton race complete; [CI 40082261396](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40082261396)):** [Independent connections cannot open duplicate rounds](tasks/P08-T02d.md).
 - **P08-T02:** Implement persisted global 60-second round state machine, server cutoff/freeze at second 50, one independently generated outcome, reveal at second 60, worker ownership/recovery design (D-06). **Gate:** deterministic clock/failure-injection tests show one result, no post-cutoff acceptance, and no client-driven outcome.
 - **P08-T03:** Transactional settlement and terminal `SETTLED` vs `VOID_REFUNDED` recovery. **Gate:** real PostgreSQL retry/race tests prove no double payout, refund, or outcome regeneration; retain persisted outcome for audit.
 
