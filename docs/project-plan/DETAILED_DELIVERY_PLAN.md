@@ -147,7 +147,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 ### P10 — Player experience
 
 - **P10-T01:** Original visual system, responsive table/wheel placeholders, login, round state, balance and current-session history against authorized contracts. **Gate:** desktop and mobile landscape layouts have usable controls and no leaked private data.
-- **P10-T01a (read-only player shell; [CI 40086078221](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40086078221) passed):** [Original responsive viewing prototype](tasks/P10-T01a.md) with a display-only wheel/table and no fake results, wagers or login. Not P10/P12/P14 acceptance.
+- **P10-T01a (read-only player shell; [CI 40086206890](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40086206890) passed):** [Original responsive viewing prototype](tasks/P10-T01a.md) with a display-only wheel/table and no fake results, wagers or login. Not P10/P12/P14 acceptance.
 - **P10-T02:** Connect authoritative round/reconnect states and clear pending/error/void feedback. **Gate:** E2E navigation, disconnect, empty balance, and result display tests.
 
 ### P11 — Betting controls and acceptance
