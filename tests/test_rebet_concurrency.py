@@ -123,8 +123,16 @@ class RebetContentionTests(unittest.TestCase):
                         if role == "OWNER"
                         else func.now(),
                         last_seen_at=func.now(),
-                        idle_expires_at=func.now() + text("interval '15 minutes'"),
-                        absolute_expires_at=func.now() + text("interval '7 hours'"),
+                        idle_expires_at=func.now()
+                        + text(
+                            "interval '15 minutes'" if role == "OWNER" else "interval '30 minutes'"
+                        ),
+                        absolute_expires_at=func.now()
+                        + text(
+                            "interval '7 hours 55 minutes'"
+                            if role == "OWNER"
+                            else "interval '24 hours'"
+                        ),
                         mfa_verified_at=func.now() - text("interval '5 minutes'")
                         if role == "OWNER"
                         else None,
