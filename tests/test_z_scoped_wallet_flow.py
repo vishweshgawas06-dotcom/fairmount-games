@@ -1,7 +1,7 @@
-"""Committed agent HTTP resource scope against disposable migrated PostgreSQL.
+"""Committed owner/agent HTTPS login and live resource scope against PostgreSQL.
 
-This fixture seeds already issued test sessions and assignments; it is NOT an
-agent registration/login test. Immutable wallet rows require disposable CI DB.
+Only the disposable migrated CI database is suitable: audit and wallet rows
+are immutable. Deployment key loaders are injected; authentication is real.
 """
 
 import os
@@ -10,7 +10,14 @@ import unittest
 from types import MappingProxyType
 from unittest.mock import patch
 
-from fairmount_api.db.models import Account, AccountSession, AgentAssignment, OwnerRecoveryCode
+from fairmount_api.db.models import (
+    Account,
+    AccountCredential,
+    AgentAssignment,
+    OwnerRecoveryCode,
+    PrivateIdentity,
+)
+from fairmount_api.identity.credentials import hash_password
 from fairmount_api.identity.http_boundary import CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE
 from fairmount_api.identity.mfa import totp_code
 from fairmount_api.identity.mfa_keys import MFAKeyring
@@ -20,7 +27,6 @@ from fairmount_api.identity.owner_mfa_enrollment import (
     begin_owner_mfa_enrollment,
     confirm_owner_mfa_enrollment,
 )
-from fairmount_api.identity.session_validation import session_token_digest
 from fairmount_api.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, func, insert, select, text, update
@@ -167,29 +173,54 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
                         started_at=func.now() - text("interval '1 minute'"),
                     )
                 )
-                tokens = {}
-                for agent in (first_agent, second_agent):
-                    token = secrets.token_urlsafe(32)
-                    tokens[agent] = token
+                identifiers = {}
+                password = "long private agent test passphrase"
+                alphabet = "abcdefghjklmnpqrstuvwxyz23456789"
+                for agent, prefix in ((first_agent, "a"), (second_agent, "b")):
+                    identifier = (
+                        "agt-" + prefix + "".join(secrets.choice(alphabet) for _ in range(9))
+                    )
+                    identifiers[agent] = identifier
                     connection.execute(
-                        insert(AccountSession.__table__).values(
+                        insert(PrivateIdentity.__table__).values(
                             account_id=agent,
-                            role_at_issue="AGENT",
-                            token_digest=session_token_digest(token),
-                            issued_at=func.now(),
-                            last_seen_at=func.now(),
-                            idle_expires_at=func.now() + text("interval '30 minutes'"),
-                            absolute_expires_at=func.now() + text("interval '12 hours'"),
+                            login_kind="AGENT",
+                            login_identifier=identifier,
+                        )
+                    )
+                    connection.execute(
+                        insert(AccountCredential.__table__).values(
+                            account_id=agent,
+                            initial_secret_issued_at=func.now(),
+                            initial_secret_consumed_at=func.now(),
+                            password_hash=hash_password(password),
+                            password_changed_at=func.now(),
                         )
                     )
             first = TestClient(app, base_url=ORIGIN, client=("203.0.113.41", 50001))
             second = TestClient(app, base_url=ORIGIN, client=("203.0.113.42", 50002))
-            first.cookies.set(SESSION_COOKIE, tokens[first_agent], domain="game.example")
-            second.cookies.set(SESSION_COOKIE, tokens[second_agent], domain="game.example")
             with (
                 patch.dict("os.environ", CONFIG),
+                patch("fairmount_api.identity.login_api._configured_engine", return_value=engine),
                 patch("fairmount_api.private_read_api._configured_engine", return_value=engine),
+                patch(
+                    "fairmount_api.identity.login_api.load_auth_hmac_key",
+                    return_value=b"separate-test-agent-hmac-secret!",
+                ),
             ):
+                for client, agent in ((first, first_agent), (second, second_agent)):
+                    login = client.post(
+                        "/api/v1/auth/login",
+                        headers={"Origin": ORIGIN},
+                        json={
+                            "role": "AGENT",
+                            "identifier": identifiers[agent],
+                            "password": password,
+                        },
+                    )
+                    self.assertEqual(login.status_code, 200)
+                    self.assertIn(SESSION_COOKIE, client.cookies)
+                    self.assertNotIn(client.cookies[SESSION_COOKIE], login.text)
                 self.assertEqual(
                     first.get("/api/v1/me/players").json(),
                     {"player_ids": [str(first_player)], "next_after": None},
