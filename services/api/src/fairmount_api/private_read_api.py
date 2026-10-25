@@ -22,6 +22,7 @@ from fairmount_api.identity.login_api import _direct_source
 from fairmount_api.readiness import _configured_engine, schema_ready
 from fairmount_api.resource_reads import (
     ResourceUnavailable,
+    list_visible_player_ids,
     read_own_recent_bets,
     read_own_wallet,
     read_player_wallet,
@@ -105,6 +106,36 @@ def player_wallet(request: Request, player_id: str) -> JSONResponse:
         return _unavailable(503)
     return JSONResponse(
         {"account_id": str(wallet.account_id), "balance": wallet.balance},
+        headers=_PRIVATE_HEADERS,
+    )
+
+
+@router.get("/api/v1/me/players", tags=["private"])
+def my_visible_players(request: Request) -> JSONResponse:
+    """Enabled player IDs only, rechecked under the live role and assignment."""
+    try:
+        _direct_source(request, origin_required=False)
+        raw_token = _single_cookie(request, SESSION_COOKIE)
+    except RequestBoundaryUnavailable:
+        return _unavailable(401)
+    except ValueError:
+        return _unavailable(503)
+    if request.query_params:
+        return _unavailable(400)  # no client-selected agent, role or player scope
+    engine = _configured_engine()
+    if engine is None:
+        return _unavailable(503)
+    try:
+        with engine.begin() as connection:
+            if not schema_ready(connection):
+                return _unavailable(503)
+            players = list_visible_player_ids(connection, raw_token)
+    except ResourceUnavailable:
+        return _unavailable(401)
+    except SQLAlchemyError:
+        return _unavailable(503)
+    return JSONResponse(
+        {"player_ids": [str(player_id) for player_id in players]},
         headers=_PRIVATE_HEADERS,
     )
 

@@ -92,9 +92,13 @@ class CommittedHTTPSessionFlowTests(unittest.TestCase):
                 self.assertEqual(
                     client.get(f"/api/v1/players/{other_player}/wallet").status_code, 404
                 )
+                roster = client.get("/api/v1/me/players")
+                self.assertEqual(
+                    (roster.status_code, roster.json()), (200, {"player_ids": [str(account_id)]})
+                )
                 history = client.get(HISTORY)
                 self.assertEqual((history.status_code, history.json()), (200, {"bets": []}))
-                for response in (wallet, own_player, history):
+                for response in (wallet, own_player, roster, history):
                     self.assertEqual(response.headers["Cache-Control"], "no-store")
                     self.assertNotIn(token, response.text)
                 self.assertEqual(
@@ -133,6 +137,7 @@ class CommittedHTTPSessionFlowTests(unittest.TestCase):
                 stale.cookies.set(SESSION_COOKIE, token, domain="game.example", path="/")
                 self.assertEqual(stale.get(WALLET).status_code, 401)
                 self.assertEqual(stale.get(HISTORY).status_code, 401)
+                self.assertEqual(stale.get("/api/v1/me/players").status_code, 401)
                 self.assertEqual(stale.get(f"/api/v1/players/{account_id}/wallet").status_code, 404)
                 self.assertEqual(client.get(WALLET).status_code, 401)
                 self.assertEqual(client.get(HISTORY).status_code, 401)
@@ -152,6 +157,7 @@ class CommittedHTTPSessionFlowTests(unittest.TestCase):
                     )
                 self.assertEqual(client.get(WALLET).status_code, 401)
                 self.assertEqual(client.get(HISTORY).status_code, 401)
+                self.assertEqual(client.get("/api/v1/me/players").status_code, 401)
         finally:
             engine.dispose()
 

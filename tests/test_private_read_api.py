@@ -15,6 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 URL = "/api/v1/me/wallet"
 BETS_URL = "/api/v1/me/recent-bets"
 PLAYER_URL = "/api/v1/players/{}/wallet"
+ROSTER_URL = "/api/v1/me/players"
 CONFIG = {
     "FAIRMOUNT_AUTH_EDGE_MODE": "direct-tls",
     "FAIRMOUNT_PUBLIC_ORIGIN": "https://game.example",
@@ -263,6 +264,70 @@ class PlayerWalletAPITests(unittest.TestCase):
                 response = self.client.get(PLAYER_URL.format(target), headers=self.cookie)
                 self.assertEqual(response.status_code, 503)
                 self.assertNotIn("secret-db", response.text)
+
+
+class VisiblePlayersAPITests(unittest.TestCase):
+    setUp = PrivateReadAPITests.setUp
+
+    def test_edge_rejects_proxy_cross_site_missing_cookie_and_client_scope(self):
+        with patch.dict("os.environ", {"FAIRMOUNT_AUTH_EDGE_MODE": ""}):
+            self.assertEqual(self.client.get(ROSTER_URL, headers=self.cookie).status_code, 503)
+        with patch.dict("os.environ", CONFIG):
+            plain = TestClient(app, base_url="http://game.example")
+            self.assertEqual(plain.get(ROSTER_URL, headers=self.cookie).status_code, 503)
+            self.assertEqual(self.client.get(ROSTER_URL).status_code, 401)
+            with patch("fairmount_api.private_read_api._configured_engine") as engine:
+                for headers in (
+                    {**self.cookie, "Origin": "https://other.example"},
+                    {**self.cookie, "Sec-Fetch-Site": "cross-site"},
+                    {**self.cookie, "X-Forwarded-For": "203.0.113.21"},
+                    {"Cookie": f"{SESSION_COOKIE}={self.token}; {SESSION_COOKIE}={self.token}"},
+                ):
+                    with self.subTest(headers=headers):
+                        self.assertIn(
+                            self.client.get(ROSTER_URL, headers=headers).status_code,
+                            (401, 503),
+                        )
+                self.assertEqual(
+                    self.client.get(
+                        ROSTER_URL + "?agent_id=" + str(uuid.uuid4()), headers=self.cookie
+                    ).status_code,
+                    400,
+                )
+                engine.assert_not_called()
+
+    def test_projection_is_only_authorized_ids_and_failures_are_generic(self):
+        first, second = uuid.uuid4(), uuid.uuid4()
+        engine = MagicMock()
+        with patch.dict("os.environ", CONFIG):
+            with patch("fairmount_api.private_read_api._configured_engine", return_value=engine):
+                with patch("fairmount_api.private_read_api.schema_ready", return_value=True):
+                    with patch(
+                        "fairmount_api.private_read_api.list_visible_player_ids",
+                        return_value=(first, second),
+                    ) as read:
+                        response = self.client.get(ROSTER_URL, headers=self.cookie)
+                    self.assertEqual(
+                        (response.status_code, response.json()),
+                        (200, {"player_ids": [str(first), str(second)]}),
+                    )
+                    self.assertEqual(read.call_args.args[1:], (self.token,))
+                    self.assertEqual(response.headers["Cache-Control"], "no-store")
+                    self.assertEqual(response.headers["Vary"], "Cookie")
+                    self.assertNotIn(self.token, response.text)
+                    with patch(
+                        "fairmount_api.private_read_api.list_visible_player_ids",
+                        side_effect=ResourceUnavailable("session private detail"),
+                    ):
+                        denied = self.client.get(ROSTER_URL, headers=self.cookie)
+                        self.assertEqual(
+                            (denied.status_code, denied.json()), (401, {"status": "unavailable"})
+                        )
+                        self.assertNotIn("private detail", denied.text)
+                engine.begin.side_effect = SQLAlchemyError("private-db-secret")
+                unavailable = self.client.get(ROSTER_URL, headers=self.cookie)
+                self.assertEqual(unavailable.status_code, 503)
+                self.assertNotIn("private-db-secret", unavailable.text)
 
 
 if __name__ == "__main__":

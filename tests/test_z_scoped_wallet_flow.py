@@ -32,6 +32,57 @@ CONFIG = {"FAIRMOUNT_AUTH_EDGE_MODE": "direct-tls", "FAIRMOUNT_PUBLIC_ORIGIN": O
     os.environ.get("FAIRMOUNT_RUN_DB_TESTS") == "1", "Disposable PostgreSQL test DB required"
 )
 class ScopedWalletHTTPFlowTests(unittest.TestCase):
+    def test_owner_can_audit_disabled_player_without_listing_it_as_visible(self):
+        engine = create_engine(local_database_url(test=True))
+        try:
+            with engine.begin() as connection:
+                owner = connection.execute(
+                    insert(Account.__table__).values(role="OWNER").returning(Account.id)
+                ).scalar_one()
+                enabled = connection.execute(
+                    insert(Account.__table__).values(role="PLAYER").returning(Account.id)
+                ).scalar_one()
+                disabled = connection.execute(
+                    insert(Account.__table__).values(role="PLAYER").returning(Account.id)
+                ).scalar_one()
+                connection.execute(
+                    update(Account.__table__)
+                    .where(Account.id == disabled)
+                    .values(status="DISABLED", disabled_at=func.now())
+                )
+                token = secrets.token_urlsafe(32)
+                connection.execute(
+                    insert(AccountSession.__table__).values(
+                        account_id=owner,
+                        role_at_issue="OWNER",
+                        token_digest=session_token_digest(token),
+                        issued_at=func.now(),
+                        last_seen_at=func.now(),
+                        idle_expires_at=func.now() + text("interval '15 minutes'"),
+                        absolute_expires_at=func.now() + text("interval '8 hours'"),
+                        mfa_verified_at=func.now(),
+                    )
+                )
+            client = TestClient(app, base_url=ORIGIN, client=("203.0.113.43", 50003))
+            client.cookies.set(SESSION_COOKIE, token, domain="game.example")
+            with (
+                patch.dict("os.environ", CONFIG),
+                patch("fairmount_api.private_read_api._configured_engine", return_value=engine),
+            ):
+                for player in (enabled, disabled):
+                    response = client.get(player_url(player))
+                    self.assertEqual(
+                        (response.status_code, response.json()),
+                        (200, {"account_id": str(player), "balance": 0}),
+                    )
+                roster = client.get("/api/v1/me/players")
+                self.assertEqual(roster.status_code, 200)
+                self.assertIn(str(enabled), roster.json()["player_ids"])
+                self.assertNotIn(str(disabled), roster.json()["player_ids"])
+                self.assertNotIn(str(owner), roster.json()["player_ids"])
+        finally:
+            engine.dispose()
+
     def test_reassign_and_disable_revoke_agent_http_wallet_scope(self):
         engine = create_engine(local_database_url(test=True))
         try:
@@ -89,6 +140,14 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
                 patch.dict("os.environ", CONFIG),
                 patch("fairmount_api.private_read_api._configured_engine", return_value=engine),
             ):
+                self.assertEqual(
+                    first.get("/api/v1/me/players").json(),
+                    {"player_ids": [str(first_player)]},
+                )
+                self.assertEqual(
+                    second.get("/api/v1/me/players").json(),
+                    {"player_ids": [str(second_player)]},
+                )
                 allowed = first.get(player_url(first_player))
                 self.assertEqual(
                     (allowed.status_code, allowed.json()),
@@ -115,7 +174,12 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
                         )
                     )
                 self.assertEqual(first.get(player_url(first_player)).status_code, 404)
+                self.assertEqual(first.get("/api/v1/me/players").json(), {"player_ids": []})
                 self.assertEqual(second.get(player_url(first_player)).status_code, 200)
+                self.assertEqual(
+                    second.get("/api/v1/me/players").json(),
+                    {"player_ids": sorted((str(first_player), str(second_player)))},
+                )
                 with engine.begin() as connection:
                     connection.execute(
                         update(Account.__table__)
@@ -124,6 +188,10 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
                     )
                 self.assertEqual(second.get(player_url(first_player)).status_code, 404)
                 self.assertEqual(second.get(player_url(second_player)).status_code, 200)
+                self.assertEqual(
+                    second.get("/api/v1/me/players").json(),
+                    {"player_ids": [str(second_player)]},
+                )
         finally:
             engine.dispose()
 
