@@ -1,8 +1,8 @@
 # P02-T01 — Conceptual PostgreSQL schema and transaction design
 
-**Status:** Owner-approved conceptual design baseline for P02-T01 on 2026-10-16; physical schema/transactions and open product decisions are not approved for implementation.
+**Status:** Historical owner-approved P02-T01 conceptual baseline (2026-10-16), updated for [D-06a](../decisions/2026-10-24-round-result-recovery.md). Later private physical schema/transaction slices passed scoped PostgreSQL CI; this document is not authorization for public gameplay, automated voids or release.
 
-**Scope:** Entity/relationship and concurrency design only. No SQL, ORM model, migration, API, wallet, roulette or UI code is authorized by this document. The owner approved this *design task*, not its proposed schema choices. PostgreSQL is the planned accounting source of truth; Redis, if later used for fan-out, must not hold authoritative point or round state.
+**Scope:** Entity/relationship and concurrency design only. This original design document did not itself authorize code; the owner later granted broad step-by-step implementation permission and approved D-06a. Proposed schema choices below are not proof of implementation or release readiness. PostgreSQL is the planned accounting source of truth; Redis, if later used for fan-out, must not hold authoritative point or round state.
 
 ## 1. Sources of truth and design invariants
 
@@ -10,7 +10,7 @@
 - V1 uses integer virtual points, never floats or real-money units. One owner wallet, each agent wallet, each player wallet, and the proposed owner-funded game reserve have separate ledger projections. Owner-only issuance is an explicit source event; ordinary transfers are linked debits/credits that conserve points. Wallet and ledger movements must reconcile; accepted bets are immutable; no balance or stake may be spent twice. A player begins with zero points.
 - One global server-authored round and at most one persisted 0–36 outcome for that round; outcome generation independent of bets, identities, stakes and balances. The animation cannot write results.
 - Individual bet/ledger records are private to the player and authorized operators. Public events contain shared round state only.
-- Terminal accounting states `SETTLED` and `VOID_REFUNDED` are mutually exclusive. A committed settlement pays once and is never refunded; an uncommitted settlement that cannot safely complete is voided and refunded exactly once. Persisted outcomes are never replaced.
+- Terminal accounting states `SETTLED` and `VOID_REFUNDED` are mutually exclusive. A committed settlement pays once and is never refunded. Under D-06a, an uncommitted settlement is retried, not automatically voided; any persisted outcome must settle. Exceptional pre-result void requires a separate audited policy. Persisted outcomes are never replaced.
 - This is a **logical design**: proposed names, data types, locks and constraints require a small PostgreSQL proof and migration review before becoming implementation decisions.
 
 ## 2. Entity relationship sketch
@@ -81,9 +81,9 @@ Read only the authenticated player's complete prior-round accepted set in stable
 
 ### C. Cutoff, result, settlement and void/refund
 
-At second 50 the server commits cutoff and freezes accepted bets; at or before animation it persists an independently generated outcome exactly once under the round's unique result key. At second 60, one transaction locks round terminal state, checks persisted outcome, calculates the approved total return on all winning bets, locks game reserve and all affected player wallets in stable order, writes uniquely referenced paired payout effects (reserve debit/player credit), and marks **the whole global round** `SETTLED` in one commit. Losing stakes already moved to the pool at acceptance remain losses to players. Do not publish a settled result before the terminal commit. The owner's chosen funded pool must never be allowed to default on an accepted bet.
+At second 50 the server targets cutoff and freezes accepted bets; it independently persists one outcome under the round's unique result key after cutoff. If the worker resumes late without a persisted result, D-06a selects it then; animation/reveal must follow that actual persisted result, not invent an on-time one. At the nominal second-60 reveal (or later during recovery), one transaction locks round terminal state, checks persisted outcome, calculates the approved total return on all winning bets, locks game reserve and all affected player wallets in stable order, writes uniquely referenced paired payout effects (reserve debit/player credit), and marks **the whole global round** `SETTLED` in one commit. Losing stakes already moved to the pool at acceptance remain losses to players. Do not publish a settled result before the terminal commit. The owner's chosen funded pool must never be allowed to default on an accepted bet.
 
-If a settlement cannot commit safely, a competing/repair transaction must observe committed state first: if `SETTLED`, do nothing; otherwise lock the round, write one paired reserve-debit/player-credit refund effect for **each** accepted bet, record cause and commit `VOID_REFUNDED` atomically. No payout and refund for the same round. Retain a persisted outcome even for a voided round. What qualifies as irrecoverable failure, how long to retry, and behavior if no outcome was ever persisted are **D-06 open**; do not implement an arbitrary timeout or invent a result. Large global all-player transactions may exceed acceptable lock time; do not weaken the owner's atomic rule without an explicit new decision.
+If settlement cannot commit, inspect committed state: if `SETTLED`, do nothing; otherwise retry that same persisted result. If no result was persisted after cutoff, select and persist an independent result once, then settle even late. Never reroll, auto-void on failure or refund after a persisted result. Reserve obligations remain until settlement; alert operators on delays. A separately approved, audited exceptional incident void for a no-result round would require atomic one-time refund of **each** accepted stake, but its authorization remains open. Large global all-player transactions may exceed acceptable lock time; do not weaken the owner's atomic rule without an explicit new decision.
 
 ### D. Account disablement / agent reassignment / admin allocation
 
@@ -112,10 +112,10 @@ Disablement locks account/session and marks active sessions revoked; it blocks n
 | ID | Decision needed before | State |
 |---|---|---|
 | D-02 | Final data lifecycle/destructive migration and launch | Retention durations, eligibility/holds, backup expiry and legal review deferred by owner. Conceptual separation may proceed. |
-| D-03 | MFA/session recovery implementation | Owner MFA recovery, session expiry/privileged reauthentication not yet approved. |
-| D-06 | Round/worker migration and engine implementation | RNG/audit choice, outcome persistence timing, leader/cutoff ordering, failure/retry/void trigger and missing-outcome handling. Approved phase timings/outcome independence cannot be changed. |
+| D-03 | Remaining recovery operations | TOTP/recovery codes, session expiry and privileged reauthentication were approved and have scoped private/HTTP tests. All-factors-lost owner self-service fallback remains unapproved; operational custody and restoration need review. |
+| D-06 / D-06a | Worker operations and exceptional incident policy | [D-06a](../decisions/2026-10-24-round-result-recovery.md) approves late independent missing-result persistence and retry-to-settlement without automatic void. Worker supervision/alerts and exceptional pre-result void authorization remain open; phase targets and independent RNG remain. |
 | ACCT-01 / D-10 | Wallet/ledger migrations and point allocation | **Resolved product choice:** single-owner reasoned issuance to owner wallet; funded owner→agent/player and agent→assigned-player transfers, full-request rejection if source is short; owner-managed players allowed. Exact implementation/transfer constraints still need PostgreSQL review. |
-| POOL-01 / D-10 | Game reserve schema and any global acceptance restriction | Owner approved [POOL-01](../decisions/2026-10-19-funded-reserve-solvency.md) worst-case payout/full-void-refund prospective admission on 2026-10-19. Ledger/locking, operations and disclosure remain unimplemented and need verification. |
+| POOL-01 / D-10 | Game reserve schema and any global acceptance restriction | Owner approved [POOL-01](../decisions/2026-10-19-funded-reserve-solvency.md) worst-case payout/full-void-refund prospective admission on 2026-10-19. Private ledger/locking and admission passed scoped PostgreSQL CI; operations, disclosure and public API remain unverified. |
 | PRIV-01 | Identity schema and deletion workflow | Mobile uniqueness/reuse after anonymization, login effects, verification and irreversible de-identification plan. |
 | OPS-01 | Global settlement implementation and P17 | Size/latency targets and PostgreSQL locking strategy for atomic all-player settlement; test real scale, never silently switch to partial settlement. |
 

@@ -2,7 +2,7 @@
 
 **Status:** Owner decisions recorded on 2026-10-14; specification verification draft — not implementation or test evidence  
 **Prerequisites:** Owner-approved payout/settlement specification and canonical legal-position catalogue  
-**Purpose:** Define deterministic cases that must pass before betting-engine implementation is authorized.
+**Purpose:** Define deterministic cases for private engine regression and eventual public/gameplay acceptance; this document alone does not authorize release.
 
 ## 1. Shared acceptance algorithm requirements
 
@@ -16,7 +16,7 @@ For every new bet submission, the server must evaluate the complete canonical se
 - If a bet is rejected, neither balance nor cap usage changes.
 - Rejected/returned excess must not be recorded as accepted exposure.
 - A duplicate selection is a distinct bet record but contributes to the same aggregate canonical-selection cap.
-- For split bets, the stake counts against both constituent numbers. The accepted amount is limited by the smaller remaining per-number capacity as well as the split-selection cap.
+- For split bets, the stake counts against both constituent numbers. The accepted amount is limited by the smaller remaining per-number capacity; there is no separate exact-split cap in the locked rules.
 - The per-selection caps and per-number exposure caps are independent constraints; apply all constraints that match the bet.
 - Rebet remains a separate all-or-nothing operation for the player's complete previous-round set. Do not partially rebet.
 - For an ordinary bet, if the player's balance is less than the requested stake, reject the entire bet and preserve the balance unchanged. Do not balance-limit or partially accept an ordinary bet.
@@ -47,7 +47,7 @@ For every new bet submission, the server must evaluate the complete canonical se
 | PA-19 | Rebet set total exceeds balance or any bet in the set cannot be accepted under current caps | Reject the entire rebet; no partial rebet or partial debit |
 | PA-20 | Ordinary 20-coin bet with 12-coin balance; caps otherwise allow it | Reject entire bet; balance remains 12; no bet record or exposure change |
 | PA-21 | Balance is 12 and ordinary requested stake is 15; caps otherwise allow it | Reject entire bet; balance remains 12. A wallet balance not divisible by 5 does not permit balance-limited partial acceptance. |
-| PA-22 | Round is voided after settlement failure | Refund every accepted stake once, idempotently; no payout is credited for the voided round |
+| PA-22 | Settlement fails or result is missing after cutoff | Under D-06a, independently persist a missing result once and settle even late; if result persisted, retry that result and settle. Do not auto-void or refund for a timeout/failure. Separately authorized exceptional pre-result void, if later approved, must refund each accepted stake once without payout. |
 | PA-23 | Settlement has committed and a retry/recovery worker runs | No refund; no duplicate payout; terminal state remains settled |
 
 ## 3. Required automated assertions
@@ -65,7 +65,7 @@ For every new bet submission, the server must evaluate the complete canonical se
 
 ## 4. Review of PA-01 through PA-23
 
-The matrix has been reviewed against the locked requirements. PA-01–PA-04, PA-06–PA-23 are consistent after clarifying PA-07 and PA-08: the locked requirements define the per-number exposure cap for straight-up and split bets, but do not define a separate exact-split cap. Those cases therefore derive the 500-coin limit from the remaining exposure on the constituent number(s), not an extra split-selection cap. PA-05 needed clarification: because all accepted stakes and both caps are multiples of 5, a 1–4 coin remaining capacity cannot occur through valid operations. It is retained as a defensive invariant/corrupt-state test, not a normal acceptance scenario.
+The matrix was reviewed against the locked requirements; PA-22 was later revised for owner-approved D-06a (no automatic failure void). PA-01–PA-04, PA-06–PA-21 and PA-23 are consistent after clarifying PA-07 and PA-08: the locked requirements define the per-number exposure cap for straight-up and split bets, but do not define a separate exact-split cap. Those cases therefore derive the 500-coin limit from the remaining exposure on the constituent number(s), not an extra split-selection cap. PA-05 needed clarification: because all accepted stakes and both caps are multiples of 5, a 1–4 coin remaining capacity cannot occur through valid operations. It is retained as a defensive invariant/corrupt-state test, not a normal acceptance scenario.
 
 Implementation test layers:
 
@@ -76,14 +76,14 @@ Implementation test layers:
 - **Rebet atomicity tests:** PA-19, including balance failure, cap failure, and rollback of the entire set.
 - **Authorization tests:** separately test that one player cannot read another player's bets or private realtime payloads.
 
-The current eight passing catalogue tests validate catalogue fixture invariants only. They do not execute any PA acceptance behavior and are not evidence that a betting engine exists.
+The original eight catalogue tests validate catalogue fixture invariants only. Later private betting/settlement services have separate PostgreSQL evidence; fixture tests alone do not establish a public game or complete PA end-to-end acceptance.
 
-## 5. Gate before implementation
+## 5. Remaining integration gate
 
-This matrix is a test specification, not evidence that the betting engine has passed tests. Before implementation begins:
+This matrix is a test specification, not proof of complete gameplay acceptance. Before any public game/release claim:
 1. The canonical red/black sets and all catalogue counts must be represented in the deterministic fixture and the catalogue suite must pass.
 2. The acceptance criteria must be reviewed and testable (review recorded above).
 3. The implementation plan must include concurrency, transaction rollback, idempotency, rebet atomicity, cutoff, and settlement/refund tests.
 4. Tests must run against the actual implementation and supported database before any implementation task is declared verified.
 
-No betting-engine implementation is authorized by this document.
+This matrix does not itself authorize public betting, automatic incident voids or release. Private engine slices were subsequently implemented and tested; API/realtime privacy, full PA coverage and operational gates remain open.

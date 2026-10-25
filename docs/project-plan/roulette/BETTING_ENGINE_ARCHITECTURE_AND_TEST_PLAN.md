@@ -1,8 +1,8 @@
 # FairMount Roulette — Betting Engine Architecture and Test Plan
 
-**Status:** Design proposal; no engine implementation exists  
+**Status:** Historical design proposal, updated for [D-06a](../decisions/2026-10-24-round-result-recovery.md); private engine/worker/ledger slices now have PostgreSQL CI evidence, but no public betting API or deployment.
 **Phase:** P00/P01 planning boundary  
-**Purpose:** Translate the owner-locked rules and PA-01–PA-23 matrix into a testable implementation plan before betting-engine code is written.
+**Purpose:** Preserve testable invariants and remaining gates without treating superseded failure-void wording as authority.
 
 ## 1. Non-negotiable invariants
 
@@ -24,7 +24,7 @@
 - **Bet acceptance service:** validates canonical selection, stake, balance, cutoff, caps, and idempotency.
 - **Wallet/ledger service:** performs transactional point movements with reason/type, round ID, bet ID, and idempotency key.
 - **Settlement service:** calculates total-return payouts from persisted outcome and accepted bets; writes payout ledger entries and terminal state atomically.
-- **Recovery worker:** examines non-terminal rounds; resolves committed settlement as settled, or voids/refunds accepted stakes exactly once when settlement did not commit.
+- **Recovery worker:** examines non-terminal rounds; after cutoff persists an independent missing result once, or reuses the persisted result, then retries settlement even if late. No automatic timeout/failure void; exceptional void requires a separate authorized incident policy.
 - **Private player query/realtime layer:** filters own bet records by authenticated player identity; never trusts a player ID supplied by the client for authorization.
 - **Admin/agent audit layer:** keeps point adjustments separate from gameplay P/L and requires a reason for administrative adjustments.
 
@@ -68,8 +68,8 @@ Use an explicit, constrained state machine. Suggested terminal states are `SETTL
 - Persist the outcome once. Recovery must never generate a replacement outcome if one already exists.
 - Settlement transaction locks the round, calculates every player's winning total return, writes idempotent payout ledger entries, credits wallets, and marks the round `SETTLED` in one commit.
 - Winning multipliers are total-return multipliers: for example, a 10-coin straight-up win credits 350 total. Since stake was already reserved, do not add the stake a second time.
-- If settlement does not commit, a recovery transaction may mark the round `VOID_REFUNDED` and refund each accepted stake once. It must not credit payouts for a voided round.
-- If settlement committed, retries/recovery workers must observe `SETTLED` and do nothing. If outcome persisted but settlement cannot commit, retain the outcome for audit and void/refund.
+- If a result has not persisted after cutoff, select it independently and persist once, then retry settlement even after the nominal reveal time. If a result has persisted but settlement fails, retain it and retry that same result; never reroll, auto-void or refund it.
+- If settlement committed, retries/recovery workers must observe `SETTLED` and do nothing. `VOID_REFUNDED` is reserved for a separately authorized, audited exceptional incident policy while no result has persisted; a timeout or failed settlement alone does not authorize it.
 - Use unique ledger/idempotency constraints and row locks to prevent duplicate payout/refund under concurrent workers.
 
 ## 6. Test layers and mapping to PA matrix
@@ -83,7 +83,7 @@ Use an explicit, constrained state machine. Suggested terminal states are `SETTL
 ### Database integration tests
 - PA-17: repeated idempotency key returns original response without duplicate ledger/bet/wallet movement.
 - PA-18: inject failure at each write boundary and prove full rollback.
-- PA-22–PA-23: settlement failure, void/refund retry, successful settlement retry, terminal state exclusivity, and exactly-once accounting.
+- PA-22–PA-23: late/missing-result recovery, retry after failed settlement with the same persisted result, terminal-state exclusivity, exactly-once accounting, and exceptional void/refund primitives **only** under a separately approved incident policy.
 
 ### Concurrency tests
 - PA-11: overlap straight-up and split requests sharing a number; exposure must never exceed 2,000.

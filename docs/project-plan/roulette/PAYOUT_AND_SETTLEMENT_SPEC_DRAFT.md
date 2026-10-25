@@ -1,8 +1,8 @@
 # P00-T02 — Roulette Payout and Settlement Specification (Draft)
 
-**Status:** Owner-approved on 2026-10-14; legal-position catalogue review remains a pre-implementation gate  
-**Implementation status:** Not implemented  
-**Purpose:** Record owner-provided choices and make remaining interpretations visible before coding.
+**Status:** Owner-approved baseline on 2026-10-14; the later owner-approved [D-06a recovery decision](../decisions/2026-10-24-round-result-recovery.md) supersedes the historical automatic failure-void choice recorded in §10. The canonical legal-position catalogue was subsequently approved.
+**Implementation status:** Private admission, reserve and terminal-accounting slices have passed PostgreSQL CI; public gameplay, realtime privacy, full acceptance and operations gates remain open.
+**Purpose:** Record owner-provided choices and their explicit supersession without treating the 2026-10-14 text as current recovery authority.
 
 ## 1. Global game and individual player view
 
@@ -76,7 +76,7 @@ These multipliers intentionally differ from conventional casino total-return fig
 - At second 45: show the final-bet call/warning; betting remains open until the cutoff.
 - At second 50: server closes betting, rejects new submissions, and freezes the accepted bet set. Wheel/ball animation begins.
 - Generate and persist exactly one server-authoritative outcome per global round, independently of bets, balances, and player identities. Animation lands on the already determined result; it never determines the result.
-- At second 60: reveal the winning number, calculate each player's combined winning payout, and update wallets. Start the next round according to the authoritative clock.
+- At second 60: target reveal of the winning number, calculation of each player's combined winning payout, and wallet settlement. A worker outage may delay this; recover per D-06a without fabricating an on-time result or automatically voiding. Start the next round according to the authoritative clock.
 - Only server-confirmed accepted bets before cutoff are valid. Client timestamps/UI do not establish acceptance.
 - Settlement must be transactional and idempotent so retries or reconnects cannot credit a player twice.
 
@@ -87,13 +87,13 @@ These multipliers intentionally differ from conventional casino total-return fig
 - Inside bets: straight-up, split, street, corner, six line, and first four. Outside bets: dozen, column, Red/Black, Odd/Even, and Low/High.
 - Use only valid standard selections on the standard single-zero European layout; no custom bet types or nonstandard positions.
 - Overlapping bets settle independently.
-- A canonical list of valid positions, including zero-adjacent positions, must be reviewed before implementation.
+- The canonical list of valid positions, including zero-adjacent positions, was reviewed before private implementation; preserve its fixture as the server validation source.
 
 ## 8. Internet disconnection and server/game failure
 
 - **Player-side internet disconnection after acceptance:** accepted bets remain valid and settle normally against the shared winning number. Disconnection does not cancel or change the bet. On reconnect, return authoritative balance, round, result, and the player's own bet state.
-- **Owner-selected atomic recovery rule:** settlement for a global round is one atomic transaction. If a server/game-side failure prevents the settlement transaction from committing successfully, void the round and refund all accepted stakes for that round through idempotent ledger entries. If settlement commits successfully, do not issue a later refund for that same round/stake. Record the incident/void reason and refund entries; do not leave stakes frozen pending manual review.
-- Generate and persist at most one outcome per round. Never generate a replacement outcome if an outcome has already been persisted. If a persisted outcome exists but settlement cannot safely commit, void/refund according to the atomic recovery rule while retaining the persisted outcome for audit; never pay and refund the same stake.
+- **D-06a supersedes the 2026-10-14 automatic failure-void rule:** settlement for a global round remains one atomic transaction. If the result is not yet persisted after cutoff, retry independent server-only selection and persist it once, then settle even if late. If a result was persisted, reuse it and retry settlement; never reroll, automatically void because settlement failed, or refund a bet with a persisted result. Keep unresolved obligations funded, surface the delay and alert operators while retrying.
+- An exceptional incident void/refund is **not** authorized by a crash, timeout or failed settlement. Its separate owner-authorized and audited policy is still open; the existing private void primitive is not a public action. A player disconnect is not a server-side incident. Terminal accounting must prevent both payout and refund for the same accepted bet.
 - Each round must end in one terminal accounting state (for example, settled or void-refunded), enforced through transactional state transitions and unique ledger references.
 - A player disconnect must not be classified as a server/game-side failure.
 
@@ -102,22 +102,22 @@ These multipliers intentionally differ from conventional casino total-return fig
 - Use the standard single-zero European roulette table.
 - Validate selections server-side against a canonical list of legal straight-up, split, street, corner, six-line, and first-four combinations.
 - First four is exactly {0, 1, 2, 3}.
-- The complete machine-readable catalogue, including legal positions adjacent to zero, is a prerequisite before the betting engine is built.
+- The complete machine-readable catalogue, including legal positions adjacent to zero, was approved before private engine work; keep its fixture and tests current.
 
-## 10. Remaining pre-implementation gate
+## 10. Catalogue gate completed; release gates remain
 
-1. **Canonical layout catalogue:** The exact valid standard positions, especially zero-adjacent combinations, must be documented and reviewed before betting-engine implementation. This is the next specification task; it does not revoke the owner's approval of the payout/settlement rules in this document.
+1. **Canonical layout catalogue:** The exact legal standard positions, including zero-adjacent combinations, were documented and reviewed on 2026-10-14. This does not verify public gameplay, realtime privacy, deployment or incident policy.
 
 ### Owner choices recorded on 2026-10-14
 
 - Apply the 2,000-coin combined per-player/per-round cap to each exact corner, six-line, first-four, and Low/High selection as well as the previously listed selection types.
 - Interpret “rows” as street bets.
 - Use local bet drafts that can be edited/cancelled before submission; accepted bets are immutable.
-- Use atomic settlement/refund recovery: if settlement cannot commit, void/refund accepted stakes idempotently; if settlement commits, do not refund again; never regenerate a persisted outcome.
+- **Superseded on 2026-10-24 by D-06a:** the previously approved automatic settlement-failure void/refund rule above is no longer operative. Retry a missing independent result and settlement even late; reuse and settle any persisted result. Exceptional void requires a separate policy, not an automatic failure branch.
 
 ## 11. Approval status and owner approval record
 
 - **Owner approval received:** 2026-10-14. The owner explicitly approved the complete P00-T02 roulette payout and settlement specification as presented.
 - The four owner choices dated 2026-10-14 are included in this approved specification.
-- The canonical legal-position catalogue remains a documented prerequisite before betting-engine implementation. Track its completion as the next specification task.
-- No betting-engine implementation has been started or authorized before the position catalogue is reviewed and the project status is updated accordingly.
+- The canonical legal-position catalogue was reviewed and approved on 2026-10-14; the private betting engine and reserve-funded settlement now have scoped PostgreSQL CI evidence, but no public betting API or deployed game is approved.
+- The owner's later [D-06a decision](../decisions/2026-10-24-round-result-recovery.md) is controlling for crash/late-result recovery; the historical 2026-10-14 automatic-void wording is not implementation guidance.
