@@ -7,14 +7,23 @@ agent registration/login test. Immutable wallet rows require disposable CI DB.
 import os
 import secrets
 import unittest
+from types import MappingProxyType
 from unittest.mock import patch
 
-from fairmount_api.db.models import Account, AccountSession, AgentAssignment
-from fairmount_api.identity.http_boundary import SESSION_COOKIE
+from fairmount_api.db.models import Account, AccountSession, AgentAssignment, OwnerRecoveryCode
+from fairmount_api.identity.http_boundary import CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE
+from fairmount_api.identity.mfa import totp_code
+from fairmount_api.identity.mfa_keys import MFAKeyring
+from fairmount_api.identity.owner_activation import activate_initial_owner
+from fairmount_api.identity.owner_bootstrap import bootstrap_owner
+from fairmount_api.identity.owner_mfa_enrollment import (
+    begin_owner_mfa_enrollment,
+    confirm_owner_mfa_enrollment,
+)
 from fairmount_api.identity.session_validation import session_token_digest
 from fairmount_api.main import app
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, func, insert, text, update
+from sqlalchemy import create_engine, func, insert, select, text, update
 
 from infrastructure.local_db_url import local_database_url
 
@@ -32,13 +41,24 @@ CONFIG = {"FAIRMOUNT_AUTH_EDGE_MODE": "direct-tls", "FAIRMOUNT_PUBLIC_ORIGIN": O
     os.environ.get("FAIRMOUNT_RUN_DB_TESTS") == "1", "Disposable PostgreSQL test DB required"
 )
 class ScopedWalletHTTPFlowTests(unittest.TestCase):
-    def test_owner_can_audit_disabled_player_without_listing_it_as_visible(self):
+    def test_owner_password_mfa_http_flow_and_disabled_claim_audit(self):
         engine = create_engine(local_database_url(test=True))
+        password = "long private owner test passphrase"
+        keyring = MFAKeyring(1, MappingProxyType({1: secrets.token_bytes(32)}))
         try:
+            # Commit real internal bootstrap, activation and ten-code MFA setup.
+            # No owner secret/key is written to disk or returned by HTTP.
             with engine.begin() as connection:
-                owner = connection.execute(
-                    insert(Account.__table__).values(role="OWNER").returning(Account.id)
-                ).scalar_one()
+                pending_owner = bootstrap_owner(connection)
+                owner = activate_initial_owner(connection, pending_owner.secret, password)
+                pending_mfa = begin_owner_mfa_enrollment(connection, keyring)
+                now = connection.scalar(select(func.clock_timestamp()))
+                confirmed = confirm_owner_mfa_enrollment(
+                    connection,
+                    totp_code(pending_mfa.secret, int(now.timestamp())),
+                    keyring,
+                )
+                code = confirmed.recovery_codes[0]
                 enabled = connection.execute(
                     insert(Account.__table__).values(role="PLAYER").returning(Account.id)
                 ).scalar_one()
@@ -50,25 +70,43 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
                     .where(Account.id == disabled)
                     .values(status="DISABLED", disabled_at=func.now())
                 )
-                token = secrets.token_urlsafe(32)
-                connection.execute(
-                    insert(AccountSession.__table__).values(
-                        account_id=owner,
-                        role_at_issue="OWNER",
-                        token_digest=session_token_digest(token),
-                        issued_at=func.now(),
-                        last_seen_at=func.now(),
-                        idle_expires_at=func.now() + text("interval '15 minutes'"),
-                        absolute_expires_at=func.now() + text("interval '8 hours'"),
-                        mfa_verified_at=func.now(),
-                    )
-                )
             client = TestClient(app, base_url=ORIGIN, client=("203.0.113.43", 50003))
-            client.cookies.set(SESSION_COOKIE, token, domain="game.example")
             with (
                 patch.dict("os.environ", CONFIG),
+                patch("fairmount_api.identity.login_api._configured_engine", return_value=engine),
                 patch("fairmount_api.private_read_api._configured_engine", return_value=engine),
+                patch(
+                    "fairmount_api.identity.login_api.load_auth_hmac_key",
+                    return_value=b"separate-test-owner-hmac-secret!",
+                ),
+                patch("fairmount_api.identity.login_api.load_mfa_keyring", return_value=keyring),
             ):
+                payload = {
+                    "role": "OWNER",
+                    "identifier": "owner",
+                    "password": password,
+                    "factor_kind": "recovery",
+                    "code": code,
+                }
+                logged_in = client.post(
+                    "/api/v1/auth/login", json=payload, headers={"Origin": ORIGIN}
+                )
+                self.assertEqual(
+                    (logged_in.status_code, logged_in.json()), (200, {"status": "authenticated"})
+                )
+                token, csrf = client.cookies[SESSION_COOKIE], client.cookies[CSRF_COOKIE]
+                self.assertNotIn(token, logged_in.text)
+                self.assertNotIn(code, logged_in.text)
+                with engine.connect() as connection:
+                    self.assertIsNotNone(
+                        connection.scalar(
+                            select(OwnerRecoveryCode.consumed_at).where(
+                                OwnerRecoveryCode.owner_account_id == owner,
+                                OwnerRecoveryCode.digest.is_not(None),
+                                OwnerRecoveryCode.consumed_at.is_not(None),
+                            )
+                        )
+                    )
                 for player in (enabled, disabled):
                     response = client.get(player_url(player))
                     self.assertEqual(
@@ -80,6 +118,18 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
                 self.assertIn(str(enabled), roster.json()["player_ids"])
                 self.assertNotIn(str(disabled), roster.json()["player_ids"])
                 self.assertNotIn(str(owner), roster.json()["player_ids"])
+                logout = client.post(
+                    "/api/v1/auth/logout",
+                    headers={"Origin": ORIGIN, CSRF_HEADER: csrf},
+                )
+                self.assertEqual(logout.status_code, 200)
+                stale = TestClient(app, base_url=ORIGIN, client=("203.0.113.43", 50004))
+                stale.cookies.set(SESSION_COOKIE, token, domain="game.example")
+                self.assertEqual(stale.get("/api/v1/me/players").status_code, 401)
+                self.assertEqual(stale.get(player_url(disabled)).status_code, 404)
+                replay = client.post("/api/v1/auth/login", json=payload, headers={"Origin": ORIGIN})
+                self.assertEqual(replay.status_code, 401)
+                self.assertNotIn("set-cookie", replay.headers)
         finally:
             engine.dispose()
 
