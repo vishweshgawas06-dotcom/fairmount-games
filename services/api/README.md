@@ -1,6 +1,6 @@
 # FairMount Games API
 
-FastAPI health and public read-only round snapshot foundation. P02-T02a introduced an account/identity/assignment **database schema** and local Alembic runner. The opt-in direct-TLS guarded login route is disabled in this proxy preview and cannot yet authorize a public wallet, wager or payout route. `/health/live` is process liveness; `/health/ready` checks a separately configured PostgreSQL URL and exact migration revision, not worker or game availability.
+FastAPI health and public read-only round snapshot foundation. P02-T02a introduced an account/identity/assignment **database schema** and local Alembic runner. The opt-in direct-TLS guarded login and self-wallet read routes are disabled in this proxy preview; there is no cross-account wallet, wager or payout route. `/health/live` is process liveness; `/health/ready` checks a separately configured PostgreSQL URL and exact migration revision, not worker or game availability.
 
 ## Planned module boundaries
 
@@ -40,7 +40,7 @@ The read-only `/api/v1/roulette/round` endpoint and `/preview/` interface can sh
 
 ## Opt-in direct-TLS login boundary (not enabled in preview)
 
-`POST /api/v1/auth/login` and the CSRF-guarded `POST /api/v1/auth/logout` can only run with explicit `FAIRMOUNT_AUTH_EDGE_MODE=direct-tls`, a canonical HTTPS `FAIRMOUNT_PUBLIC_ORIGIN`, a migrated `FAIRMOUNT_API_DATABASE_URL`, and restricted-file `FAIRMOUNT_AUTH_HMAC_KEY_FILE` (plus `FAIRMOUNT_MFA_KEY_FILE` for OWNER). It requires the **actual direct HTTPS ASGI peer**, exact Origin and Host, and rejects forwarding headers. Run a reviewed direct-TLS deployment with proxy-header trust disabled; **do not enable this mode behind Arena's preview proxy or any reverse proxy**. Reverse-proxy IP handling, full login→authorized resource→logout integration, CSRF on gameplay/point writes and production acceptance need later gates. The preview remains deliberately unable to authenticate.
+`POST /api/v1/auth/login`, CSRF-guarded `POST /api/v1/auth/logout`, and self-only `GET /api/v1/me/wallet` can only run with explicit `FAIRMOUNT_AUTH_EDGE_MODE=direct-tls`, a canonical HTTPS `FAIRMOUNT_PUBLIC_ORIGIN`, a migrated `FAIRMOUNT_API_DATABASE_URL`, and restricted-file `FAIRMOUNT_AUTH_HMAC_KEY_FILE` (plus `FAIRMOUNT_MFA_KEY_FILE` for OWNER). It requires the **actual direct HTTPS ASGI peer**, exact Origin and Host, and rejects forwarding headers. Run a reviewed direct-TLS deployment with proxy-header trust disabled; **do not enable this mode behind Arena's preview proxy or any reverse proxy**. Reverse-proxy IP handling, full committed login→self-wallet→logout integration, cross-account authorization, CSRF on gameplay/point writes and production acceptance need later gates. The preview remains deliberately unable to authenticate.
 
 ## Opt-in round worker (not deployed)
 

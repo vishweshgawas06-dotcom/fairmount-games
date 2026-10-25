@@ -23,6 +23,7 @@ from fairmount_api.reserve_funding import fund_game_reserve
 from fairmount_api.resource_reads import (
     ResourceUnavailable,
     list_visible_player_ids,
+    read_own_wallet,
     read_player_bets,
     read_wallet,
 )
@@ -269,6 +270,16 @@ class AgentPointAccountingTests(unittest.TestCase):
         self.assertEqual(read_wallet(self.connection, player_token, self.player).balance, 25)
         self.assertEqual(read_wallet(self.connection, self.agent_token, self.agent).balance, 75)
         self.assertEqual(read_wallet(self.connection, self.owner_token, self.player).balance, 25)
+        for token, account, balance in (
+            (self.owner_token, self.owner, 0),
+            (self.agent_token, self.agent, 75),
+            (player_token, self.player, 25),
+            (other_token, self.other_player, 0),
+        ):
+            own = read_own_wallet(self.connection, token)
+            self.assertEqual((own.account_id, own.balance), (account, balance))
+        with self.assertRaises(ResourceUnavailable):
+            read_own_wallet(self.connection, "untrusted-token")
         for token, target in (
             (player_token, self.other_player),
             (other_token, self.player),
@@ -300,6 +311,8 @@ class AgentPointAccountingTests(unittest.TestCase):
         )
         with self.assertRaises(ResourceUnavailable):
             read_wallet(self.connection, player_token, self.player)
+        with self.assertRaises(ResourceUnavailable):
+            read_own_wallet(self.connection, player_token)
         self.assertEqual(read_wallet(self.connection, self.owner_token, self.player).balance, 25)
 
     def test_accepted_bet_history_has_no_cross_player_or_cross_agent_leak(self) -> None:

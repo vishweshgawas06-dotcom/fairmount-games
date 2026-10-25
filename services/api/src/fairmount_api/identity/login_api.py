@@ -40,7 +40,7 @@ def _reply(status: int, label: str) -> JSONResponse:
     return JSONResponse({"status": label}, status_code=status, headers=_NO_STORE)
 
 
-def _direct_source(request: Request) -> str:
+def _direct_source(request: Request, *, origin_required: bool = True) -> str:
     """Require a configured direct HTTPS peer and one exact browser origin.
 
     No forwarded header is accepted even if it appears to name a valid IP.
@@ -63,11 +63,18 @@ def _direct_source(request: Request) -> str:
         )
     ):
         raise ValueError("Forwarded client identity is unsupported")
-    if (
-        _single_header(request, "origin") != origin
-        or _single_header(request, "host").lower() != host
-    ):
+    if _single_header(request, "host").lower() != host:
         raise RequestBoundaryUnavailable("Request unavailable")
+    if origin_required:
+        if _single_header(request, "origin") != origin:
+            raise RequestBoundaryUnavailable("Request unavailable")
+    else:
+        origins = request.headers.getlist("origin")
+        if origins and (len(origins) != 1 or origins[0] != origin):
+            raise RequestBoundaryUnavailable("Request unavailable")
+        site = request.headers.getlist("sec-fetch-site")
+        if site and (len(site) != 1 or site[0] not in ("same-origin", "none")):
+            raise RequestBoundaryUnavailable("Request unavailable")
     client = request.client
     if client is None:
         raise ValueError("Transport peer unavailable")

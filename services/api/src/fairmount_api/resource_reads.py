@@ -1,7 +1,8 @@
 """Private, transaction-scoped, role/assignment-filtered point and bet reads.
 
-No HTTP/realtime route exists. The caller must commit the session touch and return
-only these projected fields, never raw ORM rows or whole-table client filters.
+Only the self-wallet HTTP adapter is opt-in; roster and bet history have no
+HTTP/realtime route. Commit the session touch and return projected fields only,
+never raw ORM rows or whole-table client filters.
 """
 
 from __future__ import annotations
@@ -120,16 +121,27 @@ def list_visible_player_ids(connection: Connection, raw_token: str) -> tuple[uui
     return tuple(visible)
 
 
-def read_wallet(connection: Connection, raw_token: str, account_id: uuid.UUID) -> WalletView:
-    """Owner any wallet; agent own/assigned enabled player; player own only."""
-    actor = _actor(connection, raw_token)
-    _authorize_target(connection, actor, account_id, player_only=False)
+def _wallet_balance(connection: Connection, account_id: uuid.UUID) -> WalletView:
     balance = connection.scalar(
         select(AccountWallet.balance).where(AccountWallet.account_id == account_id)
     )
     if balance is None:
         raise ResourceUnavailable("Resource unavailable")
     return WalletView(account_id, balance)
+
+
+def read_wallet(connection: Connection, raw_token: str, account_id: uuid.UUID) -> WalletView:
+    """Owner any wallet; agent own/assigned enabled player; player own only."""
+    actor = _actor(connection, raw_token)
+    _authorize_target(connection, actor, account_id, player_only=False)
+    return _wallet_balance(connection, account_id)
+
+
+def read_own_wallet(connection: Connection, raw_token: str) -> WalletView:
+    """Derive the target solely from the verified session, never a client ID."""
+    actor = _actor(connection, raw_token)
+    _authorize_target(connection, actor, actor.account_id, player_only=False)
+    return _wallet_balance(connection, actor.account_id)
 
 
 def read_player_bets(
