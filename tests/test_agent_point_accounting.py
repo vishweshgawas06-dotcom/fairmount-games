@@ -26,6 +26,7 @@ from fairmount_api.resource_reads import (
     read_own_recent_bets,
     read_own_wallet,
     read_player_bets,
+    read_player_wallet,
     read_wallet,
 )
 from fairmount_api.roulette.admission import place_bet
@@ -271,6 +272,12 @@ class AgentPointAccountingTests(unittest.TestCase):
         self.assertEqual(read_wallet(self.connection, player_token, self.player).balance, 25)
         self.assertEqual(read_wallet(self.connection, self.agent_token, self.agent).balance, 75)
         self.assertEqual(read_wallet(self.connection, self.owner_token, self.player).balance, 25)
+        for token in (self.owner_token, self.agent_token, player_token):
+            self.assertEqual(read_player_wallet(self.connection, token, self.player).balance, 25)
+        with self.assertRaises(ResourceUnavailable):
+            read_player_wallet(self.connection, self.agent_token, self.agent)
+        with self.assertRaises(ResourceUnavailable):
+            read_player_wallet(self.connection, self.owner_token, self.agent)
         for token, account, balance in (
             (self.owner_token, self.owner, 0),
             (self.agent_token, self.agent, 75),
@@ -291,6 +298,8 @@ class AgentPointAccountingTests(unittest.TestCase):
         ):
             with self.subTest(target=target), self.assertRaises(ResourceUnavailable):
                 read_wallet(self.connection, token, target)
+            with self.subTest(target=target), self.assertRaises(ResourceUnavailable):
+                read_player_wallet(self.connection, token, target)
         assignment = self.connection.scalar(
             select(AgentAssignment.id).where(
                 AgentAssignment.player_account_id == self.player,
@@ -305,6 +314,8 @@ class AgentPointAccountingTests(unittest.TestCase):
         self.assign(self.player, self.other_agent)
         with self.assertRaises(ResourceUnavailable):
             read_wallet(self.connection, self.agent_token, self.player)
+        with self.assertRaises(ResourceUnavailable):
+            read_player_wallet(self.connection, self.agent_token, self.player)
         self.connection.execute(
             update(Account.__table__)
             .where(Account.id == self.player)
@@ -317,6 +328,13 @@ class AgentPointAccountingTests(unittest.TestCase):
         with self.assertRaises(ResourceUnavailable):
             read_own_recent_bets(self.connection, player_token)
         self.assertEqual(read_wallet(self.connection, self.owner_token, self.player).balance, 25)
+        self.assertEqual(
+            read_player_wallet(self.connection, self.owner_token, self.player).balance, 25
+        )
+        with self.assertRaises(ResourceUnavailable):
+            read_player_wallet(self.connection, self.agent_token, self.player)
+        with self.assertRaises(ResourceUnavailable):
+            read_player_wallet(self.connection, player_token, self.player)
 
     def test_accepted_bet_history_has_no_cross_player_or_cross_agent_leak(self) -> None:
         player_token = self.session(self.player, "PLAYER")

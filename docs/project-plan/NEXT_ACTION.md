@@ -1,6 +1,6 @@
 # Next Action
 
-P04-T02b [self-only recent-bets projection](tasks/P04-T02b.md) passed [Python 3.12/PostgreSQL CI 40173826711](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40173826711). [P04-T02c](tasks/P04-T02c.md) committed direct-TLS login→self-read→logout/disablement passed [PostgreSQL CI 40188275920](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40188275920). Next scope P04 cross-account authorization and gameplay-write CSRF; do not enable private reads behind the HTTP proxy preview. Full gameplay and operator policies remain open.
+P04-T02b [self-only recent-bets projection](tasks/P04-T02b.md) passed [Python 3.12/PostgreSQL CI 40173826711](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40173826711). [P04-T02c](tasks/P04-T02c.md) committed direct-TLS login→self-read→logout/disablement passed [PostgreSQL CI 40188275920](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40188275920). [P04-T02d](tasks/P04-T02d.md) adds a scoped player-wallet API read with database reauthorization (PostgreSQL CI pending); after that gate, test owner/agent HTTP reassignment and roster edges, then gameplay-write CSRF. Do not enable private reads behind the HTTP proxy preview. Full gameplay and operator policies remain open.
 
 ## Current integration blocker — PR #1 versus merged engine core (2026-10-23)
 

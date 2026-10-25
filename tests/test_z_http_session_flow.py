@@ -47,6 +47,9 @@ class CommittedHTTPSessionFlowTests(unittest.TestCase):
                 account_id = connection.execute(
                     insert(Account.__table__).values(role="PLAYER").returning(Account.id)
                 ).scalar_one()
+                other_player = connection.execute(
+                    insert(Account.__table__).values(role="PLAYER").returning(Account.id)
+                ).scalar_one()
                 connection.execute(
                     insert(PrivateIdentity.__table__).values(
                         account_id=account_id, login_kind="PLAYER", login_identifier=name
@@ -84,9 +87,14 @@ class CommittedHTTPSessionFlowTests(unittest.TestCase):
                 wallet = client.get(WALLET)
                 self.assertEqual(wallet.status_code, 200)
                 self.assertEqual(wallet.json(), {"account_id": str(account_id), "balance": 0})
+                own_player = client.get(f"/api/v1/players/{account_id}/wallet")
+                self.assertEqual(own_player.json(), wallet.json())
+                self.assertEqual(
+                    client.get(f"/api/v1/players/{other_player}/wallet").status_code, 404
+                )
                 history = client.get(HISTORY)
                 self.assertEqual((history.status_code, history.json()), (200, {"bets": []}))
-                for response in (wallet, history):
+                for response in (wallet, own_player, history):
                     self.assertEqual(response.headers["Cache-Control"], "no-store")
                     self.assertNotIn(token, response.text)
                 self.assertEqual(
@@ -125,6 +133,7 @@ class CommittedHTTPSessionFlowTests(unittest.TestCase):
                 stale.cookies.set(SESSION_COOKIE, token, domain="game.example", path="/")
                 self.assertEqual(stale.get(WALLET).status_code, 401)
                 self.assertEqual(stale.get(HISTORY).status_code, 401)
+                self.assertEqual(stale.get(f"/api/v1/players/{account_id}/wallet").status_code, 404)
                 self.assertEqual(client.get(WALLET).status_code, 401)
                 self.assertEqual(client.get(HISTORY).status_code, 401)
                 # A fresh login is invalidated by account disablement, not just

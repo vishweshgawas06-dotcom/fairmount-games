@@ -1,7 +1,7 @@
 """Private, transaction-scoped, role/assignment-filtered point and bet reads.
 
-Self-wallet and self-only recent-bet HTTP adapters are opt-in; cross-account
-roster and bet history have no HTTP/realtime route. Commit the session touch
+Self-wallet, self-bet and player-wallet HTTP adapters are opt-in; roster and
+cross-account bet history have no HTTP/realtime route. Commit the session touch
 and return projected fields only, never raw ORM rows or whole-table filters.
 """
 
@@ -135,6 +135,15 @@ def read_wallet(connection: Connection, raw_token: str, account_id: uuid.UUID) -
     actor = _actor(connection, raw_token)
     _authorize_target(connection, actor, account_id, player_only=False)
     return _wallet_balance(connection, account_id)
+
+
+def read_player_wallet(
+    connection: Connection, raw_token: str, player_account_id: uuid.UUID
+) -> WalletView:
+    """Recheck a player target under live session/account/assignment locks."""
+    actor = _actor(connection, raw_token)
+    _authorize_target(connection, actor, player_account_id, player_only=True)
+    return _wallet_balance(connection, player_account_id)
 
 
 def read_own_wallet(connection: Connection, raw_token: str) -> WalletView:

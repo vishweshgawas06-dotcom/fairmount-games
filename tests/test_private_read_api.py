@@ -14,6 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 URL = "/api/v1/me/wallet"
 BETS_URL = "/api/v1/me/recent-bets"
+PLAYER_URL = "/api/v1/players/{}/wallet"
 CONFIG = {
     "FAIRMOUNT_AUTH_EDGE_MODE": "direct-tls",
     "FAIRMOUNT_PUBLIC_ORIGIN": "https://game.example",
@@ -188,6 +189,80 @@ class RecentBetsAPITests(unittest.TestCase):
                 response = self.client.get(BETS_URL, headers=self.cookie)
                 self.assertEqual(response.status_code, 503)
                 self.assertNotIn("secret", response.text)
+
+
+class PlayerWalletAPITests(unittest.TestCase):
+    setUp = PrivateReadAPITests.setUp
+
+    def test_edge_rejects_disabled_http_cross_site_and_query_before_db(self):
+        target = uuid.uuid4()
+        url = PLAYER_URL.format(target)
+        with patch.dict("os.environ", {"FAIRMOUNT_AUTH_EDGE_MODE": ""}):
+            self.assertEqual(self.client.get(url, headers=self.cookie).status_code, 503)
+        with patch.dict("os.environ", CONFIG):
+            plain = TestClient(app, base_url="http://game.example")
+            self.assertEqual(plain.get(url, headers=self.cookie).status_code, 503)
+            self.assertEqual(self.client.get(url).status_code, 401)
+            with patch("fairmount_api.private_read_api._configured_engine") as engine:
+                for headers in (
+                    {**self.cookie, "Origin": "https://other.example"},
+                    {**self.cookie, "Sec-Fetch-Site": "cross-site"},
+                    {**self.cookie, "X-Forwarded-For": "203.0.113.21"},
+                ):
+                    with self.subTest(headers=headers):
+                        self.assertIn(self.client.get(url, headers=headers).status_code, (401, 503))
+                self.assertEqual(
+                    self.client.get(
+                        url + "?agent_id=" + str(uuid.uuid4()), headers=self.cookie
+                    ).status_code,
+                    400,
+                )
+                for invalid in ("invalid", target.hex, str(target).upper()):
+                    with self.subTest(invalid=invalid):
+                        self.assertEqual(
+                            self.client.get(
+                                PLAYER_URL.format(invalid), headers=self.cookie
+                            ).status_code,
+                            404,
+                        )
+                engine.assert_not_called()
+
+    def test_target_is_reauthorized_in_data_layer_and_denials_are_indistinguishable(self):
+        target = uuid.uuid4()
+        engine = MagicMock()
+        with patch.dict("os.environ", CONFIG):
+            with patch("fairmount_api.private_read_api._configured_engine", return_value=engine):
+                with patch("fairmount_api.private_read_api.schema_ready", return_value=True):
+                    with patch(
+                        "fairmount_api.private_read_api.read_player_wallet",
+                        return_value=WalletView(target, 75),
+                    ) as read:
+                        response = self.client.get(PLAYER_URL.format(target), headers=self.cookie)
+                        self.assertEqual(response.status_code, 200)
+                        self.assertEqual(
+                            response.json(), {"account_id": str(target), "balance": 75}
+                        )
+                        self.assertEqual(read.call_args.args[1:], (self.token, target))
+                        self.assertEqual(response.headers["Cache-Control"], "no-store")
+                        self.assertEqual(response.headers["Vary"], "Cookie")
+                        engine.begin.assert_called_once()
+                    with patch(
+                        "fairmount_api.private_read_api.read_player_wallet",
+                        side_effect=ResourceUnavailable("assigned elsewhere"),
+                    ):
+                        for forbidden in (target, uuid.uuid4()):
+                            denied = self.client.get(
+                                PLAYER_URL.format(forbidden), headers=self.cookie
+                            )
+                            self.assertEqual(
+                                (denied.status_code, denied.json()),
+                                (404, {"status": "unavailable"}),
+                            )
+                            self.assertNotIn("elsewhere", denied.text)
+                engine.begin.side_effect = SQLAlchemyError("secret-db")
+                response = self.client.get(PLAYER_URL.format(target), headers=self.cookie)
+                self.assertEqual(response.status_code, 503)
+                self.assertNotIn("secret-db", response.text)
 
 
 if __name__ == "__main__":
