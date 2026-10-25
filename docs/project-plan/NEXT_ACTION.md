@@ -1,6 +1,6 @@
 # Next Action
 
-P04-T02b [self-only recent-bets projection](tasks/P04-T02b.md) passed local HTTP/Ruff checks; PostgreSQL CI is pending. Next integration gate after CI: a committed direct-TLS login→protected-read→logout test and scoped P04 cross-account API authorization; do not enable private reads behind the HTTP proxy preview. Full gameplay and operator policies remain open.
+P04-T02b [self-only recent-bets projection](tasks/P04-T02b.md) passed [Python 3.12/PostgreSQL CI 40173826711](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40173826711). Next integration gate after CI: a committed direct-TLS login→protected-read→logout test and scoped P04 cross-account API authorization; do not enable private reads behind the HTTP proxy preview. Full gameplay and operator policies remain open.
 
 ## Current integration blocker — PR #1 versus merged engine core (2026-10-23)
 
