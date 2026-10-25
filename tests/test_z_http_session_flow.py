@@ -94,7 +94,8 @@ class CommittedHTTPSessionFlowTests(unittest.TestCase):
                 )
                 roster = client.get("/api/v1/me/players")
                 self.assertEqual(
-                    (roster.status_code, roster.json()), (200, {"player_ids": [str(account_id)]})
+                    (roster.status_code, roster.json()),
+                    (200, {"player_ids": [str(account_id)], "next_after": None}),
                 )
                 history = client.get(HISTORY)
                 self.assertEqual((history.status_code, history.json()), (200, {"bets": []}))

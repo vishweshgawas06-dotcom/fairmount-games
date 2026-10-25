@@ -8,7 +8,12 @@ from unittest.mock import MagicMock, patch
 
 from fairmount_api.identity.http_boundary import SESSION_COOKIE
 from fairmount_api.main import app
-from fairmount_api.resource_reads import PrivateBetView, ResourceUnavailable, WalletView
+from fairmount_api.resource_reads import (
+    PrivateBetView,
+    ResourceUnavailable,
+    VisiblePlayerPage,
+    WalletView,
+)
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -294,6 +299,17 @@ class VisiblePlayersAPITests(unittest.TestCase):
                     ).status_code,
                     400,
                 )
+                for suffix in (
+                    "?after=invalid",
+                    "?after=" + uuid.uuid4().hex,
+                    "?after=" + str(uuid.uuid4()) + "&after=" + str(uuid.uuid4()),
+                    "?after=" + str(uuid.uuid4()) + "&agent_id=x",
+                ):
+                    with self.subTest(suffix=suffix):
+                        self.assertEqual(
+                            self.client.get(ROSTER_URL + suffix, headers=self.cookie).status_code,
+                            400,
+                        )
                 engine.assert_not_called()
 
     def test_projection_is_only_authorized_ids_and_failures_are_generic(self):
@@ -303,20 +319,25 @@ class VisiblePlayersAPITests(unittest.TestCase):
             with patch("fairmount_api.private_read_api._configured_engine", return_value=engine):
                 with patch("fairmount_api.private_read_api.schema_ready", return_value=True):
                     with patch(
-                        "fairmount_api.private_read_api.list_visible_player_ids",
-                        return_value=(first, second),
+                        "fairmount_api.private_read_api.list_visible_player_page",
+                        return_value=VisiblePlayerPage((first, second), second),
                     ) as read:
                         response = self.client.get(ROSTER_URL, headers=self.cookie)
+                        self.assertEqual(read.call_args.args[1:], (self.token, None))
+                        after_response = self.client.get(
+                            ROSTER_URL + "?after=" + str(first), headers=self.cookie
+                        )
+                        self.assertEqual(after_response.status_code, 200)
+                        self.assertEqual(read.call_args.args[1:], (self.token, first))
                     self.assertEqual(
                         (response.status_code, response.json()),
-                        (200, {"player_ids": [str(first), str(second)]}),
+                        (200, {"player_ids": [str(first), str(second)], "next_after": str(second)}),
                     )
-                    self.assertEqual(read.call_args.args[1:], (self.token,))
                     self.assertEqual(response.headers["Cache-Control"], "no-store")
                     self.assertEqual(response.headers["Vary"], "Cookie")
                     self.assertNotIn(self.token, response.text)
                     with patch(
-                        "fairmount_api.private_read_api.list_visible_player_ids",
+                        "fairmount_api.private_read_api.list_visible_player_page",
                         side_effect=ResourceUnavailable("session private detail"),
                     ):
                         denied = self.client.get(ROSTER_URL, headers=self.cookie)

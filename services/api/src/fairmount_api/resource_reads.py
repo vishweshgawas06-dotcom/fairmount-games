@@ -36,6 +36,12 @@ class PrivateBetView:
     accepted_at: datetime
 
 
+@dataclass(frozen=True)
+class VisiblePlayerPage:
+    player_ids: tuple[uuid.UUID, ...]
+    next_after: uuid.UUID | None
+
+
 def _actor(connection: Connection, raw_token: str) -> VerifiedSession:
     verified = resolve_session(connection, raw_token)
     if verified is None:
@@ -119,6 +125,50 @@ def list_visible_player_ids(connection: Connection, raw_token: str) -> tuple[uui
             continue
         visible.append(player_id)
     return tuple(visible)
+
+
+def list_visible_player_page(
+    connection: Connection, raw_token: str, after: uuid.UUID | None = None
+) -> VisiblePlayerPage:
+    """Bounded keyset page of live IDs; a cursor never grants resource access.
+
+    Each page uses a new authorization transaction. Under concurrent edits,
+    pages are not a frozen snapshot: assignment/disablement can change between
+    them. The agent cursor is the last *candidate* scanned, so stale candidate
+    assignments cannot force an unbounded scan or cause a later ID to be skipped.
+    """
+    if after is not None and not isinstance(after, uuid.UUID):
+        raise ResourceUnavailable("Resource unavailable")
+    actor = _actor(connection, raw_token)
+    if actor.role == "PLAYER":
+        return VisiblePlayerPage(
+            (actor.account_id,) if after is None or actor.account_id > after else (), None
+        )
+    if actor.role == "OWNER":
+        query = select(Account.id).where(Account.role == "PLAYER", Account.status == "ENABLED")
+        if after is not None:
+            query = query.where(Account.id > after)
+        ids = connection.scalars(query.order_by(Account.id).limit(101).with_for_update()).all()
+        return VisiblePlayerPage(tuple(ids[:100]), ids[99] if len(ids) > 100 else None)
+    if actor.role != "AGENT":
+        raise ResourceUnavailable("Resource unavailable")
+    query = select(AgentAssignment.player_account_id).where(
+        AgentAssignment.agent_account_id == actor.account_id,
+        AgentAssignment.ended_at.is_(None),
+    )
+    if after is not None:
+        query = query.where(AgentAssignment.player_account_id > after)
+    candidates = connection.scalars(
+        query.order_by(AgentAssignment.player_account_id).limit(101)
+    ).all()
+    visible = []
+    for player_id in candidates[:100]:
+        try:
+            _authorize_target(connection, actor, player_id, player_only=True)
+        except ResourceUnavailable:
+            continue
+        visible.append(player_id)
+    return VisiblePlayerPage(tuple(visible), candidates[99] if len(candidates) > 100 else None)
 
 
 def _wallet_balance(connection: Connection, account_id: uuid.UUID) -> WalletView:

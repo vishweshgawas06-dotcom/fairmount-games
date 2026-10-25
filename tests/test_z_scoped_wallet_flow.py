@@ -142,11 +142,11 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
             ):
                 self.assertEqual(
                     first.get("/api/v1/me/players").json(),
-                    {"player_ids": [str(first_player)]},
+                    {"player_ids": [str(first_player)], "next_after": None},
                 )
                 self.assertEqual(
                     second.get("/api/v1/me/players").json(),
-                    {"player_ids": [str(second_player)]},
+                    {"player_ids": [str(second_player)], "next_after": None},
                 )
                 allowed = first.get(player_url(first_player))
                 self.assertEqual(
@@ -174,11 +174,16 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
                         )
                     )
                 self.assertEqual(first.get(player_url(first_player)).status_code, 404)
-                self.assertEqual(first.get("/api/v1/me/players").json(), {"player_ids": []})
+                self.assertEqual(
+                    first.get("/api/v1/me/players").json(), {"player_ids": [], "next_after": None}
+                )
                 self.assertEqual(second.get(player_url(first_player)).status_code, 200)
                 self.assertEqual(
                     second.get("/api/v1/me/players").json(),
-                    {"player_ids": sorted((str(first_player), str(second_player)))},
+                    {
+                        "player_ids": sorted((str(first_player), str(second_player))),
+                        "next_after": None,
+                    },
                 )
                 with engine.begin() as connection:
                     connection.execute(
@@ -190,7 +195,7 @@ class ScopedWalletHTTPFlowTests(unittest.TestCase):
                 self.assertEqual(second.get(player_url(second_player)).status_code, 200)
                 self.assertEqual(
                     second.get("/api/v1/me/players").json(),
-                    {"player_ids": [str(second_player)]},
+                    {"player_ids": [str(second_player)], "next_after": None},
                 )
         finally:
             engine.dispose()

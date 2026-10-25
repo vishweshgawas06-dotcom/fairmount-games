@@ -22,7 +22,7 @@ from fairmount_api.identity.login_api import _direct_source
 from fairmount_api.readiness import _configured_engine, schema_ready
 from fairmount_api.resource_reads import (
     ResourceUnavailable,
-    list_visible_player_ids,
+    list_visible_player_page,
     read_own_recent_bets,
     read_own_wallet,
     read_player_wallet,
@@ -112,7 +112,7 @@ def player_wallet(request: Request, player_id: str) -> JSONResponse:
 
 @router.get("/api/v1/me/players", tags=["private"])
 def my_visible_players(request: Request) -> JSONResponse:
-    """Enabled player IDs only, rechecked under the live role and assignment."""
+    """At most 100 live visible IDs per transaction; cursor grants no scope."""
     try:
         _direct_source(request, origin_required=False)
         raw_token = _single_cookie(request, SESSION_COOKIE)
@@ -120,8 +120,17 @@ def my_visible_players(request: Request) -> JSONResponse:
         return _unavailable(401)
     except ValueError:
         return _unavailable(503)
-    if request.query_params:
-        return _unavailable(400)  # no client-selected agent, role or player scope
+    after = None
+    params = list(request.query_params.multi_items())
+    if params:
+        if len(params) != 1 or params[0][0] != "after":
+            return _unavailable(400)
+        try:
+            after = uuid.UUID(params[0][1])
+            if str(after) != params[0][1]:
+                return _unavailable(400)
+        except ValueError:
+            return _unavailable(400)
     engine = _configured_engine()
     if engine is None:
         return _unavailable(503)
@@ -129,13 +138,16 @@ def my_visible_players(request: Request) -> JSONResponse:
         with engine.begin() as connection:
             if not schema_ready(connection):
                 return _unavailable(503)
-            players = list_visible_player_ids(connection, raw_token)
+            page = list_visible_player_page(connection, raw_token, after)
     except ResourceUnavailable:
         return _unavailable(401)
     except SQLAlchemyError:
         return _unavailable(503)
     return JSONResponse(
-        {"player_ids": [str(player_id) for player_id in players]},
+        {
+            "player_ids": [str(player_id) for player_id in page.player_ids],
+            "next_after": str(page.next_after) if page.next_after is not None else None,
+        },
         headers=_PRIVATE_HEADERS,
     )
 

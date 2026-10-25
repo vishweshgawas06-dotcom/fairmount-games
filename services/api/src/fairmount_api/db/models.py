@@ -374,6 +374,12 @@ class AgentAssignment(Base):
             postgresql_where=text("ended_at IS NULL"),
         ),
         Index("ix_assignments_agent", "agent_account_id"),
+        Index(
+            "ix_assignments_agent_current_player",
+            "agent_account_id",
+            "player_account_id",
+            postgresql_where=text("ended_at IS NULL"),
+        ),
     )
 
 

@@ -23,6 +23,7 @@ from fairmount_api.reserve_funding import fund_game_reserve
 from fairmount_api.resource_reads import (
     ResourceUnavailable,
     list_visible_player_ids,
+    list_visible_player_page,
     read_own_recent_bets,
     read_own_wallet,
     read_player_bets,
@@ -262,6 +263,45 @@ class AgentPointAccountingTests(unittest.TestCase):
         )
         with self.assertRaises(ResourceUnavailable):
             list_visible_player_ids(self.connection, player_token)
+
+    def test_bounded_roster_pages_keep_live_role_and_assignment_scope(self) -> None:
+        player_token = self.session(self.player, "PLAYER")
+        extra_players = [self.account("PLAYER") for _ in range(101)]
+        for player in extra_players:
+            self.assign(player, self.agent)
+        owner_ids = sorted((self.player, self.other_player, self.unassigned, *extra_players))
+        agent_ids = sorted((self.player, *extra_players))
+        for token, expected in (
+            (self.owner_token, owner_ids),
+            (self.agent_token, agent_ids),
+            (player_token, [self.player]),
+        ):
+            with self.subTest(token=token):
+                first = list_visible_player_page(self.connection, token)
+                self.assertLessEqual(len(first.player_ids), 100)
+                if len(expected) > 100:
+                    self.assertIsNotNone(first.next_after)
+                    second = list_visible_player_page(self.connection, token, first.next_after)
+                    self.assertEqual(second.next_after, None)
+                    self.assertEqual(first.player_ids + second.player_ids, tuple(expected))
+                else:
+                    self.assertEqual(first.next_after, None)
+                    self.assertEqual(first.player_ids, tuple(expected))
+        with self.assertRaises(ResourceUnavailable):
+            list_visible_player_page(self.connection, self.agent_token, "bad cursor")
+        # Role/assignment scope is rechecked even on a later page.
+        agent_first = list_visible_player_page(self.connection, self.agent_token)
+        later = agent_ids[-1]
+        self.connection.execute(
+            update(Account.__table__)
+            .where(Account.id == later)
+            .values(status="DISABLED", disabled_at=func.now())
+        )
+        agent_second = list_visible_player_page(
+            self.connection, self.agent_token, agent_first.next_after
+        )
+        self.assertNotIn(later, agent_second.player_ids)
+        self.assertNotIn(self.other_player, agent_second.player_ids)
 
     def test_wallet_read_scopes_follow_enabled_current_assignment(self) -> None:
         player_token = self.session(self.player, "PLAYER")
