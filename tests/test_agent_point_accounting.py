@@ -23,6 +23,7 @@ from fairmount_api.reserve_funding import fund_game_reserve
 from fairmount_api.resource_reads import (
     ResourceUnavailable,
     list_visible_player_ids,
+    read_own_recent_bets,
     read_own_wallet,
     read_player_bets,
     read_wallet,
@@ -313,6 +314,8 @@ class AgentPointAccountingTests(unittest.TestCase):
             read_wallet(self.connection, player_token, self.player)
         with self.assertRaises(ResourceUnavailable):
             read_own_wallet(self.connection, player_token)
+        with self.assertRaises(ResourceUnavailable):
+            read_own_recent_bets(self.connection, player_token)
         self.assertEqual(read_wallet(self.connection, self.owner_token, self.player).balance, 25)
 
     def test_accepted_bet_history_has_no_cross_player_or_cross_agent_leak(self) -> None:
@@ -347,6 +350,12 @@ class AgentPointAccountingTests(unittest.TestCase):
             history = read_player_bets(self.connection, token, self.player)
             self.assertEqual(len(history), 1)
             self.assertEqual((history[0].id, history[0].accepted_stake), (bet.bet_id, 10))
+        own = read_own_recent_bets(self.connection, player_token)
+        self.assertEqual([(item.id, item.accepted_stake) for item in own], [(bet.bet_id, 10)])
+        self.assertEqual(read_own_recent_bets(self.connection, other_token), ())
+        for not_player in (self.agent_token, self.owner_token):
+            with self.assertRaises(ResourceUnavailable):
+                read_own_recent_bets(self.connection, not_player)
         for token, target in (
             (other_token, self.player),
             (player_token, self.other_player),

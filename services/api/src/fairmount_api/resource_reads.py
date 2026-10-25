@@ -1,8 +1,8 @@
 """Private, transaction-scoped, role/assignment-filtered point and bet reads.
 
-Only the self-wallet HTTP adapter is opt-in; roster and bet history have no
-HTTP/realtime route. Commit the session touch and return projected fields only,
-never raw ORM rows or whole-table client filters.
+Self-wallet and self-only recent-bet HTTP adapters are opt-in; cross-account
+roster and bet history have no HTTP/realtime route. Commit the session touch
+and return projected fields only, never raw ORM rows or whole-table filters.
 """
 
 from __future__ import annotations
@@ -142,6 +142,27 @@ def read_own_wallet(connection: Connection, raw_token: str) -> WalletView:
     actor = _actor(connection, raw_token)
     _authorize_target(connection, actor, actor.account_id, player_only=False)
     return _wallet_balance(connection, actor.account_id)
+
+
+def read_own_recent_bets(connection: Connection, raw_token: str) -> tuple[PrivateBetView, ...]:
+    """Only PLAYER's 100 newest persisted bets; no client-selected account ID."""
+    actor = _actor(connection, raw_token)
+    if actor.role != "PLAYER":
+        raise ResourceUnavailable("Resource unavailable")
+    _authorize_target(connection, actor, actor.account_id, player_only=True)
+    rows = connection.execute(
+        select(
+            RouletteBet.id,
+            RouletteBet.round_id,
+            RouletteBet.selection_key,
+            RouletteBet.accepted_stake,
+            RouletteBet.accepted_at,
+        )
+        .where(RouletteBet.player_account_id == actor.account_id)
+        .order_by(RouletteBet.accepted_at.desc(), RouletteBet.id.desc())
+        .limit(100)
+    ).all()
+    return tuple(PrivateBetView(*row) for row in rows)
 
 
 def read_player_bets(

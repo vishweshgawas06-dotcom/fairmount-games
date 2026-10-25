@@ -1,8 +1,8 @@
-"""Opt-in direct-TLS private self-wallet HTTP projection; never client-ID scoped.
+"""Opt-in direct-TLS private self-wallet and self-bet HTTP projections.
 
-No role can read another account through this path. The authenticated actor and
-wallet target are derived from the same live database session, not a query/body
-parameter. Disabled/revoked sessions fail closed even with a saved cookie.
+No role can read another account through these paths. The authenticated actor
+and resource target come from the same live database session, never a client
+ID. Disabled/revoked sessions fail closed even with a saved cookie.
 """
 
 from __future__ import annotations
@@ -18,7 +18,11 @@ from fairmount_api.identity.http_boundary import (
 )
 from fairmount_api.identity.login_api import _direct_source
 from fairmount_api.readiness import _configured_engine, schema_ready
-from fairmount_api.resource_reads import ResourceUnavailable, read_own_wallet
+from fairmount_api.resource_reads import (
+    ResourceUnavailable,
+    read_own_recent_bets,
+    read_own_wallet,
+)
 
 router = APIRouter()
 _PRIVATE_HEADERS = {
@@ -58,5 +62,46 @@ def my_wallet(request: Request) -> JSONResponse:
         return _unavailable(503)
     return JSONResponse(
         {"account_id": str(wallet.account_id), "balance": wallet.balance},
+        headers=_PRIVATE_HEADERS,
+    )
+
+
+@router.get("/api/v1/me/recent-bets", tags=["private"])
+def my_recent_bets(request: Request) -> JSONResponse:
+    """Latest 100 accepted bets for this enabled PLAYER session only."""
+    try:
+        _direct_source(request, origin_required=False)
+        raw_token = _single_cookie(request, SESSION_COOKIE)
+    except RequestBoundaryUnavailable:
+        return _unavailable(401)
+    except ValueError:
+        return _unavailable(503)
+    if request.query_params:
+        return _unavailable(400)
+    engine = _configured_engine()
+    if engine is None:
+        return _unavailable(503)
+    try:
+        with engine.begin() as connection:
+            if not schema_ready(connection):
+                return _unavailable(503)
+            bets = read_own_recent_bets(connection, raw_token)
+    except ResourceUnavailable:
+        return _unavailable(401)
+    except SQLAlchemyError:
+        return _unavailable(503)
+    return JSONResponse(
+        {
+            "bets": [
+                {
+                    "id": str(bet.id),
+                    "round_id": str(bet.round_id),
+                    "selection_key": bet.selection_key,
+                    "accepted_stake": bet.accepted_stake,
+                    "accepted_at": bet.accepted_at.isoformat(),
+                }
+                for bet in bets
+            ]
+        },
         headers=_PRIVATE_HEADERS,
     )
