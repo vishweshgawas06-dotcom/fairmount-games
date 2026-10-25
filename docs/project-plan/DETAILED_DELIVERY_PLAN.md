@@ -107,6 +107,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **P04-T02b (self-only recent bets; [CI 40173826711](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40173826711) passed):** [Direct-TLS PLAYER session to latest 100 own accepted bets](tasks/P04-T02b.md), with no client target or query scope. Not a cross-account history endpoint or gameplay.
 - **P04-T02c (committed HTTP session flow; [CI 40188275920](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40188275920) passed):** [Disposable-PostgreSQL login→self-read→logout/disablement integration](tasks/P04-T02c.md), with separate connections and real cookie/CSRF/session lifecycle; not a deployment test.
 - **P04-T02d (scoped player-wallet read; [CI 40188492976](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40188492976) passed):** [Direct-TLS resource target independently reauthorized](tasks/P04-T02d.md) for owner audit/agent assignment/player self; no general wallet or roster API.
+- **P04-T02e (agent HTTP assignment acceptance; CI pending):** [Committed, independent-connection reassignment/disablement test](tasks/P04-T02e.md) for scoped player-wallet reads; no registration or reassignment write route.
 - **P04-T03:** Protect realtime private subscriptions and audit privileged actions. **Gate:** another player's bets, balance, and history never appear in API or WebSocket payloads.
 
 ### P05 — Wallet and point ledger
