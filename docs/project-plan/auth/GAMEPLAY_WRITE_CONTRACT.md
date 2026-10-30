@@ -1,6 +1,7 @@
 # Gameplay-write request contract
 
-Status: **contract and tests only; no gameplay write route exists.**
+Status: **contract implemented; one opt-in route uses it
+([P11-T03a](../tasks/P11-T03a.md)); still disabled by default and not deployed.**
 
 `fairmount_api.identity.write_boundary.require_gameplay_write()` is the single
 request-edge envelope a future bet, rebet, transfer or settlement route must
@@ -35,10 +36,11 @@ Denials are indistinguishable (`GameplayWriteUnavailable`, HTTP 400/401 with
    role/assignment/resource checks, and reject revoked, expired or disabled
    sessions. The PostgreSQL tests here prove that revocation after a passing
    envelope still denies the write downstream.
-2. **Idempotency is not stored yet.** The contract normalizes the key, but no
-   unique index or replay table exists. A future write transaction must persist
-   it uniquely with the bet and return the original outcome on replay; until
-   then a retried request can still duplicate work.
+2. **Idempotency is stored by the service, not by this module.** The contract only
+   normalizes the key; `place_bet()` persists it on `point_operations` with a
+   request fingerprint under `uq_point_operations_actor_key` and returns the
+   original bet for an identical replay. A future route must keep that pairing,
+   and any new write kind needs its own persisted key plus fingerprint.
 3. **It does not rate limit.** Per-account/per-IP limits, failure accounting and
    abuse budgets are still separate gates (P03-T02i covers private issuance
    throttling only).

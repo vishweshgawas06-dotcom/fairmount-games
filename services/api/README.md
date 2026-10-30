@@ -36,7 +36,11 @@ python -m unittest discover -s tests -v
 ruff check .
 ```
 
-The read-only `/api/v1/roulette/round` endpoint and `/preview/` interface can show a persisted server result **only after reveal** when a migrated database and separately started worker exist. The preview has no fake result if no database is configured. This is not evidence of a deployed game. UUID wallet/reserve and private bet/settlement/recovery transactions have PostgreSQL tests, but the opt-in login is **not enabled here** and there are no public betting, transfer or payout routes. P03/P04 edge security and broader D-06 operations still gate deployment.
+The read-only `/api/v1/roulette/round` endpoint and `/preview/` interface can show a persisted server result **only after reveal** when a migrated database and separately started worker exist. The preview has no fake result if no database is configured. This is not evidence of a deployed game. UUID wallet/reserve and private bet/settlement/recovery transactions have PostgreSQL tests, the opt-in login and a single **opt-in direct-TLS bet route** exist, and there are still **no public betting, transfer or payout routes**. P03/P04 edge security, per-actor write rate limits and broader D-06 operations still gate deployment.
+
+## Opt-in direct-TLS bet write (disabled in preview)
+
+`POST /api/v1/rounds/{round_id}/bets` accepts exactly `{"selection_key": "...", "stake": 5..}` with the same-origin session cookie, a matching `x-csrf-token` header and one `Idempotency-Key` UUID, and requires the direct-TLS configuration described below (no proxy, no forwarded headers). It returns `{"bet_id", "requested", "accepted", "unaccepted", "replayed"}` with `Cache-Control: no-store`. The full requested stake must be affordable before cap-limited partial acceptance; caps and POOL-01 reserve coverage are checked under the documented lock order; a replay of the same intent returns the original bet and a reused key with different intent returns 409. Unknown, non-canonical or closed rounds and every boundary failure return a generic response. Without direct TLS the route returns 503, which is what the proxy preview always does. There is no bet UI, realtime feed or per-actor write rate limit yet.
 
 ## Opt-in direct-TLS login boundary (not enabled in preview)
 

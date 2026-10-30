@@ -4,7 +4,8 @@
 
 ## Current verified checkpoints (2026-10-25)
 
-- [P03-T02p](tasks/P03-T02p.md): gameplay-write request envelope (same-origin JSON, ≤4096 bytes, single normalized idempotency key, no ambiguity headers) with pure, HTTP probe and PostgreSQL tests ([CI 41082544552](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41082544552) passed on `ea30bd9`); **no write route is exposed** and idempotency persistence/rate limits remain open.
+- [P11-T03a](tasks/P11-T03a.md): opt-in direct-TLS `POST /api/v1/rounds/{round_id}/bets` wires the gameplay-write envelope, strict `{selection_key, stake}` schema and `place_bet()` into one committed transaction with a persisted idempotency key, full-stake affordability, caps and POOL-01 coverage. Disabled without direct TLS (503 in the preview); no bet UI, realtime feed, write rate limit or staging acceptance yet.
+- [P03-T02p](tasks/P03-T02p.md): gameplay-write request envelope (same-origin JSON, ≤4096 bytes, single normalized idempotency key, no ambiguity headers) with pure, HTTP probe and PostgreSQL tests; consumed by the opt-in [P11-T03a](tasks/P11-T03a.md) route ([CI 41082544552](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41082544552) passed on `ea30bd9`); **no write route is exposed** and idempotency persistence/rate limits remain open.
 - [Plan consistency audit](reviews/2026-10-25-plan-audit.md) corrected D-06a/PA-22 and stale current-state claims; [CI 40195121369](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40195121369) passed Python 3.12/PostgreSQL migration, DB tests, pure tests, Node checks and Ruff. This is documentation verification, not launch acceptance.
 - [P03-T02n/o](tasks/P03-T02n.md): opt-in direct-TLS login and CSRF-guarded logout; no proxy-trust approval. [P04-T02h](tasks/P04-T02h.md) and [P04-T02i](tasks/P04-T02i.md) subsequently passed committed owner MFA/agent login-to-resource PostgreSQL tests ([CI 40192542205](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40192542205), [CI 40192708908](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40192708908)).
 - [P04-T02a–g](DETAILED_DELIVERY_PLAN.md#p04--resource-level-authorization): self wallet/recent bets, scoped player wallet, live ID-only roster and bounded keyset pages passed scoped CI; [P04-T02g](tasks/P04-T02g.md) passed [CI 40192377032](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40192377032). This does not complete cross-account bet history or realtime authorization.
@@ -23,7 +24,7 @@ The task records and [delivery plan](DETAILED_DELIVERY_PLAN.md) retain checkpoin
 
 **Integration audit verification:** Branch-only [CI 39393934428](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39393934428) passed on `8706a87`, including Python 3.12/PostgreSQL migrations, DB-enabled tests and Ruff. PR #1 remains conflicting with PR #2/main; this does not test a combined tree. See [audit](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md).
 
-**Last updated:** 2026-10-30 (P03-T02p gameplay-write request contract)
+**Last updated:** 2026-10-30 (P11-T03a opt-in bet route)
 
 ## Delivery plan (owner-approved sequence)
 
