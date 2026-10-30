@@ -39,6 +39,24 @@ FAIRMOUNT_DB_NAME=fairmount_test python -m alembic check
 
 On PowerShell set `$env:FAIRMOUNT_DB_NAME='fairmount_test'` and `$env:FAIRMOUNT_RUN_DB_TESTS='1'` in that shell before running the same `python -m alembic ...` and `python -m unittest ...` commands. For a fresh local development database, omit `FAIRMOUNT_DB_NAME` (defaults to `fairmount_dev`) and run `python -m alembic upgrade head`; **do not downgrade a database whose data you need**. CI alone runs `upgrade head → downgrade base → upgrade head` against its disposable `fairmount_test` database. Downgrade drops account tables and their data. See [P02-T02a boundaries](../docs/project-plan/tasks/P02-T02a.md): these tables do not provide login, wallet, betting or privacy-deletion behavior yet.
 
+## Re-running the PostgreSQL suite locally
+
+The integration tests commit real bootstrap, audit, wallet and roulette rows, and
+the migrations deliberately reject `TRUNCATE`/`DELETE` on immutable audit and
+ledger tables, so one database cannot back two suite runs. CI starts from a fresh
+volume every time; locally recreate only the disposable test database:
+
+```sh
+# Recreate fairmount_test (refuses without --yes and never touches fairmount_dev)
+python -m infrastructure.reset_test_db --yes
+# Restore the migrated schema, then run the database-backed suite
+FAIRMOUNT_DB_NAME=fairmount_test python -m alembic upgrade head
+FAIRMOUNT_DB_NAME=fairmount_test FAIRMOUNT_RUN_DB_TESTS=1 python -m unittest discover -s tests -v
+```
+
+Without a reset, a second run fails with unique-constraint or immutability errors
+from the previous run's committed rows; that is expected, not a test defect.
+
 ## Stop or reset
 
 ```sh
