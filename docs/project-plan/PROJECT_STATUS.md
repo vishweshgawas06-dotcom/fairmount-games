@@ -4,6 +4,7 @@
 
 ## Current verified checkpoints (2026-10-25)
 
+- [P09-T02a](tasks/P09-T02a.md): public reveal-only server-sent event stream at `/api/v1/roulette/stream` — same reveal-safe projection as the JSON snapshot, change-only events, heartbeats, 5-minute self-close, 64 concurrent streams per process, fail-closed 503 without a database. No private/authenticated feed yet.
 - [Stage status scan 2026-11-03](reviews/2026-11-03-stage-status.md): every delivery phase classified as done, partial or not started. P06/P07/P12–P14/P17–P19 have not started; P09/P10/P15/P16 are partial.
 - [P11-T03b](tasks/P11-T03b.md): pseudonymous gameplay-write attempt windows (20/min session, 120/min source) inside the admission transaction, `429` + `Retry-After`, migration `20261103_01` ([CI 41598169376](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41598169376) passed on `283421d`); no journal pending D-02.
 - [P11-T03a](tasks/P11-T03a.md): opt-in direct-TLS `POST /api/v1/rounds/{round_id}/bets` wires the gameplay-write envelope, strict `{selection_key, stake}` schema and `place_bet()` into one committed transaction with a persisted idempotency key, full-stake affordability, caps and POOL-01 coverage. Disabled without direct TLS (503 in the preview) and passed [CI 41099191399](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41099191399); no bet UI, realtime feed, write rate limit or staging acceptance yet.
@@ -26,7 +27,7 @@ The task records and [delivery plan](DETAILED_DELIVERY_PLAN.md) retain checkpoin
 
 **Integration audit verification:** Branch-only [CI 39393934428](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39393934428) passed on `8706a87`, including Python 3.12/PostgreSQL migrations, DB-enabled tests and Ruff. PR #1 remains conflicting with PR #2/main; this does not test a combined tree. See [audit](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md).
 
-**Last updated:** 2026-11-03 (stage status scan + P11-T03b write windows)
+**Last updated:** 2026-11-03 (P09-T02a public event stream)
 
 ## Delivery plan (owner-approved sequence)
 

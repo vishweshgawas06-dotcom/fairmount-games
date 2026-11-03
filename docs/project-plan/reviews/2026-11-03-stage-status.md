@@ -20,7 +20,7 @@ product exists.
 | **P06** Owner/admin operations | **Not started** | Only private services the future UI would call. | Owner API scope, provisioning/assignment write endpoints, admin UI. |
 | **P07** Agent operations | **Not started** | Private assigned-player transfer and roster reads. | Agent API write routes, agent UI, history views. |
 | **P08** Roulette engine | **Done (private)** | Catalogue/payout/cap rules, round/open-close, once-only independent result, D-06a recovery, due-round worker, singleton poller (`T01`–`T02d`). | Supervised deployment, alerting, failure-injection matrix. |
-| **P09** Realtime delivery | **Partial** | Public read-only snapshot (`T01a`/`T01b`) with reveal-gated results. | Any push transport (SSE/WebSocket), reconnect/replay, bet-lock events, realtime session revocation. |
+| **P09** Realtime delivery | **Partial** | Public read-only snapshot (`T01a`/`T01b`) and a reveal-only server-sent event stream with de-duplication, heartbeats and a per-process connection cap (`T02a`). | Private/authenticated realtime channel, bet-lock/bet-accepted events, reconnect/replay contract (D-08), realtime session revocation. |
 | **P10** Player experience | **Partial** | Read-only preview UI with server-aligned wheel (`T01a`). | Real client, betting UI, wallet/history screens, delayed-result UX. |
 | **P11** Betting controls | **Done (opt-in)** | Admission, caps, POOL-01 coverage, settlement, rebet, idempotent HTTP write route (`T01a`–`T03a`), attempt windows (`T03b`). | Bet UI, per-player (not per-session) budgets, staging acceptance. |
 | **P12** Wheel animation | **Not started** | Preview-only static wheel alignment. | Production animation, timing budgets, reduced-motion variants. |

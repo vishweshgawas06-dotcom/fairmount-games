@@ -154,6 +154,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **P09-T01:** Version and implement public round event contract (phase, countdown, result/history) and authenticated private player updates; decide replay/sequence (D-08). **Gate:** public payloads contain no private bets/balances.
 - **P09-T01a (private result-safe snapshot; [CI 40084449705](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40084449705) passed):** [Database-clock phase/reveal projection with no private bet or wallet data](tasks/P09-T01a.md); no event contract.
 - **P09-T01b (public read-only HTTP snapshot; [CI 40086078221](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40086078221) passed):** [No private data or early result; generic 503 without a migrated DB](tasks/P09-T01b.md). D-08 realtime/versioning remains open.
+- **P09-T02a (public reveal-only event stream; no private feed):** [Server-sent events](tasks/P09-T02a.md) for `GET /api/v1/roulette/stream` reuse the JSON snapshot projection, de-duplicate on public fields, heartbeat, self-close after 5 minutes, cap concurrent streams per process and fail closed without a database. Reveal gating is unchanged; private bet-lock/accepted events and replay semantics (D-08) remain open.
 - **P09-T02:** Reconnect/snapshot flow and load-aware fan-out; Redis only with an explicit role. **Gate:** reconnect sees server state, stale sessions cannot subscribe, missed events do not rewrite accepted bets.
 
 ### P10 — Player experience

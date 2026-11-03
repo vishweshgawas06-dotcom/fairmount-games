@@ -7,37 +7,16 @@ balances, and has no event/replay contract; D-08 realtime design remains open.
 from __future__ import annotations
 
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from fairmount_api.readiness import _configured_engine, schema_ready
-from fairmount_api.roulette.public_snapshot import RoundSnapshot, read_public_round_snapshot
+from fairmount_api.roulette import public_stream
+from fairmount_api.roulette.public_payload import encode_snapshot
+from fairmount_api.roulette.public_snapshot import read_public_round_snapshot
 
 router = APIRouter()
 _NO_STORE = {"Cache-Control": "no-store"}
-
-
-def _encode(snapshot: RoundSnapshot) -> dict:
-    return {
-        "observed_at": snapshot.observed_at.isoformat(),
-        "round": None
-        if snapshot.round_id is None
-        else {
-            "id": str(snapshot.round_id),
-            "phase": snapshot.phase,
-            "closes_at": snapshot.closes_at.isoformat() if snapshot.closes_at else None,
-            "reveal_at": snapshot.reveal_at.isoformat() if snapshot.reveal_at else None,
-            "winning_number": snapshot.winning_number,
-        },
-        "recent": [
-            {
-                "round_id": str(item.round_id),
-                "state": item.state,
-                "winning_number": item.winning_number,
-            }
-            for item in snapshot.recent
-        ],
-    }
 
 
 @router.get("/api/v1/roulette/round", tags=["round"])
@@ -54,4 +33,23 @@ def current_round() -> JSONResponse:
     except SQLAlchemyError:
         # No connection, SQL or credential details are suitable for public HTTP.
         return JSONResponse({"status": "unavailable"}, status_code=503, headers=_NO_STORE)
-    return JSONResponse(_encode(snapshot), headers=_NO_STORE)
+    return JSONResponse(encode_snapshot(snapshot), headers=_NO_STORE)
+
+
+@router.get("/api/v1/roulette/stream", tags=["round"], response_model=None)
+def current_round_stream() -> StreamingResponse | JSONResponse:
+    """Stream the reveal-safe public snapshot; never a private or betting feed."""
+    engine = _configured_engine()
+    if engine is None:
+        return JSONResponse({"status": "unavailable"}, status_code=503, headers=_NO_STORE)
+    try:
+        with engine.connect() as connection:
+            if not schema_ready(connection):
+                return JSONResponse({"status": "unavailable"}, status_code=503, headers=_NO_STORE)
+    except SQLAlchemyError:
+        return JSONResponse({"status": "unavailable"}, status_code=503, headers=_NO_STORE)
+    try:
+        public_stream.capacity.enter()
+    except public_stream.StreamCapacityExceeded:
+        return JSONResponse({"status": "unavailable"}, status_code=503, headers=_NO_STORE)
+    return StreamingResponse(public_stream.guarded_stream(), headers=public_stream.stream_headers())
