@@ -17,7 +17,7 @@ product exists.
 | **P03** Authentication and sessions | **Done (opt-in)** | Identifier rules, password policy, Argon2id, TOTP/recovery codes, key custody, owner bootstrap/activation/MFA, sessions, logout, rate limiting, CSRF boundary (`T01a`–`T02p`). | Provisioning/registration endpoints, all-factors-lost recovery, trusted reverse-proxy policy, production MFA key rotation. |
 | **P04** Resource authorization | **Done (opt-in)** | Self wallet/recent bets, scoped player wallet, live ID-only roster, bounded keyset pages, owner/agent real-HTTP flows (`T01a`–`T02i`). | Cross-account bet history, realtime authorization, operator-authorized assignment writes over HTTP. |
 | **P05** Wallet and point ledger | **Done (private)** | UUID ledger, paired append-only journal, issuance, owner/agent transfers, reserve funding/withdrawal, reconciliation (`T01a`–`T03a`). | Request-edge transfer routes, retention policy for the journal. |
-| **P06** Owner/admin operations | **Not started** | Only private services the future UI would call. | Owner API scope, provisioning/assignment write endpoints, admin UI. |
+| **P06** Owner/admin operations | **Partial** | [P06-T01a](../tasks/P06-T01a.md) internal owner-MFA-gated provisioning, audited assignment and idempotent enable/disable with session revocation by trigger. | Owner API routes, cookies/CSRF, reason contract, dashboards, admin UI. |
 | **P07** Agent operations | **Not started** | Private assigned-player transfer and roster reads. | Agent API write routes, agent UI, history views. |
 | **P08** Roulette engine | **Done (private)** | Catalogue/payout/cap rules, round/open-close, once-only independent result, D-06a recovery, due-round worker, singleton poller (`T01`–`T02d`). | Supervised deployment, alerting, failure-injection matrix. |
 | **P09** Realtime delivery | **Partial** | Public read-only snapshot (`T01a`/`T01b`) and a reveal-only server-sent event stream with de-duplication, heartbeats and a per-process connection cap (`T02a`). | Private/authenticated realtime channel, bet-lock/bet-accepted events, reconnect/replay contract (D-08), realtime session revocation. |
@@ -36,7 +36,7 @@ product exists.
 
 - **P00–P05, P08 and P11 are complete as *private or opt-in* slices.** Nothing
   they implement is reachable by an ordinary player in the preview deployment.
-- **P06, P07, P12–P14, P17–P19 have not started.** The product cannot be called
+- **P06 has its first internal service slice (P06-T01a) but no route or UI. P07, P12–P14, P17–P19 have not started.** The product cannot be called
   playable until at least P06/P07 (operations), P09-T02 (realtime), P10-T02 (bet
   UI) and P17 (targets) progress.
 - **P09, P10, P15 and P16 are partly done** and each has a clearly bounded next

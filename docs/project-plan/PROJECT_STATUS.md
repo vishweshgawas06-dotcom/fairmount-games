@@ -1,9 +1,10 @@
 # Project Status
 
-**Current phase (2026-10-25):** Private P05/P08/P11 engine slices, opt-in direct-TLS P03/P04 request-edge reads and P15 diagnostics have scoped CI evidence; writable gameplay, realtime privacy, full UI, proxy trust and operational integration remain open. PR #1 was last checked as conflicting with main's incompatible integer-ID engine core; recheck GitHub before any merge decision.
+**Current phase (2026-11-03):** Private P05/P08/P11 engine slices, opt-in direct-TLS P03/P04 request-edge reads, a public reveal-only round stream and P15 diagnostics have scoped CI evidence; the first operator lifecycle services (P06-T01a) now exist without routes. Writable gameplay UI, realtime privacy, operator endpoints/UI, proxy trust and operational integration remain open, and production is targeted for **2026-11-15**. PR #1 was last checked as conflicting with main's incompatible integer-ID engine core; recheck GitHub before any merge decision.
 
-## Current verified checkpoints (2026-10-25)
+## Current verified checkpoints (2026-11-03)
 
+- [P06-T01a](tasks/P06-T01a.md): owner provisioning and account lifecycle **services** — `provision_agent`/`provision_player` (fresh-owner-MFA, one-time 24-hour secret stored as a digest only, fixed Agent IDs, reserved-name rejection), audited `assign_player`/`unassign_player` and idempotent `set_account_enabled` that refuses the sole owner and lets the D-03 triggers revoke sessions; migration `20261103_02`. No route, cookie, UI or rate limit yet, so P06/P07 remain **not started at the product level**.
 - [P09-T02a](tasks/P09-T02a.md): public reveal-only server-sent event stream at `/api/v1/roulette/stream` — same reveal-safe projection as the JSON snapshot, change-only events, heartbeats, 5-minute self-close, 64 concurrent streams per process, fail-closed 503 without a database ([CI 41602323698](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41602323698) passed on `8c612e8`). No private/authenticated feed yet.
 - [Stage status scan 2026-11-03](reviews/2026-11-03-stage-status.md): every delivery phase classified as done, partial or not started. P06/P07/P12–P14/P17–P19 have not started; P09/P10/P15/P16 are partial.
 - [P11-T03b](tasks/P11-T03b.md): pseudonymous gameplay-write attempt windows (20/min session, 120/min source) inside the admission transaction, `429` + `Retry-After`, migration `20261103_01` ([CI 41598169376](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41598169376) passed on `283421d`); no journal pending D-02.
@@ -27,7 +28,7 @@ The task records and [delivery plan](DETAILED_DELIVERY_PLAN.md) retain checkpoin
 
 **Integration audit verification:** Branch-only [CI 39393934428](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39393934428) passed on `8706a87`, including Python 3.12/PostgreSQL migrations, DB-enabled tests and Ruff. PR #1 remains conflicting with PR #2/main; this does not test a combined tree. See [audit](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md).
 
-**Last updated:** 2026-11-03 (P09-T02a public event stream)
+**Last updated:** 2026-11-03 (P06-T01a owner provisioning and account lifecycle services)
 
 ## Delivery plan (owner-approved sequence)
 

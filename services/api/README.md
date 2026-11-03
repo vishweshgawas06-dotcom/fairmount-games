@@ -6,6 +6,9 @@ FastAPI health and public read-only round snapshot foundation. P02-T02a introduc
 
 - `auth/` — authentication and session lifecycle
 - `users/` and `agents/` — account and hierarchy management
+- `identity/` — owner bootstrap/activation, credential and session services, plus
+  internal owner-MFA-gated `provisioning.py` (agents/players) and `account_admin.py`
+  (assignment, enable/disable). None of these are reachable over HTTP yet.
 - `wallets/` and `transactions/` — point ledger and accounting
 - `roulette/` and `bets/` — round state, bet validation, outcomes, settlement
 - `realtime/` — authorized WebSocket state updates
@@ -27,7 +30,7 @@ Start the API:
 uvicorn fairmount_api.main:app --reload --app-dir services/api/src
 ```
 
-Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261023_03`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
+Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261103_02`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
 
 Run tests and lint:
 

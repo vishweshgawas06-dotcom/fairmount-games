@@ -131,6 +131,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 ### P06 — Owner/admin operations
 
 - **P06-T01:** Scope owner API: provision/manage agents and users, disable/enable, point actions (D-01 required for removal). **Gate:** every privileged route enforces MFA/role, reason, audit, and budget rules.
+- **P06-T01a (owner provisioning and account lifecycle services; internal):** [Owner-only member creation, audited assignment and enable/disable](tasks/P06-T01a.md) behind a fresh-owner-MFA check: one-time 24-hour secrets stored as digests only, fixed/generated Agent IDs, canonical reserved-name rejection, reassignment that ends the prior row with two audit events, and idempotent enablement that relies on the D-03 triggers to revoke sessions. Migration `20261103_02` adds the four lifecycle event types. **No route, cookie, UI or rate limit.**
 - **P06-T02:** Build admin UI for those APIs with confirmation/error states, reports and audit review. **Gate:** functional and accessibility tests; aggregate gameplay P/L remains distinct from admin adjustments.
 
 ### P07 — Agent operations
