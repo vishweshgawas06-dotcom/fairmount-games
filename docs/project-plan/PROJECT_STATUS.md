@@ -4,6 +4,8 @@
 
 ## Current verified checkpoints (2026-10-25)
 
+- [Stage status scan 2026-11-03](reviews/2026-11-03-stage-status.md): every delivery phase classified as done, partial or not started. P06/P07/P12–P14/P17–P19 have not started; P09/P10/P15/P16 are partial.
+- [P11-T03b](tasks/P11-T03b.md): pseudonymous gameplay-write attempt windows (20/min session, 120/min source) inside the admission transaction, `429` + `Retry-After`, migration `20261103_01`; no journal pending D-02.
 - [P11-T03a](tasks/P11-T03a.md): opt-in direct-TLS `POST /api/v1/rounds/{round_id}/bets` wires the gameplay-write envelope, strict `{selection_key, stake}` schema and `place_bet()` into one committed transaction with a persisted idempotency key, full-stake affordability, caps and POOL-01 coverage. Disabled without direct TLS (503 in the preview) and passed [CI 41099191399](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41099191399); no bet UI, realtime feed, write rate limit or staging acceptance yet.
 - [P03-T02p](tasks/P03-T02p.md): gameplay-write request envelope (same-origin JSON, ≤4096 bytes, single normalized idempotency key, no ambiguity headers) with pure, HTTP probe and PostgreSQL tests; consumed by the opt-in [P11-T03a](tasks/P11-T03a.md) route ([CI 41082544552](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41082544552) passed on `ea30bd9`); **no write route is exposed** and idempotency persistence/rate limits remain open.
 - [Plan consistency audit](reviews/2026-10-25-plan-audit.md) corrected D-06a/PA-22 and stale current-state claims; [CI 40195121369](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40195121369) passed Python 3.12/PostgreSQL migration, DB tests, pure tests, Node checks and Ruff. This is documentation verification, not launch acceptance.
@@ -24,7 +26,7 @@ The task records and [delivery plan](DETAILED_DELIVERY_PLAN.md) retain checkpoin
 
 **Integration audit verification:** Branch-only [CI 39393934428](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39393934428) passed on `8706a87`, including Python 3.12/PostgreSQL migrations, DB-enabled tests and Ruff. PR #1 remains conflicting with PR #2/main; this does not test a combined tree. See [audit](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md).
 
-**Last updated:** 2026-10-30 (P11-T03a opt-in bet route)
+**Last updated:** 2026-11-03 (stage status scan + P11-T03b write windows)
 
 ## Delivery plan (owner-approved sequence)
 

@@ -64,9 +64,10 @@ def place_bet(
 ) -> AcceptedBet:
     """Atomic in the caller's transaction; no reserve-limited partial stake.
 
-    Lock order: player Account/session -> global reserve -> round -> player wallet.
-    Every betting/settlement/withdrawal service must acquire the same reserve
-    before any round/wallet rows. The round's DB trigger rechecks cutoff on
+    Lock order: gameplay attempt buckets (HTTP adapter only) -> player
+    Account/session -> global reserve -> round -> player wallet. Every
+    betting/settlement/withdrawal service must acquire the same reserve before
+    any round/wallet rows. The round's DB trigger rechecks cutoff on
     insertion and prevents a close transition racing with a bet commit.
     """
     selection = parse_selection_key(selection_key)

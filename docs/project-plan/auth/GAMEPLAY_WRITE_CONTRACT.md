@@ -41,9 +41,10 @@ Denials are indistinguishable (`GameplayWriteUnavailable`, HTTP 400/401 with
    request fingerprint under `uq_point_operations_actor_key` and returns the
    original bet for an identical replay. A future route must keep that pairing,
    and any new write kind needs its own persisted key plus fingerprint.
-3. **It does not rate limit.** Per-account/per-IP limits, failure accounting and
-   abuse budgets are still separate gates (P03-T02i covers private issuance
-   throttling only).
+3. **It does not rate limit.** The envelope itself has no budget; the consumer
+   must apply one. [P11-T03b](../tasks/P11-T03b.md) does so for the bet route with
+   pseudonymous session/source attempt windows (`429` + `Retry-After`). Any new
+   write kind needs its own budget, and shared-NAT source policy is still open.
 4. **It does not validate the body schema.** Each route owns strict field
    validation, amount limits and unknown-field rejection.
 5. **It does not address proxy trust.** The direct-TLS origin/Host checks assume
@@ -61,3 +62,5 @@ Denials are indistinguishable (`GameplayWriteUnavailable`, HTTP 400/401 with
    locks used by admission.
 5. Persist the idempotency key with the write and commit once.
 6. Respond `Cache-Control: no-store`; never include another player's data.
+7. Take the gameplay-write attempt windows before admission and let the same
+   transaction commit the count (see [P11-T03b](../tasks/P11-T03b.md)).

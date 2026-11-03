@@ -606,3 +606,20 @@ class RouletteBet(Base):
         Index("ix_roulette_bets_round_player", "round_id", "player_account_id"),
         UniqueConstraint("operation_id", name="uq_roulette_bets_operation"),
     )
+
+
+class GameplayWriteBucket(Base):
+    """HMAC-indexed gameplay-write window; no account, address or bet content."""
+
+    __tablename__ = "gameplay_write_buckets"
+
+    key_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+
+    __table_args__ = (
+        CheckConstraint(
+            "key_digest COLLATE \"C\" ~ '^[0-9a-f]{64}$'", name="ck_gameplay_buckets_key"
+        ),
+        CheckConstraint("attempts >= 0", name="ck_gameplay_buckets_nonnegative"),
+    )

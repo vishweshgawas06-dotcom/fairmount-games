@@ -8,8 +8,10 @@ remain, which is harmless only at the end of a suite that starts from a reset
 database.
 """
 
+import base64
 import os
 import secrets
+import tempfile
 import unittest
 import uuid
 from unittest.mock import patch
@@ -53,9 +55,7 @@ class PlayerBetHTTPTests(unittest.TestCase):
             # An earlier committed-flow module may already own the single OWNER
             # row; reuse it and revoke any stale session before issuing a fixture
             # session (one unrevoked session per account is enforced).
-            cls.owner = connection.scalar(
-                select(Account.id).where(Account.role == "OWNER")
-            )
+            cls.owner = connection.scalar(select(Account.id).where(Account.role == "OWNER"))
             if cls.owner is None:
                 cls.owner = connection.execute(
                     insert(Account.__table__).values(role="OWNER").returning(Account.id)
@@ -75,8 +75,21 @@ class PlayerBetHTTPTests(unittest.TestCase):
         cls.engine.dispose()
 
     def setUp(self):
+        # The gameplay-write guard keys its buckets with the restricted auth HMAC
+        # file; the bet route fails closed (503) without it.
+        self.key_file = os.path.join(tempfile.mkdtemp(), "gameplay-hmac.key")
+        with open(self.key_file, "wb") as handle:
+            handle.write(base64.b64encode(secrets.token_bytes(32)) + b"\n")
+        os.chmod(self.key_file, 0o600)
         url = local_database_url(test=True).render_as_string(hide_password=False)
-        self.environment = patch.dict(os.environ, {**CONFIG, "FAIRMOUNT_API_DATABASE_URL": url})
+        self.environment = patch.dict(
+            os.environ,
+            {
+                **CONFIG,
+                "FAIRMOUNT_API_DATABASE_URL": url,
+                "FAIRMOUNT_AUTH_HMAC_KEY_FILE": self.key_file,
+            },
+        )
         self.environment.start()
         _configured_engine.cache_clear()
         with self.engine.begin() as connection:
@@ -126,6 +139,10 @@ class PlayerBetHTTPTests(unittest.TestCase):
             engine.dispose()
         _configured_engine.cache_clear()
         self.environment.stop()
+        try:
+            os.unlink(self.key_file)
+        except OSError:
+            pass
 
     @staticmethod
     def account(connection, role):
@@ -314,6 +331,52 @@ class PlayerBetHTTPTests(unittest.TestCase):
                 self.assertNotIn(self.player_token, response.text)
         self.assertEqual(self.bets(), [])
         self.assertEqual((self.wallet(), self.reserve() - self.reserve_baseline), (PLAYER_START, 0))
+
+    def test_repeated_writes_are_throttled_with_a_retry_hint(self):
+        with patch("fairmount_api.roulette.write_limits.SESSION_LIMIT", 2):
+            statuses = [
+                self.client.post(
+                    self.url(),
+                    json={"selection_key": "straight:17", "stake": 5},
+                    headers=self.headers(),
+                )
+                for _ in range(3)
+            ]
+        self.assertEqual([response.status_code for response in statuses], [200, 200, 429])
+        throttled = statuses[-1]
+        self.assertEqual(throttled.json(), {"status": "unavailable"})
+        self.assertGreaterEqual(int(throttled.headers["retry-after"]), 1)
+        self.assertLessEqual(int(throttled.headers["retry-after"]), 61)
+        self.assertEqual(throttled.headers["cache-control"], "no-store")
+        self.assertEqual(
+            (self.wallet(), self.reserve() - self.reserve_baseline), (PLAYER_START - 10, 10)
+        )
+        self.assertEqual(len(self.bets()), 2)
+        self.assertNotIn(self.player_token, throttled.text)
+
+    def test_disabled_writes_still_spend_budget(self):
+        key = str(uuid.uuid4())
+        with patch("fairmount_api.roulette.write_limits.SESSION_LIMIT", 2):
+            # Two rejected attempts (unaffordable full stake) still consume the
+            # window, so a rejection flood cannot outrun the limiter.
+            for _ in range(2):
+                self.assertEqual(
+                    self.client.post(
+                        self.url(),
+                        json={"selection_key": "straight:17", "stake": PLAYER_START + 5},
+                        headers=self.headers(key),
+                    ).status_code,
+                    409,
+                )
+            self.assertEqual(
+                self.client.post(
+                    self.url(),
+                    json={"selection_key": "straight:17", "stake": 5},
+                    headers=self.headers(),
+                ).status_code,
+                429,
+            )
+        self.assertEqual(self.bets(), [])
 
     def test_unaffordable_full_stake_is_rejected_without_partial_acceptance(self):
         response = self.client.post(
