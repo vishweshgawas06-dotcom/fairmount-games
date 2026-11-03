@@ -1,10 +1,11 @@
-"""Owner-only account lifecycle: assignment and enable/disable, currently internal.
+"""Owner-only lifecycle services shared by restricted operator adapters.
 
 Agents never call these; an agent's authority comes *from* an assignment made
 here. Every action re-checks a live owner session with MFA proof no older than
 ten minutes, takes its locks in the documented order (owner Account → target
-account → assignment row), and appends exactly one audit event that carries no
-reason text, address or credential data.
+account → assignment row), and appends audit events only for actual changes.
+Events carry no reason text, address or credential data; reassignment has two
+events, for the ended and new assignments.
 
 Disabling an account relies on the existing D-03 triggers to revoke its sessions
 in the same transaction; this module never issues or clears tokens itself.
@@ -16,7 +17,8 @@ import uuid
 
 from sqlalchemy import Connection, func, insert, select, update
 
-from fairmount_api.db.models import Account, AgentAssignment, SecurityEvent
+from fairmount_api.db.models import Account, AgentAssignment, PrivateIdentity, SecurityEvent
+from fairmount_api.identity.identifiers import canonical_agent_id, canonical_player_username
 from fairmount_api.identity.owner_step_up import require_recent_owner_mfa
 
 
@@ -64,6 +66,46 @@ def _locked_account(connection: Connection, account_id: object, *, role: str) ->
     return AccountRow(row.id, row.role, row.status)
 
 
+def _member_id(connection: Connection, kind: str, canonical: str) -> uuid.UUID:
+    """Map a canonical login identifier to its account; never reveal absence."""
+    account_id = connection.scalar(
+        select(PrivateIdentity.account_id).where(
+            PrivateIdentity.login_kind == kind,
+            PrivateIdentity.login_identifier == canonical,
+        )
+    )
+    if account_id is None:
+        raise AccountAdminUnavailable("Account change unavailable")
+    return account_id
+
+
+def resolve_player_id(connection: Connection, username: str) -> uuid.UUID:
+    """Resolve a player username as typed by the owner to its account ID."""
+    try:
+        canonical = canonical_player_username(username)
+    except ValueError as exc:
+        raise AccountAdminUnavailable("Account change unavailable") from exc
+    return _member_id(connection, "PLAYER", canonical)
+
+
+def resolve_agent_id(connection: Connection, agent_id: str) -> uuid.UUID:
+    """Resolve a display Agent ID to its account ID under the same rules."""
+    try:
+        canonical = canonical_agent_id(agent_id)
+    except ValueError as exc:
+        raise AccountAdminUnavailable("Account change unavailable") from exc
+    return _member_id(connection, "AGENT", canonical)
+
+
+def resolve_member_id(connection: Connection, identifier: str) -> tuple[uuid.UUID, str]:
+    """Resolve either kind of member reference; Agent IDs are tried first."""
+    try:
+        canonical = canonical_agent_id(identifier)
+    except ValueError:
+        return resolve_player_id(connection, identifier), "PLAYER"
+    return _member_id(connection, "AGENT", canonical), "AGENT"
+
+
 def _audit(
     connection: Connection,
     *,
@@ -91,8 +133,10 @@ def assign_player(
     remains the database backstop. Returns the new assignment ID.
     """
     owner_id = _require_owner(connection, raw_owner_token)
-    player = _locked_account(connection, player_id, role="PLAYER")
+    # Match agent transfer order (agent Account -> player Account). Reversing
+    # these locks could deadlock assignment against a live agent allocation.
     agent = _locked_account(connection, agent_id, role="AGENT")
+    player = _locked_account(connection, player_id, role="PLAYER")
     if player.status != "ENABLED" or agent.status != "ENABLED":
         raise AccountAdminUnavailable("Account change unavailable")
     now = connection.scalar(select(func.clock_timestamp()))

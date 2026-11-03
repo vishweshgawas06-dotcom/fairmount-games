@@ -1,8 +1,9 @@
-"""Owner-only member provisioning; internal service, no HTTP route yet.
+"""Owner-only member provisioning; shared by restricted operator adapters.
 
-The owner creates agents and players. Agents never create sub-agents, and a
-player is created by the owner only — assignment to an agent is a separate,
-audited action in `account_admin`.
+This slice lets the owner create agents and players; assignment to an agent
+is a separate audited action in `account_admin`. D-10 also permits agents to
+create only their own assigned players. That separate P07 capability is not
+implemented here; agents never create sub-agents.
 
 Every call requires a live owner session whose MFA proof is no older than ten
 minutes, then re-checks the caller's role under the same transaction. The

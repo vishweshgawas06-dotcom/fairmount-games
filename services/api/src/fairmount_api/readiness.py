@@ -14,7 +14,7 @@ from sqlalchemy import Connection, Engine, create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import SQLAlchemyError
 
-EXPECTED_REVISION = "20261103_02"
+EXPECTED_REVISION = "20261103_03"
 
 
 @lru_cache(maxsize=1)

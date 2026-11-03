@@ -9,7 +9,7 @@
 ## How to use this plan
 
 - [Locked requirements](LOCKED_REQUIREMENTS.md), the [owner-approved payout/settlement specification](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md), and the [approved legal-position catalogue](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md) govern product behavior. This document proposes a delivery sequence, not new product rules. In particular, the approved **total-payout** multipliers are intentional: a winning 10-point straight-up bet credits 350 total, not 360.
-- Existing task IDs P00-T02 and P01-T01 retain their current meaning/status. The owner approved this delivery sequence on 2026-10-15; task IDs are **planning placeholders** until individually scoped and tested, but the later broad authorization removes per-task permission checkpoints. No schedules, staffing assumptions, or completion claims are implied.
+- Existing task IDs P00-T02 and P01-T01 retain their current meaning/status. The owner approved this delivery sequence on 2026-10-15; task IDs are **planning placeholders** until individually scoped and tested, but the later broad authorization removes per-task permission checkpoints. The dated launch workback below supersedes the original undated sequence; dates are targets, not completion evidence or a guarantee.
 - For each proposed task, create a small task brief before work: allowed files/scope, prerequisites and unresolved choices, acceptance examples, failure cases, commands to run, and rollback/observability implications. Get owner decisions for unresolved product/security choices before implementing dependent flows. Do not implement ahead of a blocked dependency.
 - At every task: reproduce baseline; check open decisions; make one readable, bounded change with appropriate error handling; run unit/integration/security/UI tests as applicable and debug failures; review the diff and authorization/accounting impact; record commands, results, and environment; update task, `PROJECT_STATUS.md`, and `NEXT_ACTION.md`; request review; commit and push approved stage/checkpoint work to GitHub. Tests must run against the real implementation, not just the catalogue fixture. Follow [workflow rules](WORKFLOW_AND_UPDATE_RULES.md) for UI quality, verification, and reporting.
 - A phase passes only after its gate has evidence. Tests are **continuous**, not postponed to P16. P15/P16 are broad hardening gates, not the first time recovery or security is tested. A failed gate keeps the task open.
@@ -39,6 +39,30 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 3. **M2 — authoritative game:** P08 → P09 and P11 server acceptance → P10/P11 client integration. UI can be prototyped against *clearly marked mock contracts*, but cannot be presented as working gameplay before the backend is verified.
 4. **M3 — experience and resilience:** P12/P13/P14 after authoritative result and player contracts; P15 reliability tests expand the work done throughout M1/M2.
 5. **M4 — release:** P16 → P17 → P18 → P19, subject to signed-off operational/legal decisions. Phase numbers are categories, not a rigid prohibition on parallel non-dependent work.
+
+## Workback to the owner’s production deadline — 15 November 2026
+
+As of **3 November**, the deadline is fixed but readiness is not established.
+This is a dependency-ordered execution target, **not an assertion that every
+remaining phase can safely be completed by that date**. Each window ends with
+committed tests/evidence. If a release gate fails, record the blocker and revised
+forecast immediately; do not mark it done or lower accounting/security gates.
+
+| Target window (IST) | Remaining phases and concrete exit | Dependency / release consequence |
+|---|---|---|
+| **3–5 Nov** | **P06/P07 + remaining P03/P04/P05 edges:** owner lifecycle routes, complete activation/pending-secret reissue, approved identity fields, agent-created assigned players, authorized point-write routes, owner/agent dashboards with scope tests. | Internal lifecycle and ledger primitives exist; no operator UI yet. Proxy/topology and retention decisions must be resolved in parallel, not deferred to launch day. |
+| **5–7 Nov** | **P09/P10/P11:** authenticated session-checked events, reconnect snapshots and bet-lock/acceptance feedback; player login, wallet/history, draft/accepted bets and all-or-nothing rebet UI. | Depends on operator account setup and authoritative server contracts; no optimistic acceptance, stale authorization or unrevealed result exposure. |
+| **7–9 Nov** | **P12/P13/P14:** original European wheel/ball animation driven by persisted results; reduced-motion presentation, effects-only sound with mute/volume settings, responsive landscape and keyboard/accessibility audit. | Shared rules reference table governs keys, payouts and chips. Owner visual/device review required; no client-selected results. |
+| **9–11 Nov** | **P15/P16:** supervised worker, failure/restart drills, immutable accounting reconciliation, incident/runbook review, consolidated threat model and browser/security regressions. | D-06a preserved; no automatic void. Production credentials/keys stay out of Git. Retention/backups and authorized exceptional incident handling remain decisions, not inferred policies. |
+| **10–12 Nov** | **P17:** agree D-04 targets and representative device/player/bet workload before measurement; run repeatable load/fan-out/settlement/reconnect tests, fix and rerun. | Can prepare workload alongside hardening; cannot claim capacity before targets and evidence exist. |
+| **12–14 Nov** | **P18:** resolve PR #1/main schema conflict on the session branch, test combined tree; deploy seeded staging with approved TLS topology, restore/migration/rollback rehearsal, full owner→agent→player round and owner sign-off. | Depends on P15–P17 and deployment/legal/privacy decisions (D-02/D-05). No real host credentials requested in chat. |
+| **15 Nov** | **P19:** explicit owner go/no-go, controlled release, health/alerts and accounting reconciliation, recorded rollback decision and launch report. | Only after all release gates pass. A date alone never authorizes deployment or a readiness claim. |
+
+**Immediate risks:** owner decisions on proxy trust/client IP, D-02 retention and
+backup handling, D-04 workload/SLOs, jurisdiction/disclosures, staging access and
+operational ownership; PR #1 remains conflicting. Ask for consequential owner
+choices when they block the next dependency. Independent code/test work can
+continue without routine permission.
 
 ### P00 — Specification lock (existing phase; partially evidenced)
 
@@ -132,6 +156,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 
 - **P06-T01:** Scope owner API: provision/manage agents and users, disable/enable, point actions (D-01 required for removal). **Gate:** every privileged route enforces MFA/role, reason, audit, and budget rules.
 - **P06-T01a (owner provisioning and account lifecycle services; internal):** [Owner-only member creation, audited assignment and enable/disable](tasks/P06-T01a.md) behind a fresh-owner-MFA check: one-time 24-hour secrets stored as digests only, fixed/generated Agent IDs, canonical reserved-name rejection, reassignment that ends the prior row with two audit events, and idempotent enablement that relies on the D-03 triggers to revoke sessions. Migration `20261103_02` adds the four lifecycle event types. **No route, cookie, UI or rate limit.**
+- **P06-T01b (opt-in HTTP lifecycle):** [Five direct-TLS owner write adapters and non-secret replay receipts](tasks/P06-T01b.md), strict CSRF/JSON, fresh MFA before lookup/replay, attempt budgets, atomic receipts/audit and once-only secret disclosure. Migration `20261103_03`; concurrent generated-Agent-ID retry tested. Full registration/activation/reissue, reason contract and dashboards remain open.
 - **P06-T02:** Build admin UI for those APIs with confirmation/error states, reports and audit review. **Gate:** functional and accessibility tests; aggregate gameplay P/L remains distinct from admin adjustments.
 
 ### P07 — Agent operations
@@ -142,6 +167,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 ### P08 — Authoritative roulette engine
 
 - **P08-T01 (pure integration complete 2026-10-23; [CI 39908224792](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39908224792)):** [Ported pure roulette catalogue/payout/cap rules](tasks/P08-T01.md) from merged PR #2 without its incompatible account/migration/wallet services, plus a POOL-01 round-exposure projector. **Gate passed:** fixture, payout table, cap and projection cases including 10 straight-up → 350 total; no API acceptance yet.
+- **P08-T02 (shared rules integration):** Use the agreed shared reference table as the single source of truth for selection keys, payouts and chip denominations. Server rules and client display must not maintain conflicting copies.
 - **P08-T02a (schema/clock slice complete 2026-10-23; [CI 39914613660](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39914613660)):** [UUID round, immutable accepted-bet linkage and one independent server result](tasks/P08-T02a.md), without live bet acceptance/reveal/settlement.
 - **D-06a (owner-approved 2026-10-24):** [Retry missing independent result and settle even late; never auto-void or void a persisted result](decisions/2026-10-24-round-result-recovery.md). Broader worker/exceptional-void policy remains open.
 - **P08-T02b (private recovery step complete; [CI 40081815264](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40081815264)):** [Due close/settle transitions and non-backfilled next round](tasks/P08-T02b.md); no autonomous process.
@@ -167,7 +193,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 ### P11 — Betting controls and acceptance
 
 - **P11-T01a (private admission complete 2026-10-23; [CI 39915037914](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39915037914)):** [Reserve-serialized POOL-01 acceptance](tasks/P11-T01a.md) checks all 37 results/full void refunds across persisted unsettled rounds and appends one candidate; no public route. Private settlement is tracked separately in P11-T01c.
-- **P11-T01 (server):** Implement acceptance with full-balance check, valid stake/chips, canonical position, cutoff, per-number straight/split exposure, exact-selection caps, duplicate records, and atomic cap-limited partial acceptance. Apply owner-approved POOL-01 coverage (including void refunds) atomically after cap/wallet checks; do not release until funded-reserve races and reconciliation pass. **Gate:** PA-01–PA-18, PA-20–PA-21, approved funded-reserve invariant and relevant PostgreSQL concurrent requests; no balance-limited partial bet.
+- **P11-T01 (server):** Use the agreed shared reference table as the single source of truth for selection keys, payouts and chip denominations. Implement acceptance with full-balance check, valid stake/chips, canonical position, cutoff, per-number straight/split exposure, exact-selection caps, duplicate records, and atomic cap-limited partial acceptance. Apply owner-approved POOL-01 coverage (including void refunds) atomically after cap/wallet checks; do not release until funded-reserve races and reconciliation pass. **Gate:** PA-01–PA-18, PA-20–PA-21, approved funded-reserve invariant and relevant PostgreSQL concurrent requests; no balance-limited partial bet.
 - **P11-T01b (global reserve race complete 2026-10-23; [CI 39915358726](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39915358726)):** [Two players compete for one funded 350-point payout](tasks/P11-T01b.md) in separate connections; exactly one accepted when two would owe 700.
 - **P11-T01c (private terminal accounting complete 2026-10-23; [CI 39915748062](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39915748062)):** [Atomic winner payouts and full-round void refunds](tasks/P11-T01c.md); neither autonomous recovery nor owner reserve withdrawal is enabled.
 - **P11-T01d (cross-round coverage complete; [CI 39915956422](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39915956422)):** [Two unsettled rounds share a reserve and terminalize independently](tasks/P11-T01d.md).
@@ -182,7 +208,7 @@ D-01 and the D-10 account/transfer flow are owner-approved. D-02 remains open fo
 - **P11-T03a (opt-in bet route; no deployment):** [Direct-TLS player bet write](tasks/P11-T03a.md) wires the gameplay-write envelope, strict `{selection_key, stake}` schema and `place_bet()` into `POST /api/v1/rounds/{round_id}/bets`: one committed transaction, persisted idempotency key, full-stake affordability, caps and POOL-01 reserve coverage, generic denials. Disabled without direct TLS; no bet UI, realtime feed, per-actor write rate limit or staging acceptance yet.
 - **P11-T03b (gameplay-write attempt windows; no deployment):** [Pseudonymous session/source budgets](tasks/P11-T03b.md) add `gameplay_write_buckets` and a guarded admission wrapper: 20 attempts/min per session, 120/min per transport source, counted inside the bet transaction, `429` + `Retry-After` when exhausted. No journal (D-02 retention undecided); shared-NAT source policy still depends on the proxy decision.
 - **P11-T03 (client):** Draft chip placement/edit/cancel before submission, pending/confirmed distinction, immutable accepted bets, combined duplicate display and rebet UX. **Gate:** E2E insufficient balance, cap return, cutoff, retries, and disconnect behavior; no optimistic bet treated as accepted.
-- **P11-T04 (cross-service):** Wire bet results into P08 settlement and P09 private events. **Gate:** PA-22/PA-23 and player privacy end-to-end on a shared round. P00-T02 cannot be marked verified before these gates pass.
+- **P11-T04 (cross-service):** Use the agreed shared reference table as the single source of truth for selection keys, payouts and chip denominations. Wire bet results into P08 settlement and P09 private events. **Gate:** PA-22/PA-23 and player privacy end-to-end on a shared round. P00-T02 cannot be marked verified before these gates pass.
 
 ### P12 — Wheel animation
 

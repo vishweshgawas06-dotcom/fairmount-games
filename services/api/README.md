@@ -8,7 +8,7 @@ FastAPI health and public read-only round snapshot foundation. P02-T02a introduc
 - `users/` and `agents/` — account and hierarchy management
 - `identity/` — owner bootstrap/activation, credential and session services, plus
   internal owner-MFA-gated `provisioning.py` (agents/players) and `account_admin.py`
-  (assignment, enable/disable). None of these are reachable over HTTP yet.
+  (assignment, enable/disable). Five lifecycle writes are available only in explicitly configured direct-TLS mode; see [P06-T01b](../../docs/project-plan/tasks/P06-T01b.md). Bootstrap/activation remain internal.
 - `wallets/` and `transactions/` — point ledger and accounting
 - `roulette/` and `bets/` — round state, bet validation, outcomes, settlement
 - `realtime/` — authorized WebSocket state updates
@@ -30,7 +30,7 @@ Start the API:
 uvicorn fairmount_api.main:app --reload --app-dir services/api/src
 ```
 
-Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261103_02`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
+Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261103_03`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
 
 Run tests and lint:
 
@@ -58,3 +58,13 @@ The read-only `/api/v1/roulette/round` endpoint and `/preview/` interface can sh
 The private `fairmount_api.roulette.worker` entry point polls migrated PostgreSQL for due rounds, commits result persistence separately from settlement, and retries a missing independent result after cutoff under [D-06a](../../docs/project-plan/decisions/2026-10-24-round-result-recovery.md). It never automatically voids or rerolls a persisted result. It is **not** started by FastAPI. A supervised deployment must supply `FAIRMOUNT_WORKER_DATABASE_URL` (`postgresql+psycopg://...`) from protected configuration outside Git and launch `python -m fairmount_api.roulette.worker`; never put a URL or credentials in a command argument, log or repository file. Configure real alerts and secret rotation before production. A process restart alone is not a complete operations runbook.
 
 For read-only operator observation, `python -m fairmount_api.roulette.worker_status_cli` uses the **same protected worker URL** and reports due OPEN/CLOSED transition counts and the oldest due timestamp as JSON. An unavailable DB/schema yields a generic exit-code-2 error without printing credentials. Due counts do not change the exit code: the owner has not approved a lag/SLO threshold. This is neither a heartbeat nor a recovery action, and must not be used to void a round or patch wallet balances.
+
+## Restricted owner lifecycle writes
+
+`POST /api/v1/operator/{agents,players,assignments,assignments/remove,accounts/status}`
+uses the existing direct-TLS origin/Host, cookie/CSRF and bounded JSON envelope,
+with recent owner MFA, shared write-attempt windows and an `Idempotency-Key`.
+No forwarding-header/proxy mode is allowed. See the [route contract and replay
+limitations](../../docs/project-plan/tasks/P06-T01b.md): setup secrets appear only
+on first creation success, never in replay receipts. Full registration,
+activation/reissue, agent-side player creation and dashboards are still open.

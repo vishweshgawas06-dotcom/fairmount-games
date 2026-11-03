@@ -25,7 +25,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -624,4 +624,26 @@ class GameplayWriteBucket(Base):
             "key_digest COLLATE \"C\" ~ '^[0-9a-f]{64}$'", name="ck_gameplay_buckets_key"
         ),
         CheckConstraint("attempts >= 0", name="ck_gameplay_buckets_nonnegative"),
+    )
+
+
+class OperatorWriteReceipt(Base):
+    """Non-secret replay receipt; committed atomically with an operator action."""
+
+    __tablename__ = "operator_write_receipts"
+    owner_account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="RESTRICT"), primary_key=True
+    )
+    request_key: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    response: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("clock_timestamp()")
+    )
+    __table_args__ = (
+        CheckConstraint(
+            "request_digest ~ '^[0-9a-f]{64}$' AND jsonb_typeof(response) = 'object' "
+            "AND NOT (response ? 'secret')",
+            name="ck_operator_receipt_no_secret",
+        ),
     )
