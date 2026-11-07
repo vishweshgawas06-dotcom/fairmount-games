@@ -144,6 +144,12 @@ class OperatorHTTPTests(unittest.TestCase):
         }
 
     def post(self, route, body, key=None, **headers):
+        if route in ("agents", "players"):
+            body = {
+                "display_name": "Test member",
+                "mobile_number": "unverified shared contact",
+                **body,
+            }
         return self.client.post(BASE + route, json=body, headers=self.headers(key, **headers))
 
     def fixtures(self):
@@ -180,7 +186,7 @@ class OperatorHTTPTests(unittest.TestCase):
                 self.assertIsNone(credential.password_hash)
                 stored = connection.scalar(
                     select(OperatorWriteReceipt.response).where(
-                        OperatorWriteReceipt.owner_account_id == self.owner,
+                        OperatorWriteReceipt.actor_account_id == self.owner,
                         OperatorWriteReceipt.request_key == uuid.UUID(key),
                     )
                 )
@@ -323,7 +329,7 @@ class OperatorHTTPTests(unittest.TestCase):
             self.assertIsNone(
                 connection.scalar(
                     select(OperatorWriteReceipt.request_key).where(
-                        OperatorWriteReceipt.owner_account_id == self.owner,
+                        OperatorWriteReceipt.actor_account_id == self.owner,
                         OperatorWriteReceipt.request_key == uuid.UUID(key),
                     )
                 )
@@ -348,7 +354,11 @@ class OperatorHTTPTests(unittest.TestCase):
                 client=("203.0.113.73", 50433),
                 cookies={SESSION_COOKIE: self.token, CSRF_COOKIE: self.csrf},
             ) as client:
-                return client.post(BASE + "agents", json={}, headers=self.headers(key))
+                return client.post(
+                    BASE + "agents",
+                    json={"display_name": "Test agent", "mobile_number": "unverified contact"},
+                    headers=self.headers(key),
+                )
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             responses = list(pool.map(request_once, range(2)))
@@ -374,7 +384,7 @@ class OperatorHTTPTests(unittest.TestCase):
             connection.execute(
                 update(OperatorWriteReceipt.__table__)
                 .where(
-                    OperatorWriteReceipt.owner_account_id == self.owner,
+                    OperatorWriteReceipt.actor_account_id == self.owner,
                     OperatorWriteReceipt.request_key == uuid.UUID(key),
                 )
                 .values(request_digest="a" * 64)
@@ -382,7 +392,7 @@ class OperatorHTTPTests(unittest.TestCase):
         with self.assertRaises(IntegrityError), self.engine.begin() as connection:
             connection.execute(
                 insert(OperatorWriteReceipt.__table__).values(
-                    owner_account_id=self.owner,
+                    actor_account_id=self.owner,
                     request_key=uuid.uuid4(),
                     request_digest="a" * 64,
                     response={"secret": "must never be persisted"},
@@ -710,3 +720,253 @@ class OperatorHTTPTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 401)
         self.assertEqual(self.activate(member).status_code, 200)
+
+    def agent_browser(self, agent, source="203.0.113.81"):
+        self.assertEqual(self.activate(agent, role="AGENT").status_code, 200)
+        client = TestClient(app, base_url=ORIGIN, client=(source, 51000))
+        self.addCleanup(client.close)
+        login = client.post(
+            "/api/v1/auth/login",
+            headers={"origin": ORIGIN},
+            json={
+                "role": "AGENT",
+                "identifier": agent.login_id,
+                "password": "  सुरक्षित passphrase 42  ",
+            },
+        )
+        self.assertEqual(login.status_code, 200, login.text)
+        return client
+
+    def agent_post(self, client, body, key=None):
+        return client.post(
+            "/api/v1/agent/players",
+            json=body,
+            headers={
+                "origin": ORIGIN,
+                CSRF_HEADER: client.cookies.get(CSRF_COOKIE),
+                "idempotency-key": key or str(uuid.uuid4()),
+            },
+        )
+
+    def profile_body(self, suffix="new"):
+        return {
+            "username": self.name + "_" + suffix,
+            "display_name": "  खिलाड़ी Test  ",
+            "mobile_number": "unverified shared contact",
+        }
+
+    def test_agent_real_login_creates_only_own_assigned_zero_balance_player(self):
+        from fairmount_api.db.models import AccountWallet, PrivateIdentity
+
+        agent, _ = self.fixtures()
+        browser = self.agent_browser(agent)
+        body = self.profile_body()
+        key = str(uuid.uuid4())
+        response = self.agent_post(browser, body, key)
+        self.assertEqual(response.status_code, 201, response.text)
+        payload = response.json()
+        target = uuid.UUID(payload["account_id"])
+        replay = self.agent_post(browser, body, key)
+        self.assertEqual(replay.status_code, 200)
+        self.assertEqual(replay.json()["account_id"], payload["account_id"])
+        self.assertNotIn("secret", replay.json())
+        self.assertTrue(replay.json()["replayed"])
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                select(AgentAssignment).where(AgentAssignment.player_account_id == target)
+            ).one()
+            self.assertEqual(
+                (row.agent_account_id, row.actor_account_id), (agent.account_id, agent.account_id)
+            )
+            profile = connection.execute(
+                select(PrivateIdentity).where(PrivateIdentity.account_id == target)
+            ).one()
+            self.assertEqual(profile.display_name, body["display_name"])
+            self.assertEqual(profile.mobile_number, body["mobile_number"])
+            self.assertEqual(
+                connection.scalar(
+                    select(AccountWallet.balance).where(AccountWallet.account_id == target)
+                ),
+                0,
+            )
+            receipt = connection.scalar(
+                select(OperatorWriteReceipt.response).where(
+                    OperatorWriteReceipt.actor_account_id == agent.account_id,
+                    OperatorWriteReceipt.request_key == uuid.UUID(key),
+                )
+            )
+            self.assertNotIn(payload["secret"], str(receipt))
+            events = connection.execute(
+                select(SecurityEvent.actor_account_id).where(
+                    SecurityEvent.target_account_id == target
+                )
+            ).all()
+            self.assertEqual(events, [(agent.account_id,), (agent.account_id,)])
+        own = browser.get(f"/api/v1/players/{target}/wallet", headers={"origin": ORIGIN})
+        self.assertEqual(own.status_code, 200, own.text)
+        self.assertNotIn(body["display_name"], own.text)
+
+    def test_profile_fields_are_required_bounded_private_and_shared_contact_allowed(self):
+        from fairmount_api.db.models import PrivateIdentity
+
+        for route, base in (("agents", {}), ("players", {"username": self.name})):
+            response = self.client.post(BASE + route, json=base, headers=self.headers())
+            self.assertEqual(response.status_code, 400)
+        for field, value in (
+            ("display_name", " "),
+            ("mobile_number", ""),
+            ("display_name", "x" * 161),
+            ("mobile_number", "x" * 33),
+            ("display_name", "line\nbreak"),
+            ("mobile_number", 42),
+        ):
+            body = {**self.profile_body(), field: value}
+            self.assertEqual(self.post("players", body).status_code, 400)
+        for suffix in ("one", "two"):
+            body = self.profile_body(suffix)
+            response = self.post("players", body)
+            self.assertEqual(response.status_code, 201, response.text)
+            self.assertNotIn(body["mobile_number"], response.text)
+            with self.engine.connect() as connection:
+                self.assertEqual(
+                    connection.scalar(
+                        select(PrivateIdentity.mobile_number).where(
+                            PrivateIdentity.account_id == uuid.UUID(response.json()["account_id"])
+                        )
+                    ),
+                    body["mobile_number"],
+                )
+
+    def test_agent_cannot_select_another_agent_create_subagent_or_reissue(self):
+        agent, _ = self.fixtures()
+        browser = self.agent_browser(agent)
+        for extra in (
+            {"agent_id": agent.login_id},
+            {"role": "AGENT"},
+            {"account_id": str(self.owner)},
+            {"balance": 100},
+            {"owner_managed": True},
+        ):
+            self.assertEqual(
+                self.agent_post(browser, {**self.profile_body(), **extra}).status_code, 400
+            )
+        for route, body in (
+            ("agents", {"display_name": "Subagent", "mobile_number": "contact"}),
+            ("accounts/setup-secret", {"identifier": self.name}),
+        ):
+            response = browser.post(
+                BASE + route,
+                json=body,
+                headers={
+                    "origin": ORIGIN,
+                    CSRF_HEADER: browser.cookies.get(CSRF_COOKIE),
+                    "idempotency-key": str(uuid.uuid4()),
+                },
+            )
+            self.assertEqual(response.status_code, 403)
+        # Even an owner cannot use an agent-only endpoint under a forged role.
+        self.assertEqual(self.agent_post(self.client, self.profile_body()).status_code, 403)
+
+    def test_agent_registration_disabled_and_revoked_sessions_denied(self):
+        agent, _ = self.fixtures()
+        browser = self.agent_browser(agent)
+        key = str(uuid.uuid4())
+        self.assertEqual(self.agent_post(browser, self.profile_body(), key).status_code, 201)
+        self.assertEqual(
+            self.post(
+                "accounts/status", {"identifier": agent.login_id, "enabled": False}
+            ).status_code,
+            200,
+        )
+        self.assertEqual(self.agent_post(browser, self.profile_body(), key).status_code, 403)
+        self.assertEqual(self.agent_post(browser, self.profile_body("next")).status_code, 403)
+
+    def test_two_agents_race_on_one_global_username_with_no_orphan_accounts(self):
+        from concurrent.futures import ThreadPoolExecutor
+
+        from fairmount_api.db.models import PrivateIdentity
+
+        first, _ = self.fixtures()
+        with self.engine.begin() as connection:
+            second = provision_agent(connection, self.token)
+        browsers = [self.agent_browser(first), self.agent_browser(second, "203.0.113.82")]
+        body = self.profile_body("race")
+        with self.engine.connect() as connection:
+            before = connection.scalar(select(func.count()).select_from(Account))
+
+        from threading import Barrier
+
+        from fairmount_api.identity import agent_provisioning
+
+        original_lookup = agent_provisioning._login_taken
+        barrier = Barrier(2)
+
+        def simultaneous_lookup(connection, role, canonical):
+            exists = original_lookup(connection, role, canonical)
+            barrier.wait(timeout=10)
+            return exists
+
+        # Distinct source/session windows and a barrier after the uniqueness
+        # lookup force both transactions to attempt the same global identifier.
+        with patch.object(agent_provisioning, "_login_taken", side_effect=simultaneous_lookup):
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                responses = list(pool.map(lambda browser: self.agent_post(browser, body), browsers))
+        self.assertEqual(sorted(r.status_code for r in responses), [201, 403])
+        winner = next(r for r in responses if r.status_code == 201)
+        with self.engine.connect() as connection:
+            self.assertEqual(
+                connection.scalar(select(func.count()).select_from(Account)), before + 1
+            )
+            self.assertEqual(
+                connection.scalar(
+                    select(func.count())
+                    .select_from(PrivateIdentity)
+                    .where(PrivateIdentity.login_identifier == body["username"])
+                ),
+                1,
+            )
+        # The losing agent cannot inspect the newly created player's wallet.
+        loser = browsers[0] if responses[0].status_code == 403 else browsers[1]
+        self.assertNotEqual(
+            loser.get(
+                f"/api/v1/players/{winner.json()['account_id']}/wallet", headers={"origin": ORIGIN}
+            ).status_code,
+            200,
+        )
+
+    def test_agent_assignment_audit_failure_rolls_back_entire_registration(self):
+        from fairmount_api.db.models import PrivateIdentity
+        from fairmount_api.identity import agent_provisioning
+
+        agent, _ = self.fixtures()
+        browser = self.agent_browser(agent)
+        body = self.profile_body()
+        with patch.object(
+            agent_provisioning,
+            "insert",
+            side_effect=IntegrityError("simulated assignment failure", {}, Exception()),
+        ):
+            self.assertEqual(self.agent_post(browser, body).status_code, 503)
+        with self.engine.connect() as connection:
+            self.assertIsNone(
+                connection.scalar(
+                    select(PrivateIdentity.account_id).where(
+                        PrivateIdentity.login_identifier == body["username"]
+                    )
+                )
+            )
+        self.assertEqual(self.agent_post(browser, body).status_code, 201)
+
+    def test_agent_request_key_is_bound_to_actor_and_body(self):
+        first, _ = self.fixtures()
+        with self.engine.begin() as connection:
+            second = provision_agent(connection, self.token)
+        first_browser, second_browser = self.agent_browser(first), self.agent_browser(second)
+        key = str(uuid.uuid4())
+        one = self.agent_post(first_browser, self.profile_body("first"), key)
+        two = self.agent_post(second_browser, self.profile_body("second"), key)
+        self.assertEqual((one.status_code, two.status_code), (201, 201))
+        self.assertNotEqual(one.json()["account_id"], two.json()["account_id"])
+        self.assertEqual(
+            self.agent_post(first_browser, self.profile_body("changed"), key).status_code, 409
+        )

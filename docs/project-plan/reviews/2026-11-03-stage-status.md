@@ -9,6 +9,8 @@ product exists.
 
 ## Matrix
 
+Updated 7 November with P03-T03a/P07-T01a; original scan date retained.
+
 | Phase | State | Implemented and tested | Not done |
 |---|---|---|---|
 | **P00** Specification lock | **Done** | `P00-T02` payout/settlement spec, `T03`/`T04` acceptance docs; superseded recovery text reconciled by the [2026-10-25 audit](2026-10-25-plan-audit.md) and D-06a. | Owner wording/UX review of total-return multipliers. |
@@ -18,7 +20,7 @@ product exists.
 | **P04** Resource authorization | **Done (opt-in)** | Self wallet/recent bets, scoped player wallet, live ID-only roster, bounded keyset pages, owner/agent real-HTTP flows (`T01a`–`T02i`). | Cross-account bet history, realtime authorization, operator-authorized assignment writes over HTTP. |
 | **P05** Wallet and point ledger | **Done (private)** | UUID ledger, paired append-only journal, issuance, owner/agent transfers, reserve funding/withdrawal, reconciliation (`T01a`–`T03a`). | Request-edge transfer routes, retention policy for the journal. |
 | **P06** Owner/admin operations | **Partial** | [P06-T01a](../tasks/P06-T01a.md) internal lifecycle services plus [P06-T01b](../tasks/P06-T01b.md) opt-in owner HTTP writes, replay receipts and CSRF/MFA/attempt guards. | Full registration identity fields/activation/reissue, point-write adapters, reason contract, dashboards/admin UI. |
-| **P07** Agent operations | **Not started** | Private assigned-player transfer and roster reads. | Agent API write routes, agent UI, history views. |
+| **P07** Agent operations | **Partial** | [P07-T01a](../tasks/P07-T01a.md) real agent login→self-assigned player registration, private profile fields and actor-isolated replay; private transfers/roster reads. | Point-write adapters, agent UI/history and browser acceptance. |
 | **P08** Roulette engine | **Done (private)** | Catalogue/payout/cap rules, round/open-close, once-only independent result, D-06a recovery, due-round worker, singleton poller (`T01`–`T02d`). | Supervised deployment, alerting, failure-injection matrix. |
 | **P09** Realtime delivery | **Partial** | Public read-only snapshot (`T01a`/`T01b`) and a reveal-only server-sent event stream with de-duplication, heartbeats and a per-process connection cap (`T02a`). | Private/authenticated realtime channel, bet-lock/bet-accepted events, reconnect/replay contract (D-08), realtime session revocation. |
 | **P10** Player experience | **Partial** | Read-only preview UI with server-aligned wheel (`T01a`). | Real client, betting UI, wallet/history screens, delayed-result UX. |
@@ -36,7 +38,7 @@ product exists.
 
 - **P00–P05, P08 and P11 are complete as *private or opt-in* slices.** Nothing
   they implement is reachable by an ordinary player in the preview deployment.
-- **P06 has internal services and restricted direct-TLS routes (P06-T01a/b), but no complete registration or UI. P07, P12–P14, P17–P19 have not started.** The product cannot be called
+- **P06 has internal services and restricted direct-TLS routes (P06-T01a/b), but no complete registration or UI. P07 is partial; P12–P14, P17–P19 have not started.** The product cannot be called
   playable until at least P06/P07 (operations), P09-T02 (realtime), P10-T02 (bet
   UI) and P17 (targets) progress.
 - **P09, P10, P15 and P16 are partly done** and each has a clearly bounded next

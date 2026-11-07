@@ -26,6 +26,7 @@ from fairmount_api.identity.account_admin import (
     set_account_enabled,
     unassign_player,
 )
+from fairmount_api.identity.agent_provisioning import provision_assigned_player, require_agent
 from fairmount_api.identity.auth_hmac_key import load_auth_hmac_key
 from fairmount_api.identity.http_boundary import RequestBoundaryUnavailable
 from fairmount_api.identity.login_api import _direct_source
@@ -38,6 +39,7 @@ from fairmount_api.identity.provisioning import (
     _require_owner,
     provision_agent,
     provision_player,
+    validate_profile,
 )
 from fairmount_api.identity.write_boundary import GameplayWriteUnavailable, require_gameplay_write
 from fairmount_api.readiness import _configured_engine, schema_ready
@@ -78,8 +80,9 @@ def _reply(status: int, label: str = "unavailable", *, retry_after: int = 0) -> 
 
 def _validate(kind: str, body: dict) -> None:
     required = {
-        "agent": set(),
-        "player": {"username"},
+        "agent": {"display_name", "mobile_number"},
+        "player": {"username", "display_name", "mobile_number"},
+        "agent-player": {"username", "display_name", "mobile_number"},
         "assign": {"username", "agent_id"},
         "unassign": {"username"},
         "status": {"identifier", "enabled"},
@@ -92,16 +95,33 @@ def _validate(kind: str, body: dict) -> None:
         if name == "enabled":
             if type(value) is not bool:
                 raise OperatorRequestInvalid("Invalid request")
-        elif not isinstance(value, str) or not 1 <= len(value) <= 128:
+        elif not isinstance(value, str) or not 1 <= len(value) <= (
+            160 if name == "display_name" else 128
+        ):
             raise OperatorRequestInvalid("Invalid request")
+    if kind in ("agent", "player", "agent-player"):
+        try:
+            validate_profile(body["display_name"], body["mobile_number"])
+        except ProvisioningUnavailable as exc:
+            raise OperatorRequestInvalid("Invalid request") from exc
 
 
 def _action(connection, token, kind, body) -> dict:
+    if kind == "agent-player":
+        member = provision_assigned_player(connection, token, **body)
+        return {
+            "status": "created",
+            "account_id": str(member.account_id),
+            "username": member.login_id,
+            "secret": member.secret,
+            "secret_expires_at": member.expires_at.isoformat(),
+        }
     if kind in ("agent", "player"):
+        profile = {name: body[name] for name in ("display_name", "mobile_number")}
         member = (
-            provision_agent(connection, token, agent_id=body.get("agent_id"))
+            provision_agent(connection, token, agent_id=body.get("agent_id"), **profile)
             if kind == "agent"
-            else provision_player(connection, token, username=body["username"])
+            else provision_player(connection, token, username=body["username"], **profile)
         )
         return {
             "status": "created",
@@ -141,14 +161,18 @@ def _action(connection, token, kind, body) -> dict:
 def _execute(connection, token, key, kind, body) -> tuple[int, dict]:
     # Owner lock serializes concurrent commands, including duplicate requests.
     # Authenticate before resolving identifiers OR reading a replay receipt.
-    owner_id = _require_owner(connection, token)
+    actor_id = (
+        require_agent(connection, token)
+        if kind == "agent-player"
+        else _require_owner(connection, token)
+    )
     _validate(kind, body)
     digest = hashlib.sha256(
         json.dumps([kind, body], sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
     receipt = connection.execute(
         select(OperatorWriteReceipt.request_digest, OperatorWriteReceipt.response).where(
-            OperatorWriteReceipt.owner_account_id == owner_id,
+            OperatorWriteReceipt.actor_account_id == actor_id,
             OperatorWriteReceipt.request_key == key,
         )
     ).one_or_none()
@@ -162,13 +186,16 @@ def _execute(connection, token, key, kind, body) -> tuple[int, dict]:
     stored = {name: value for name, value in response.items() if name != "secret"}
     connection.execute(
         insert(OperatorWriteReceipt.__table__).values(
-            owner_account_id=owner_id,
+            actor_account_id=actor_id,
             request_key=key,
             request_digest=digest,
             response=stored,
         )
     )
-    return (201 if kind in ("agent", "player") else 200), {**response, "replayed": False}
+    return (201 if kind in ("agent", "player", "agent-player") else 200), {
+        **response,
+        "replayed": False,
+    }
 
 
 async def _dispatch(request: Request, kind: str) -> JSONResponse:
@@ -252,3 +279,9 @@ async def account_status(request: Request) -> JSONResponse:
 async def reissue_setup_secret(request: Request) -> JSONResponse:
     """Rotate a still-pending member credential; never changes an active password."""
     return await _dispatch(request, "reissue")
+
+
+@router.post("/api/v1/agent/players", tags=["agent"])
+async def create_assigned_player(request: Request) -> JSONResponse:
+    """An enabled agent may create only a new player assigned to itself."""
+    return await _dispatch(request, "agent-player")

@@ -631,7 +631,7 @@ class OperatorWriteReceipt(Base):
     """Non-secret replay receipt; committed atomically with an operator action."""
 
     __tablename__ = "operator_write_receipts"
-    owner_account_id: Mapped[uuid.UUID] = mapped_column(
+    actor_account_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="RESTRICT"), primary_key=True
     )
     request_key: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)

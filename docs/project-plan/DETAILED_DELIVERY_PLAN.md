@@ -187,6 +187,8 @@ new date or green unit tests for staging, security or owner acceptance.
 - **P07-T01:** Scope agent API to assigned users and allocations. **Gate:** agents cannot enumerate/change another agent's users or exceed allocated budget under concurrent requests.
 - **P07-T02:** Build agent UI and history views within authorized scope. **Gate:** cross-agent and stale-session E2E tests plus accessible failure handling.
 
+- **P07-T01a (7 Nov, opt-in):** [Agent-created assigned players and required registration profiles](tasks/P07-T01a.md), real agent login→self-assigned zero-balance player, globally unique username race containment, actor-scoped receipts and private bounded name/unverified shared-contact storage. Owner registration routes now require the same profile fields. Agent point edges, UI/history remain open.
+
 ### P08 — Authoritative roulette engine
 
 - **P08-T01 (pure integration complete 2026-10-23; [CI 39908224792](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39908224792)):** [Ported pure roulette catalogue/payout/cap rules](tasks/P08-T01.md) from merged PR #2 without its incompatible account/migration/wallet services, plus a POOL-01 round-exposure projector. **Gate passed:** fixture, payout table, cap and projection cases including 10 straight-up → 350 total; no API acceptance yet.

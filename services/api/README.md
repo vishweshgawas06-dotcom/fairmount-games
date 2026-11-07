@@ -30,7 +30,7 @@ Start the API:
 uvicorn fairmount_api.main:app --reload --app-dir services/api/src
 ```
 
-Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261107_01`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
+Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261107_02`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
 
 Run tests and lint:
 
@@ -79,3 +79,15 @@ password, and returns `activated` **without setting cookies**. Login separately.
 owner write/CSRF/recent-MFA envelope and an idempotency key. It can rotate only
 a pending enabled member secret, not reset an active password. Replays disclose
 no secret. See [P03-T03a](../../docs/project-plan/tasks/P03-T03a.md).
+
+## Agent registration and required profiles
+
+`POST /api/v1/agent/players` requires an enabled AGENT session and the standard
+same-origin CSRF/idempotent write envelope. Exact body: `username`,
+`display_name`, `mobile_number`. The server derives assignment from the session,
+creates no funds, and discloses a digest-only setup secret once after commit.
+Owner agent/player creation now requires `display_name` and `mobile_number` too.
+Contact text is bounded/private/unverified, may be shared and is never reset
+proof. Receipts are now keyed by `actor_account_id`, preserving owner history.
+See [P07-T01a](../../docs/project-plan/tasks/P07-T01a.md). Still no dashboard or
+agent point-write adapter is deployed.

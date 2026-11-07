@@ -2,8 +2,8 @@
 
 This slice lets the owner create agents and players; assignment to an agent
 is a separate audited action in `account_admin`. D-10 also permits agents to
-create only their own assigned players. That separate P07 capability is not
-implemented here; agents never create sub-agents.
+create only their own assigned players via `agent_provisioning`; this module
+continues to require owner authority. Agents never create sub-agents.
 
 Every call requires a live owner session whose MFA proof is no older than ten
 minutes, then re-checks the caller's role under the same transaction. The
@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from sqlalchemy import Connection, func, insert, select
+from sqlalchemy.exc import IntegrityError
 
 from fairmount_api.db.models import (
     Account,
@@ -82,13 +83,15 @@ def _login_taken(connection: Connection, kind: str, canonical: str) -> bool:
     )
 
 
-def _create_member(
+def _insert_member(
     connection: Connection,
-    owner_id: uuid.UUID,
+    actor_id: uuid.UUID,
     *,
     role: str,
     canonical: str,
     display: str,
+    display_name: str | None = None,
+    mobile_number: str | None = None,
 ) -> ProvisionedMember:
     """Insert account, private identity, pending credential and audit atomically."""
     account_id = connection.execute(
@@ -96,7 +99,11 @@ def _create_member(
     ).scalar_one()
     connection.execute(
         insert(PrivateIdentity.__table__).values(
-            account_id=account_id, login_kind=role, login_identifier=canonical
+            account_id=account_id,
+            login_kind=role,
+            login_identifier=canonical,
+            display_name=display_name,
+            mobile_number=mobile_number,
         )
     )
     secret = generate_initial_secret()
@@ -114,15 +121,56 @@ def _create_member(
         insert(SecurityEvent.__table__).values(
             event_type="INITIAL_CREDENTIAL_ISSUED",
             source="DASHBOARD",
-            actor_account_id=owner_id,
+            actor_account_id=actor_id,
             target_account_id=account_id,
         )
     )
     return ProvisionedMember(account_id, display, secret, expires_at)
 
 
+def validate_profile(display_name: str, mobile_number: str) -> None:
+    """Bound unverified contact text; retain exact input, never infer identity.
+
+    Country-specific phone normalization/verification is not approved. Shared
+    numbers are allowed. This is storage validation, not a verified phone check.
+    """
+    for value, limit in ((display_name, 160), (mobile_number, 32)):
+        if (
+            not isinstance(value, str)
+            or not 1 <= len(value) <= limit
+            or not value.isprintable()
+            or not value.strip()
+        ):
+            raise ProvisioningUnavailable("Provisioning unavailable")
+        try:
+            value.encode("utf-8")
+        except UnicodeError as exc:
+            raise ProvisioningUnavailable("Provisioning unavailable") from exc
+
+
+def _create_member(connection: Connection, actor_id: uuid.UUID, **fields) -> ProvisionedMember:
+    """Contain uniqueness races so duplicate registration leaves no partial rows."""
+    name, mobile = fields.get("display_name"), fields.get("mobile_number")
+    if name is not None or mobile is not None:
+        validate_profile(name, mobile)
+    try:
+        with connection.begin_nested():
+            return _insert_member(connection, actor_id, **fields)
+    except IntegrityError as exc:
+        if getattr(getattr(exc.orig, "diag", None), "constraint_name", None) == (
+            "uq_private_identities_login_namespace"
+        ):
+            raise ProvisioningUnavailable("Provisioning unavailable") from exc
+        raise
+
+
 def provision_agent(
-    connection: Connection, raw_owner_token: str, *, agent_id: str | None = None
+    connection: Connection,
+    raw_owner_token: str,
+    *,
+    agent_id: str | None = None,
+    display_name: str | None = None,
+    mobile_number: str | None = None,
 ) -> ProvisionedMember:
     """Create one AGENT with a fixed Agent ID and a 24-hour one-time secret.
 
@@ -149,12 +197,19 @@ def provision_agent(
             role="AGENT",
             canonical=canonical,
             display=canonical.upper(),
+            display_name=display_name,
+            mobile_number=mobile_number,
         )
     raise ProvisioningUnavailable("Provisioning unavailable")  # ID space exhausted
 
 
 def provision_player(
-    connection: Connection, raw_owner_token: str, *, username: str
+    connection: Connection,
+    raw_owner_token: str,
+    *,
+    username: str,
+    display_name: str | None = None,
+    mobile_number: str | None = None,
 ) -> ProvisionedMember:
     """Create one PLAYER owned by the owner, unassigned until an audited assignment."""
     owner_id = _require_owner(connection, raw_owner_token)
@@ -165,5 +220,11 @@ def provision_player(
     if _login_taken(connection, "PLAYER", canonical):
         raise ProvisioningUnavailable("Provisioning unavailable")
     return _create_member(
-        connection, owner_id, role="PLAYER", canonical=canonical, display=canonical
+        connection,
+        owner_id,
+        role="PLAYER",
+        canonical=canonical,
+        display=canonical,
+        display_name=display_name,
+        mobile_number=mobile_number,
     )
