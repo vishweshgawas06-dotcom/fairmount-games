@@ -24,7 +24,7 @@ from fairmount_api.db.models import AuthAttemptBucket, AuthFailureEvent
 WINDOW = timedelta(minutes=15)
 SUBJECT_LIMIT = 5
 SOURCE_LIMIT = 30
-_SURFACES = frozenset(("OWNER_LOGIN", "MEMBER_LOGIN", "OWNER_MFA"))
+_SURFACES = frozenset(("OWNER_LOGIN", "MEMBER_LOGIN", "OWNER_MFA", "MEMBER_ACTIVATION"))
 
 
 @dataclass(frozen=True)

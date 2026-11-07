@@ -269,7 +269,7 @@ SECURITY_EVENT_CHECK = """
         'PASSWORD_CHANGED', 'OWNER_MFA_ENROLLED', 'OWNER_MFA_VERIFIED',
         'OWNER_SESSION_STARTED', 'SESSION_REVOKED', 'MEMBER_SESSION_STARTED',
         'ACCOUNT_ENABLED', 'ACCOUNT_DISABLED',
-        'AGENT_ASSIGNED', 'AGENT_UNASSIGNED'
+        'AGENT_ASSIGNED', 'AGENT_UNASSIGNED', 'INITIAL_CREDENTIAL_REISSUED'
     ) AND source IN ('LOCAL_CLI', 'DASHBOARD', 'SELF_SERVICE')
     AND (actor_account_id IS NOT NULL OR
          (source = 'LOCAL_CLI' AND event_type IN
@@ -312,7 +312,7 @@ class AuthFailureEvent(Base):
         CheckConstraint(
             "subject_digest COLLATE \"C\" ~ '^[0-9a-f]{64}$' AND "
             "source_digest COLLATE \"C\" ~ '^[0-9a-f]{64}$' AND "
-            "surface IN ('OWNER_LOGIN','MEMBER_LOGIN','OWNER_MFA') AND "
+            "surface IN ('OWNER_LOGIN','MEMBER_LOGIN','OWNER_MFA','MEMBER_ACTIVATION') AND "
             "outcome IN ('FAILED','THROTTLED')",
             name="ck_auth_failure_events_shape",
         ),

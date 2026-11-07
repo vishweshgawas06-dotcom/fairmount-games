@@ -6,6 +6,7 @@ import secrets
 import tempfile
 import unittest
 import uuid
+from datetime import UTC
 from unittest.mock import patch
 
 from fairmount_api.db.models import (
@@ -42,6 +43,7 @@ class OperatorClosedTests(unittest.TestCase):
                     "assignments",
                     "assignments/remove",
                     "accounts/status",
+                    "accounts/setup-secret",
                 ):
                     response = client.post(BASE + route, json={})
                     self.assertEqual(response.status_code, 503)
@@ -276,6 +278,7 @@ class OperatorHTTPTests(unittest.TestCase):
                 ("accounts/status", {"identifier": self.name, "enabled": False}),
                 ("assignments", {"username": self.name, "agent_id": agent.login_id}),
                 ("assignments/remove", {"username": self.name}),
+                ("accounts/setup-secret", {"identifier": self.name}),
             ):
                 response = self.post(route, body)
                 self.assertIn(response.status_code, (403, 429), response.text)
@@ -401,3 +404,309 @@ class OperatorHTTPTests(unittest.TestCase):
         self.assertEqual(response.status_code, 503)
         # The same username can be provisioned: the whole failed action rolled back.
         self.assertEqual(self.post("players", {"username": self.name}).status_code, 201)
+
+    def activate(self, member, *, role="PLAYER", identifier=None, secret=None, password=None):
+        return self.client.post(
+            "/api/v1/auth/activate",
+            json={
+                "role": role,
+                "identifier": identifier or member.login_id,
+                "secret": secret if secret is not None else member.secret,
+                "new_password": password if password is not None else "  सुरक्षित passphrase 42  ",
+            },
+            headers={"origin": ORIGIN},
+        )
+
+    def test_activation_for_both_roles_then_login_without_auto_session(self):
+        agent, player = self.fixtures()
+        for member, role in ((agent, "AGENT"), (player, "PLAYER")):
+            response = self.activate(member, role=role)
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(response.json(), {"status": "activated"})
+            self.assertNotIn("set-cookie", response.headers)
+            self.assertEqual(response.headers["cache-control"], "no-store")
+            self.assertEqual(self.event_count(member.account_id, "INITIAL_CREDENTIAL_CONSUMED"), 1)
+            self.assertEqual(self.activate(member, role=role).status_code, 401)
+            with self.engine.connect() as connection:
+                credential = connection.execute(
+                    select(AccountCredential).where(
+                        AccountCredential.account_id == member.account_id
+                    )
+                ).one()
+                self.assertIsNone(credential.initial_secret_digest)
+                self.assertIsNone(credential.initial_secret_expires_at)
+                self.assertIsNotNone(credential.initial_secret_consumed_at)
+                self.assertIsNone(
+                    connection.scalar(
+                        select(AccountSession.id).where(
+                            AccountSession.account_id == member.account_id
+                        )
+                    )
+                )
+            with TestClient(app, base_url=ORIGIN, client=("203.0.113.75", 50111)) as client:
+                login = client.post(
+                    "/api/v1/auth/login",
+                    json={
+                        "role": role,
+                        "identifier": member.login_id,
+                        "password": "  सुरक्षित passphrase 42  ",
+                    },
+                    headers={"origin": ORIGIN},
+                )
+                self.assertEqual(login.status_code, 200, login.text)
+                self.assertIn("set-cookie", login.headers)
+
+    def test_reissue_rotates_pending_secret_once_with_nonsecret_replay(self):
+        _, member = self.fixtures()
+        body = {"identifier": member.login_id}
+        key = str(uuid.uuid4())
+        response = self.post("accounts/setup-secret", body, key)
+        self.assertEqual(response.status_code, 200, response.text)
+        secret = response.json()["secret"]
+        self.assertNotEqual(secret, member.secret)
+        replay = self.post("accounts/setup-secret", body, key)
+        self.assertTrue(replay.json()["replayed"])
+        self.assertNotIn("secret", replay.json())
+        self.assertEqual(self.event_count(member.account_id, "INITIAL_CREDENTIAL_REISSUED"), 1)
+        self.assertEqual(self.activate(member).status_code, 401)
+        self.assertEqual(self.activate(member, secret=secret).status_code, 200)
+        self.assertEqual(self.post("accounts/setup-secret", body).status_code, 403)
+        # An old receipt acknowledges delivery but must never rotate an active password.
+        self.assertTrue(self.post("accounts/setup-secret", body, key).json()["replayed"])
+        self.assertEqual(self.event_count(member.account_id, "INITIAL_CREDENTIAL_REISSUED"), 1)
+
+    def test_activation_failures_and_throttling_are_generic_and_audited(self):
+        from fairmount_api.db.models import AuthFailureEvent
+        from fairmount_api.identity import activation_api
+        from fairmount_api.identity.auth_attempts import _digests
+        from fairmount_api.identity.auth_hmac_key import load_auth_hmac_key
+
+        _, member = self.fixtures()
+        for _ in range(5):
+            self.assertEqual(self.activate(member, secret="wrong").status_code, 401)
+        # A correct proof is not evaluated once the subject window is blocked.
+        with patch.object(activation_api, "activate_member") as execute:
+            self.assertEqual(self.activate(member).status_code, 401)
+            execute.assert_not_called()
+        digest, _ = _digests(
+            "MEMBER_ACTIVATION", f"PLAYER:{self.name}", "203.0.113.73", load_auth_hmac_key()
+        )
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(AuthFailureEvent).where(AuthFailureEvent.subject_digest == digest)
+            ).all()
+            self.assertEqual([r.outcome for r in rows].count("FAILED"), 5)
+            self.assertEqual([r.outcome for r in rows].count("THROTTLED"), 1)
+            self.assertNotIn(member.secret, str(rows))
+            self.assertNotIn(self.name, str(rows))
+
+    def test_activation_rejects_weak_wrong_role_missing_disabled_and_expired(self):
+        agent, member = self.fixtures()
+        self.assertEqual(self.activate(member, password="password1234").status_code, 401)
+        self.assertEqual(self.activate(member, role="AGENT").status_code, 401)
+        self.assertEqual(self.activate(member, identifier="not_present").status_code, 401)
+        self.assertEqual(
+            self.post(
+                "accounts/status", {"identifier": agent.login_id, "enabled": False}
+            ).status_code,
+            200,
+        )
+        self.assertEqual(self.activate(agent, role="AGENT").status_code, 401)
+        self.assertEqual(
+            self.post("accounts/setup-secret", {"identifier": agent.login_id}).status_code, 403
+        )
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(AccountCredential.__table__)
+                .where(AccountCredential.account_id == member.account_id)
+                .values(
+                    initial_secret_issued_at=func.now() - text("interval '2 days'"),
+                    initial_secret_expires_at=func.now() - text("interval '1 day'"),
+                )
+            )
+        self.assertEqual(self.activate(member).status_code, 401)
+        # An expired pending credential can be recovered by a freshly verified owner.
+        rotated = self.post("accounts/setup-secret", {"identifier": self.name})
+        self.assertEqual(rotated.status_code, 200)
+        self.assertEqual(self.activate(member, secret=rotated.json()["secret"]).status_code, 200)
+
+    def test_activation_request_schema_transport_and_no_owner_bypass(self):
+        _, member = self.fixtures()
+        body = {
+            "role": "PLAYER",
+            "identifier": self.name,
+            "secret": member.secret,
+            "new_password": "valid long passphrase",
+        }
+        for payload in (
+            {**body, "role": "OWNER"},
+            {**body, "extra": True},
+            {**body, "secret": None},
+            {**body, "new_password": "x" * 129},
+            [],
+        ):
+            self.assertEqual(
+                self.client.post(
+                    "/api/v1/auth/activate", json=payload, headers={"origin": ORIGIN}
+                ).status_code,
+                400,
+            )
+        self.assertEqual(
+            self.client.post(
+                "/api/v1/auth/activate", json=body, headers={"origin": "https://evil.example"}
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/v1/auth/activate",
+                json=body,
+                headers={"origin": ORIGIN, "x-forwarded-for": "203.0.113.7"},
+            ).status_code,
+            503,
+        )
+        duplicate = '{"role":"PLAYER","role":"OWNER"}'
+        self.assertEqual(
+            self.client.post(
+                "/api/v1/auth/activate",
+                content=duplicate,
+                headers={"origin": ORIGIN, "content-type": "application/json"},
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/v1/auth/activate",
+                json={**body, "new_password": "a" * 5000},
+                headers={"origin": ORIGIN},
+            ).status_code,
+            400,
+        )
+
+    def test_concurrent_activation_consumes_secret_exactly_once(self):
+        from concurrent.futures import ThreadPoolExecutor
+
+        _, member = self.fixtures()
+        body = {
+            "role": "PLAYER",
+            "identifier": self.name,
+            "secret": member.secret,
+            "new_password": "a strong member passphrase",
+        }
+
+        def attempt(_):
+            with TestClient(app, base_url=ORIGIN, client=("203.0.113.76", 50112)) as client:
+                return client.post("/api/v1/auth/activate", json=body, headers={"origin": ORIGIN})
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            responses = list(pool.map(attempt, range(2)))
+        self.assertEqual(sorted(r.status_code for r in responses), [200, 401])
+        self.assertEqual(self.event_count(member.account_id, "INITIAL_CREDENTIAL_CONSUMED"), 1)
+
+    def test_activation_audit_failure_rolls_back_password_and_secret_consumption(self):
+        from fairmount_api.identity import member_activation
+
+        _, member = self.fixtures()
+        with patch.object(
+            member_activation,
+            "insert",
+            side_effect=IntegrityError("simulated audit failure", {}, Exception()),
+        ):
+            self.assertEqual(self.activate(member).status_code, 503)
+        self.assertEqual(self.event_count(member.account_id, "INITIAL_CREDENTIAL_CONSUMED"), 0)
+        self.assertEqual(self.activate(member).status_code, 200)
+
+    def test_activation_rechecks_expiry_after_hashing(self):
+        from fairmount_api.identity import member_activation
+
+        _, member = self.fixtures()
+
+        # Simulate a long hash operation crossing the expiry boundary without
+        # depending on wall-clock sleeps or mutating immutable account state.
+        def delayed_hash(_):
+            # This runs in the request transaction/thread; changing the returned
+            # clock values below models expiry during hashing deterministically.
+            return "hash-not-to-be-stored"
+
+        original = member_activation._pending_credential
+        from datetime import datetime, timedelta
+        from types import SimpleNamespace
+
+        def expiring(connection, target):
+            row = original(connection, target)
+            return SimpleNamespace(
+                initial_secret_digest=row.initial_secret_digest,
+                initial_secret_expires_at=datetime.now(UTC) + timedelta(seconds=5),
+            )
+
+        # Make the second clock read beyond expiry; all actual DB statements
+        # still execute, only the SQL function expression used here is offset.
+        with (
+            patch.object(member_activation, "_pending_credential", side_effect=expiring),
+            patch.object(member_activation, "hash_password", side_effect=delayed_hash),
+            patch.object(member_activation, "func") as clock,
+        ):
+            clock.clock_timestamp.side_effect = [
+                func.clock_timestamp(),
+                func.clock_timestamp() + text("interval '10 seconds'"),
+            ]
+            self.assertEqual(self.activate(member).status_code, 401)
+        self.assertEqual(self.activate(member).status_code, 200)
+
+    def test_activation_reissue_race_has_one_consistent_credential_state(self):
+        from concurrent.futures import ThreadPoolExecutor
+
+        _, member = self.fixtures()
+
+        def attempt(which):
+            with TestClient(
+                app,
+                base_url=ORIGIN,
+                client=("203.0.113.77", 50119),
+                cookies={SESSION_COOKIE: self.token, CSRF_COOKIE: self.csrf},
+            ) as client:
+                if which == "activate":
+                    return client.post(
+                        "/api/v1/auth/activate",
+                        json={
+                            "role": "PLAYER",
+                            "identifier": self.name,
+                            "secret": member.secret,
+                            "new_password": "a strong permanent passphrase",
+                        },
+                        headers={"origin": ORIGIN},
+                    )
+                return client.post(
+                    BASE + "accounts/setup-secret",
+                    json={"identifier": self.name},
+                    headers=self.headers(),
+                )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            activation, rotation = list(pool.map(attempt, ("activate", "rotate")))
+        self.assertIn((activation.status_code, rotation.status_code), ((200, 403), (401, 200)))
+        if rotation.status_code == 200:
+            self.assertEqual(
+                self.activate(member, secret=rotation.json()["secret"]).status_code, 200
+            )
+        self.assertEqual(self.event_count(member.account_id, "INITIAL_CREDENTIAL_CONSUMED"), 1)
+
+    def test_nonencodable_secret_is_a_generic_proof_denial_not_server_error(self):
+        _, member = self.fixtures()
+        import json
+
+        raw = json.dumps(
+            {
+                "role": "PLAYER",
+                "identifier": self.name,
+                "secret": "\ud800",
+                "new_password": "a valid permanent passphrase",
+            }
+        )
+        response = self.client.post(
+            "/api/v1/auth/activate",
+            content=raw,
+            headers={"origin": ORIGIN, "content-type": "application/json"},
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(self.activate(member).status_code, 200)

@@ -29,6 +29,10 @@ from fairmount_api.identity.account_admin import (
 from fairmount_api.identity.auth_hmac_key import load_auth_hmac_key
 from fairmount_api.identity.http_boundary import RequestBoundaryUnavailable
 from fairmount_api.identity.login_api import _direct_source
+from fairmount_api.identity.member_activation import (
+    MemberActivationUnavailable,
+    reissue_pending_member_secret,
+)
 from fairmount_api.identity.provisioning import (
     ProvisioningUnavailable,
     _require_owner,
@@ -59,6 +63,7 @@ class OperatorReplayConflict(ValueError):
 _DENIALS = (
     ProvisioningUnavailable,
     AccountAdminUnavailable,
+    MemberActivationUnavailable,
     OperatorRequestInvalid,
     OperatorReplayConflict,
 )
@@ -78,6 +83,7 @@ def _validate(kind: str, body: dict) -> None:
         "assign": {"username", "agent_id"},
         "unassign": {"username"},
         "status": {"identifier", "enabled"},
+        "reissue": {"identifier"},
     }[kind]
     optional = {"agent_id"} if kind == "agent" else set()
     if not required <= body.keys() or body.keys() - required - optional:
@@ -117,6 +123,16 @@ def _action(connection, token, kind, body) -> dict:
             connection, token, player_id=resolve_player_id(connection, body["username"])
         )
         return {"status": "unassigned"}
+    if kind == "reissue":
+        account_id, role = resolve_member_id(connection, body["identifier"])
+        member = reissue_pending_member_secret(connection, token, account_id=account_id)
+        return {
+            "status": "setup_secret_reissued",
+            "account_id": str(member.account_id),
+            "role": role,
+            "secret": member.secret,
+            "secret_expires_at": member.expires_at.isoformat(),
+        }
     account_id, role = resolve_member_id(connection, body["identifier"])
     status = set_account_enabled(connection, token, account_id=account_id, enabled=body["enabled"])
     return {"status": status.lower(), "role": role}
@@ -230,3 +246,9 @@ async def remove_assignment(request: Request) -> JSONResponse:
 @router.post("/api/v1/operator/accounts/status", tags=["operator"])
 async def account_status(request: Request) -> JSONResponse:
     return await _dispatch(request, "status")
+
+
+@router.post("/api/v1/operator/accounts/setup-secret", tags=["operator"])
+async def reissue_setup_secret(request: Request) -> JSONResponse:
+    """Rotate a still-pending member credential; never changes an active password."""
+    return await _dispatch(request, "reissue")

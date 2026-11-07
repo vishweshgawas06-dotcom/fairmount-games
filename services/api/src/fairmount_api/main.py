@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from fairmount_api.identity.activation_api import router as activation_router
 from fairmount_api.identity.login_api import router as direct_login_router
 from fairmount_api.identity.operator_api import router as operator_router
 from fairmount_api.private_read_api import router as private_read_router
@@ -26,6 +27,7 @@ app.include_router(direct_login_router)
 app.include_router(private_read_router)
 app.include_router(player_bet_router)
 app.include_router(operator_router)
+app.include_router(activation_router)
 
 # Repository-only read-only interface. An installed API wheel can run without
 # the frontend tree; production UI hosting is a separate deployment gate.

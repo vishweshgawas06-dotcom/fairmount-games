@@ -64,6 +64,27 @@ operational ownership; PR #1 remains conflicting. Ask for consequential owner
 choices when they block the next dependency. Independent code/test work can
 continue without routine permission.
 
+### 7 November status correction and recovery sequence
+
+The **3–5 November operator milestone was missed**; do not read that historical
+window as completed work. P03-T03a now closes member activation/pending reissue,
+but full registration, P07 creation, operator UI and many release gates remain.
+The 15 November deadline is **at risk**, not guaranteed by this plan.
+
+| Remaining target window | Execution / evidence required |
+|---|---|
+| **7–9 Nov** | Finish P03/P06/P07 registration, agent scope and point-write edges; account/dashboard flows. P03-T03a activation/reissue is implemented; approved profile fields and P07 remain. |
+| **9–11 Nov** | P09 private live-authorized feed, P10/P11 player controls/history/rebet and disconnect/cutoff feedback, with browser tests. |
+| **10–12 Nov** | P12–P14 wheel/ball, effects/settings and responsive/accessibility work after authoritative contracts; device/visual review. |
+| **11–13 Nov** | P15/P16 restart/failure/security drills and supervised operation; P17 agreed targets followed by load/capacity evidence. |
+| **13–14 Nov** | P18 integrated schema/branch resolution, seeded staging, restore/rollback and owner acceptance. |
+| **15 Nov** | P19 owner go/no-go, controlled release and post-launch reconciliation **only if every gate passed**. |
+
+Proxy/client-IP trust, retention/backups, capacity targets, staging infrastructure
+and legal/privacy acceptance need consequential owner/deployment decisions.
+Continue independent implementation while those are open; never substitute a
+new date or green unit tests for staging, security or owner acceptance.
+
 ### P00 — Specification lock (existing phase; partially evidenced)
 
 - **P00-T02 (existing):** Owner-approved payout/settlement and legal catalogue; fixture's 8 tests were previously reported passing. Remains open for actual engine, privacy, and transaction verification; do not claim those behaviors exist.
@@ -121,6 +142,8 @@ continue without routine permission.
 - **P03-T02o (opt-in logout; [CI 40092369410](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40092369410) passed):** [Same-origin CSRF and commit-before-clear cookie revocation](tasks/P03-T02o.md); later P04-T02c/h prove committed protected-resource request flows.
 - **P03-T02p (gameplay-write request contract; no route):** [Gameplay write envelope](tasks/P03-T02p.md) validates `POST`-only same-origin JSON within 4096 bytes, one normalized `Idempotency-Key`, no query string and no ambiguous transfer/encoding headers; PostgreSQL tests prove the envelope is not authorization. Idempotency persistence, per-actor rate limits, body schemas and trusted-proxy policy remain gates before any gameplay-write route.
 - **P03-T03:** Owner TOTP/recovery-code MFA and D-03-approved session/step-up policy; rate limits and audit. Manual all-factors-lost recovery is not approved and must not be improvised. **Gate:** MFA required for privileged access and tested failure/recovery paths before production.
+
+- **P03-T03a (7 Nov, opt-in):** [Member activation and owner pending-secret recovery](tasks/P03-T03a.md), one-time consume/reissue, Argon2id, generic rate-guarded proofs, no auto-login, strict direct-TLS HTTP and concurrency/rollback tests. Required profile fields, agent creation and active-password reset remain open.
 
 ### P04 — Resource-level authorization
 

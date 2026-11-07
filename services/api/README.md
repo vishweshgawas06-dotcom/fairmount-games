@@ -8,7 +8,7 @@ FastAPI health and public read-only round snapshot foundation. P02-T02a introduc
 - `users/` and `agents/` — account and hierarchy management
 - `identity/` — owner bootstrap/activation, credential and session services, plus
   internal owner-MFA-gated `provisioning.py` (agents/players) and `account_admin.py`
-  (assignment, enable/disable). Five lifecycle writes are available only in explicitly configured direct-TLS mode; see [P06-T01b](../../docs/project-plan/tasks/P06-T01b.md). Bootstrap/activation remain internal.
+  (assignment, enable/disable). Five lifecycle writes are available only in explicitly configured direct-TLS mode; see [P06-T01b](../../docs/project-plan/tasks/P06-T01b.md). Owner bootstrap/activation remain local; member activation now has a restricted direct-TLS adapter.
 - `wallets/` and `transactions/` — point ledger and accounting
 - `roulette/` and `bets/` — round state, bet validation, outcomes, settlement
 - `realtime/` — authorized WebSocket state updates
@@ -30,7 +30,7 @@ Start the API:
 uvicorn fairmount_api.main:app --reload --app-dir services/api/src
 ```
 
-Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261103_03`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
+Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261107_01`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
 
 Run tests and lint:
 
@@ -68,3 +68,14 @@ No forwarding-header/proxy mode is allowed. See the [route contract and replay
 limitations](../../docs/project-plan/tasks/P06-T01b.md): setup secrets appear only
 on first creation success, never in replay receipts. Full registration,
 activation/reissue, agent-side player creation and dashboards are still open.
+
+## Member activation and lost pending setup response
+
+`POST /api/v1/auth/activate` accepts exactly `role`, `identifier`, `secret`,
+`new_password` under direct TLS and the canonical same-origin boundary. It
+rate-guards proof failures, consumes a valid pending secret, sets the permanent
+password, and returns `activated` **without setting cookies**. Login separately.
+`POST /api/v1/operator/accounts/setup-secret` accepts `identifier`, with the
+owner write/CSRF/recent-MFA envelope and an idempotency key. It can rotate only
+a pending enabled member secret, not reset an active password. Replays disclose
+no secret. See [P03-T03a](../../docs/project-plan/tasks/P03-T03a.md).
