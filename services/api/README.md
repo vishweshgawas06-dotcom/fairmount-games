@@ -89,5 +89,16 @@ creates no funds, and discloses a digest-only setup secret once after commit.
 Owner agent/player creation now requires `display_name` and `mobile_number` too.
 Contact text is bounded/private/unverified, may be shared and is never reset
 proof. Receipts are now keyed by `actor_account_id`, preserving owner history.
-See [P07-T01a](../../docs/project-plan/tasks/P07-T01a.md). Still no dashboard or
-agent point-write adapter is deployed.
+See [P07-T01a](../../docs/project-plan/tasks/P07-T01a.md). Still no dashboard or production deployment is claimed.
+
+## Point and reserve write adapters (opt-in)
+
+Owner routes: `/api/v1/operator/points/issue`, `/points/transfer`,
+`/reserve/fund`, `/reserve/withdraw` (the latter three under the same
+`/api/v1/operator` prefix). Agent route: `/api/v1/agent/points/transfer`.
+All require the same-origin CSRF/idempotent write envelope, live role and
+attempt budgets; owner actions require recent MFA. Positive integer amount and
+nonblank reason are mandatory. Transfers require a strict boolean direction and
+member identifier/assigned-player username, never the holder's password.
+No default/proxy enablement. See [P05-T04a](../../docs/project-plan/tasks/P05-T04a.md)
+for exact schemas, full-request rejection and funded-reserve protection.

@@ -9,7 +9,7 @@ product exists.
 
 ## Matrix
 
-Updated 7 November with P03-T03a/P07-T01a; original scan date retained.
+Updated 7 November with P03-T03a/P07-T01a/P05-T04a; original scan date retained.
 
 | Phase | State | Implemented and tested | Not done |
 |---|---|---|---|
@@ -18,9 +18,9 @@ Updated 7 November with P03-T03a/P07-T01a; original scan date retained.
 | **P02** Database and migrations | **Done** | Account/identity/credential/session/MFA/ledger/round/bet/auth-attempt schemas, roster index, and `20261103_01` write-window schema; round-trip + `alembic check` in CI. | Physical BIGINT-vs-UUID reconciliation with `main`/PR #1; D-02 retention/backups. |
 | **P03** Authentication and sessions | **Done (opt-in)** | Identifier rules, password policy, Argon2id, TOTP/recovery codes, key custody, owner bootstrap/activation/MFA, sessions, logout, rate limiting, CSRF boundary (`T01a`–`T02p`). | Provisioning/registration endpoints, all-factors-lost recovery, trusted reverse-proxy policy, production MFA key rotation. |
 | **P04** Resource authorization | **Done (opt-in)** | Self wallet/recent bets, scoped player wallet, live ID-only roster, bounded keyset pages, owner/agent real-HTTP flows (`T01a`–`T02i`). | Cross-account bet history, realtime authorization, operator-authorized assignment writes over HTTP. |
-| **P05** Wallet and point ledger | **Done (private)** | UUID ledger, paired append-only journal, issuance, owner/agent transfers, reserve funding/withdrawal, reconciliation (`T01a`–`T03a`). | Request-edge transfer routes, retention policy for the journal. |
+| **P05** Wallet and point ledger | **Done (private)** | UUID ledger, paired append-only journal, issuance, owner/agent transfers, reserve funding/withdrawal, reconciliation (`T01a`–`T03a`). | P05-T04a now adds opt-in transfer/reserve HTTP routes; journal retention, dashboard UX and deployment acceptance remain. |
 | **P06** Owner/admin operations | **Partial** | [P06-T01a](../tasks/P06-T01a.md) internal lifecycle services plus [P06-T01b](../tasks/P06-T01b.md) opt-in owner HTTP writes, replay receipts and CSRF/MFA/attempt guards. | Full registration identity fields/activation/reissue, point-write adapters, reason contract, dashboards/admin UI. |
-| **P07** Agent operations | **Partial** | [P07-T01a](../tasks/P07-T01a.md) real agent login→self-assigned player registration, private profile fields and actor-isolated replay; private transfers/roster reads. | Point-write adapters, agent UI/history and browser acceptance. |
+| **P07** Agent operations | **Partial** | [P07-T01a](../tasks/P07-T01a.md) real agent login→self-assigned player registration, private profile fields and actor-isolated replay; private transfers/roster reads. | P05-T04a adds point-write adapters; agent UI/history and browser acceptance remain. |
 | **P08** Roulette engine | **Done (private)** | Catalogue/payout/cap rules, round/open-close, once-only independent result, D-06a recovery, due-round worker, singleton poller (`T01`–`T02d`). | Supervised deployment, alerting, failure-injection matrix. |
 | **P09** Realtime delivery | **Partial** | Public read-only snapshot (`T01a`/`T01b`) and a reveal-only server-sent event stream with de-duplication, heartbeats and a per-process connection cap (`T02a`). | Private/authenticated realtime channel, bet-lock/bet-accepted events, reconnect/replay contract (D-08), realtime session revocation. |
 | **P10** Player experience | **Partial** | Read-only preview UI with server-aligned wheel (`T01a`). | Real client, betting UI, wallet/history screens, delayed-result UX. |

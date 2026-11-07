@@ -19,7 +19,7 @@ app = FastAPI(
     version="0.1.0",
     description=(
         "Read-only round snapshot, opt-in direct-TLS login, bet write and "
-        "owner operator writes; gameplay is not publicly enabled."
+        "owner/agent operator writes; gameplay is not publicly enabled."
     ),
 )
 app.include_router(public_round_router)

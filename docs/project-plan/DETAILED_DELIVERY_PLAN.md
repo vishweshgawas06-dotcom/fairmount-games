@@ -175,6 +175,8 @@ new date or green unit tests for staging, security or owner acceptance.
 - **P05-T03a (read-only reconciliation complete 2026-10-23; [CI 39912027719](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39912027719)):** [Wallet/reserve vs journal and explicit issuance report](tasks/P05-T03a.md) requires a stable PostgreSQL snapshot and never repairs balances.
 - **P05-T03:** Reconciliation, correction policy, and backup/restore accounting checks. **Gate:** wallet totals reconcile to ledger in seeded integration scenarios; no silent balance edits.
 
+- **P05-T04a (7 Nov, opt-in):** [Point/reserve HTTP writes](tasks/P05-T04a.md): audited owner-only issuance, conserved owner/member and agent/current-player transfers, reserve funding and POOL-01 surplus return. Shared CSRF/MFA/role/attempt/replay envelope; full-rejection, assignment/freeze, concurrent retry and accepted-coverage tests. Dashboard/history UX and deployment acceptance remain open.
+
 ### P06 — Owner/admin operations
 
 - **P06-T01:** Scope owner API: provision/manage agents and users, disable/enable, point actions (D-01 required for removal). **Gate:** every privileged route enforces MFA/role, reason, audit, and budget rules.

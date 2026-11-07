@@ -4,7 +4,8 @@
 
 ## Current verified checkpoints (2026-11-07)
 
-- [P07-T01a](tasks/P07-T01a.md): real agent login→new self-assigned player, zero initial wallet, required private name/unverified contact fields for registration, actor-isolated replay receipts, collision/rollback/scope tests. Full local fresh-DB unittest **318 passed**. P07 is now partial; point edges and UI/history remain open.
+- [P05-T04a](tasks/P05-T04a.md): opt-in protected point/reserve HTTP writes, owner-only issuance, conserved owner/member and agent/current-player transfers, funded reserve surplus protection, atomic journal/projection/receipt. Full local fresh-DB unittest **326 passed**, with replay, freeze, scope and accepted-cover checks. No dashboard or deployment acceptance yet.
+- [P07-T01a](tasks/P07-T01a.md): real agent login→new self-assigned player, zero initial wallet, required private name/unverified contact fields for registration, actor-isolated replay receipts, collision/rollback/scope tests. Full local fresh-DB unittest **318 passed**; [CI 42349281491](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349281491) passed on `794d2d7`. P05-T04a adds point edges; P07 UI/history remains open.
 - [P03-T03a](tasks/P03-T03a.md): member activation and fresh-owner-MFA pending-secret reissue, no auto-login, subject/source failure guard, single-use/expiry/race/rollback HTTP checks. Fresh local full unittest: **311 passed, zero skips**; [CI 42349049855](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349049855) passed on `0ba5c39`. The earlier operator milestone was missed; **15 November is at risk**, with a [dated recovery sequence](DETAILED_DELIVERY_PLAN.md#7-november-status-correction-and-recovery-sequence).
 - [P06-T01b](tasks/P06-T01b.md): five opt-in owner lifecycle writes, atomic non-secret replay receipts (`20261103_03`), CSRF/strict JSON, fresh MFA and attempt budgets; concurrent retry, rollback and revocation tests. Local **301 unittest / 390 pytest passed**; [CI 41613468040](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/41613468040) passed on `faad2ca`. Full registration (identity fields, activation/reissue), agent-created assigned players, point routes and dashboards remain open. [Dated workback to 15 November](DETAILED_DELIVERY_PLAN.md#workback-to-the-owners-production-deadline--15-november-2026) now covers each remaining phase and its gate.
 - [P06-T01a](tasks/P06-T01a.md): owner provisioning and account lifecycle **services** — `provision_agent`/`provision_player` (fresh-owner-MFA, one-time 24-hour secret stored as a digest only, fixed Agent IDs, reserved-name rejection), audited `assign_player`/`unassign_player` and idempotent `set_account_enabled` that refuses the sole owner and lets the D-03 triggers revoke sessions; migration `20261103_02`. This internal checkpoint had no HTTP adapter; P06-T01b adds restricted routes, while P06 remains partial and P07 remains open.
@@ -31,7 +32,7 @@ The task records and [delivery plan](DETAILED_DELIVERY_PLAN.md) retain checkpoin
 
 **Integration audit verification:** Branch-only [CI 39393934428](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/39393934428) passed on `8706a87`, including Python 3.12/PostgreSQL migrations, DB-enabled tests and Ruff. PR #1 remains conflicting with PR #2/main; this does not test a combined tree. See [audit](REPOSITORY_INTEGRATION_AUDIT_2026-10-20.md).
 
-**Last updated:** 2026-11-07 (P07 agent registration and private profile fields)
+**Last updated:** 2026-11-07 (P05-T04a point/reserve HTTP writes)
 
 ## Delivery plan (owner-approved sequence)
 

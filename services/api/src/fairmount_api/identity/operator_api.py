@@ -1,8 +1,8 @@
-"""Opt-in direct-TLS owner writes, with atomic non-secret replay receipts.
+"""Opt-in direct-TLS operator writes, with atomic non-secret replay receipts.
 
 Disabled behind a proxy. A provision response discloses its setup secret only
 on first success; replay returns the stored account reference, never a secret.
-A lost first response needs a separately authorized credential reissue flow.
+A lost first response can use the owner-authorized pending-secret reissue flow.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import insert, select
 from sqlalchemy.exc import SQLAlchemyError
 
+from fairmount_api.agent_point_accounting import transfer_agent_points
 from fairmount_api.db.models import OperatorWriteReceipt
 from fairmount_api.identity.account_admin import (
     AccountAdminUnavailable,
@@ -42,7 +43,14 @@ from fairmount_api.identity.provisioning import (
     validate_profile,
 )
 from fairmount_api.identity.write_boundary import GameplayWriteUnavailable, require_gameplay_write
+from fairmount_api.point_accounting import (
+    PointActionConflict,
+    PointActionUnavailable,
+    issue_owner_points,
+    transfer_owner_points,
+)
 from fairmount_api.readiness import _configured_engine, schema_ready
+from fairmount_api.reserve_funding import fund_game_reserve, withdraw_surplus_reserve
 from fairmount_api.roulette.write_limits import guard_gameplay_write
 
 router = APIRouter()
@@ -68,6 +76,7 @@ _DENIALS = (
     MemberActivationUnavailable,
     OperatorRequestInvalid,
     OperatorReplayConflict,
+    PointActionUnavailable,
 )
 
 
@@ -87,18 +96,28 @@ def _validate(kind: str, body: dict) -> None:
         "unassign": {"username"},
         "status": {"identifier", "enabled"},
         "reissue": {"identifier"},
+        "point-issue": {"amount", "reason"},
+        "owner-transfer": {"identifier", "amount", "to_member", "reason"},
+        "agent-transfer": {"username", "amount", "to_player", "reason"},
+        "reserve-fund": {"amount", "reason"},
+        "reserve-withdraw": {"amount", "reason"},
     }[kind]
     optional = {"agent_id"} if kind == "agent" else set()
     if not required <= body.keys() or body.keys() - required - optional:
         raise OperatorRequestInvalid("Invalid request")
     for name, value in body.items():
-        if name == "enabled":
+        if name in ("enabled", "to_member", "to_player"):
             if type(value) is not bool:
                 raise OperatorRequestInvalid("Invalid request")
+        elif name == "amount":
+            if type(value) is not int or not 1 <= value <= 2**63 - 1:
+                raise OperatorRequestInvalid("Invalid request")
         elif not isinstance(value, str) or not 1 <= len(value) <= (
-            160 if name == "display_name" else 128
+            500 if name == "reason" else 160 if name == "display_name" else 128
         ):
             raise OperatorRequestInvalid("Invalid request")
+    if "reason" in body and (not body["reason"].isprintable() or not body["reason"].strip()):
+        raise OperatorRequestInvalid("Invalid request")
     if kind in ("agent", "player", "agent-player"):
         try:
             validate_profile(body["display_name"], body["mobile_number"])
@@ -106,7 +125,39 @@ def _validate(kind: str, body: dict) -> None:
             raise OperatorRequestInvalid("Invalid request") from exc
 
 
-def _action(connection, token, kind, body) -> dict:
+def _action(connection, token, kind, body, request_key) -> dict:
+    if kind in (
+        "point-issue",
+        "owner-transfer",
+        "agent-transfer",
+        "reserve-fund",
+        "reserve-withdraw",
+    ):
+        args = {
+            "amount": body["amount"],
+            "reason": body["reason"],
+            "idempotency_key": "http:" + str(request_key),
+        }
+        if kind == "point-issue":
+            operation = issue_owner_points(connection, token, **args)
+        elif kind == "owner-transfer":
+            member_id, _ = resolve_member_id(connection, body["identifier"])
+            operation = transfer_owner_points(
+                connection, token, member_account_id=member_id, to_member=body["to_member"], **args
+            )
+        elif kind == "agent-transfer":
+            operation = transfer_agent_points(
+                connection,
+                token,
+                player_account_id=resolve_player_id(connection, body["username"]),
+                to_player=body["to_player"],
+                **args,
+            )
+        elif kind == "reserve-fund":
+            operation = fund_game_reserve(connection, token, **args)
+        else:
+            operation = withdraw_surplus_reserve(connection, token, **args)
+        return {"status": "completed", "operation_id": str(operation.operation_id)}
     if kind == "agent-player":
         member = provision_assigned_player(connection, token, **body)
         return {
@@ -159,11 +210,11 @@ def _action(connection, token, kind, body) -> dict:
 
 
 def _execute(connection, token, key, kind, body) -> tuple[int, dict]:
-    # Owner lock serializes concurrent commands, including duplicate requests.
+    # The live actor Account lock serializes concurrent commands and retries.
     # Authenticate before resolving identifiers OR reading a replay receipt.
     actor_id = (
         require_agent(connection, token)
-        if kind == "agent-player"
+        if kind in ("agent-player", "agent-transfer")
         else _require_owner(connection, token)
     )
     _validate(kind, body)
@@ -180,7 +231,7 @@ def _execute(connection, token, key, kind, body) -> tuple[int, dict]:
         if receipt.request_digest != digest:
             raise OperatorReplayConflict("Request conflict")
         return 200, {**receipt.response, "replayed": True}
-    response = _action(connection, token, kind, body)
+    response = _action(connection, token, kind, body, key)
     # Never persist the setup secret, even in the idempotency store. The client
     # must distinguish an acknowledged replay from first-time secret delivery.
     stored = {name: value for name, value in response.items() if name != "secret"}
@@ -241,7 +292,7 @@ async def _dispatch(request: Request, kind: str) -> JSONResponse:
     if not outcome.allowed:
         if outcome.denial is OperatorRequestInvalid:
             return _reply(400, "invalid_request")
-        if outcome.denial is OperatorReplayConflict:
+        if outcome.denial in (OperatorReplayConflict, PointActionConflict):
             return _reply(409, "conflict")
         return _reply(403, "denied")
     status, payload = outcome.value
@@ -285,3 +336,32 @@ async def reissue_setup_secret(request: Request) -> JSONResponse:
 async def create_assigned_player(request: Request) -> JSONResponse:
     """An enabled agent may create only a new player assigned to itself."""
     return await _dispatch(request, "agent-player")
+
+
+@router.post("/api/v1/operator/points/issue", tags=["points"])
+async def issue_points(request: Request) -> JSONResponse:
+    """Audited owner-only issuance into the owner's own wallet."""
+    return await _dispatch(request, "point-issue")
+
+
+@router.post("/api/v1/operator/points/transfer", tags=["points"])
+async def owner_transfer(request: Request) -> JSONResponse:
+    """Conserved owner/member transfer; never asks for the holder's password."""
+    return await _dispatch(request, "owner-transfer")
+
+
+@router.post("/api/v1/agent/points/transfer", tags=["points"])
+async def agent_transfer(request: Request) -> JSONResponse:
+    """Transfer only between the live agent and its currently assigned player."""
+    return await _dispatch(request, "agent-transfer")
+
+
+@router.post("/api/v1/operator/reserve/fund", tags=["points"])
+async def fund_reserve(request: Request) -> JSONResponse:
+    return await _dispatch(request, "reserve-fund")
+
+
+@router.post("/api/v1/operator/reserve/withdraw", tags=["points"])
+async def withdraw_reserve(request: Request) -> JSONResponse:
+    """Return only proven surplus; never remove accepted payout/refund cover."""
+    return await _dispatch(request, "reserve-withdraw")

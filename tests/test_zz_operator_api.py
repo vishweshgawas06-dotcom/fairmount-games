@@ -970,3 +970,344 @@ class OperatorHTTPTests(unittest.TestCase):
         self.assertEqual(
             self.agent_post(first_browser, self.profile_body("changed"), key).status_code, 409
         )
+
+    def balance(self, account):
+        from fairmount_api.db.models import AccountWallet
+
+        with self.engine.connect() as connection:
+            return connection.scalar(
+                select(AccountWallet.balance).where(AccountWallet.account_id == account)
+            )
+
+    def reserve_balance(self):
+        from fairmount_api.db.models import GameReserve
+
+        with self.engine.connect() as connection:
+            return connection.scalar(select(GameReserve.balance).where(GameReserve.id == 1))
+
+    def agent_transfer(self, browser, username, amount, *, to_player=True, key=None):
+        return browser.post(
+            "/api/v1/agent/points/transfer",
+            json={
+                "username": username,
+                "amount": amount,
+                "to_player": to_player,
+                "reason": "requested allocation or return",
+            },
+            headers={
+                "origin": ORIGIN,
+                CSRF_HEADER: browser.cookies.get(CSRF_COOKIE),
+                "idempotency-key": key or str(uuid.uuid4()),
+            },
+        )
+
+    def test_owner_issuance_replays_once_with_exact_ledger_actor_reason(self):
+        from fairmount_api.db.models import PointOperation
+
+        before = self.balance(self.owner)
+        key = str(uuid.uuid4())
+        body = {"amount": 120, "reason": "audited virtual-points issuance"}
+        first = self.post("points/issue", body, key)
+        second = self.post("points/issue", body, key)
+        self.assertEqual((first.status_code, second.status_code), (200, 200))
+        self.assertEqual(first.json()["operation_id"], second.json()["operation_id"])
+        self.assertTrue(second.json()["replayed"])
+        self.assertEqual(self.balance(self.owner), before + 120)
+        with self.engine.connect() as connection:
+            operation = connection.execute(
+                select(PointOperation).where(
+                    PointOperation.id == uuid.UUID(first.json()["operation_id"])
+                )
+            ).one()
+            self.assertEqual(operation.actor_account_id, self.owner)
+            self.assertEqual(operation.kind, "OWNER_ISSUE")
+            self.assertEqual(operation.amount, 120)
+            self.assertEqual(operation.reason, body["reason"])
+        self.assertEqual(self.post("points/issue", {**body, "amount": 121}, key).status_code, 409)
+
+    def test_http_owner_agent_player_transfers_conserve_full_requested_amounts(self):
+        agent, _ = self.fixtures()
+        browser = self.agent_browser(agent)
+        body = self.profile_body()
+        created = self.agent_post(browser, body)
+        player = uuid.UUID(created.json()["account_id"])
+        before = self.balance(self.owner)
+        self.assertEqual(
+            self.post("points/issue", {"amount": 1000, "reason": "seed"}).status_code, 200
+        )
+        self.assertEqual(
+            self.post(
+                "points/transfer",
+                {
+                    "identifier": agent.login_id,
+                    "amount": 100,
+                    "to_member": True,
+                    "reason": "agent allocation",
+                },
+            ).status_code,
+            200,
+        )
+        self.assertEqual(self.agent_transfer(browser, body["username"], 60).status_code, 200)
+        self.assertEqual(
+            self.agent_transfer(browser, body["username"], 20, to_player=False).status_code, 200
+        )
+        self.assertEqual(
+            self.post(
+                "points/transfer",
+                {
+                    "identifier": body["username"],
+                    "amount": 10,
+                    "to_member": False,
+                    "reason": "requested owner return",
+                },
+            ).status_code,
+            200,
+        )
+        self.assertEqual(
+            (
+                self.balance(self.owner) - before,
+                self.balance(agent.account_id),
+                self.balance(player),
+            ),
+            (910, 60, 30),
+        )
+        self.assertEqual(
+            self.balance(self.owner)
+            - before
+            + self.balance(agent.account_id)
+            + self.balance(player),
+            1000,
+        )
+
+    def test_http_transfers_reject_insufficient_disabled_and_stale_assignment_in_full(self):
+        agent, player = self.fixtures()
+        browser = self.agent_browser(agent)
+        self.assertEqual(
+            self.post(
+                "assignments", {"username": self.name, "agent_id": agent.login_id}
+            ).status_code,
+            200,
+        )
+        self.assertEqual(self.agent_transfer(browser, self.name, 1).status_code, 403)
+        self.assertEqual((self.balance(agent.account_id), self.balance(player.account_id)), (0, 0))
+        self.assertEqual(
+            self.post("points/issue", {"amount": 100, "reason": "seed"}).status_code, 200
+        )
+        self.assertEqual(
+            self.post(
+                "points/transfer",
+                {"identifier": agent.login_id, "amount": 10, "to_member": True, "reason": "budget"},
+            ).status_code,
+            200,
+        )
+        self.assertEqual(self.agent_transfer(browser, self.name, 11).status_code, 403)
+        self.assertEqual(self.agent_transfer(browser, self.name, 5).status_code, 200)
+        self.assertEqual(self.post("assignments/remove", {"username": self.name}).status_code, 200)
+        self.assertEqual(
+            self.agent_transfer(browser, self.name, 1, to_player=False).status_code, 403
+        )
+        self.assertEqual(
+            self.post("accounts/status", {"identifier": self.name, "enabled": False}).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.post(
+                "points/transfer",
+                {
+                    "identifier": self.name,
+                    "amount": 1,
+                    "to_member": False,
+                    "reason": "must stay frozen",
+                },
+            ).status_code,
+            403,
+        )
+        self.assertEqual((self.balance(agent.account_id), self.balance(player.account_id)), (5, 5))
+
+    def test_point_write_schemas_and_agent_cannot_issue_or_manage_reserve(self):
+        agent, _ = self.fixtures()
+        browser = self.agent_browser(agent)
+        for route in ("points/issue", "reserve/fund", "reserve/withdraw"):
+            response = browser.post(
+                BASE + route,
+                json={"amount": 1, "reason": "denied"},
+                headers={
+                    "origin": ORIGIN,
+                    CSRF_HEADER: browser.cookies.get(CSRF_COOKIE),
+                    "idempotency-key": str(uuid.uuid4()),
+                },
+            )
+            self.assertEqual(response.status_code, 403)
+        for body in (
+            {"amount": True, "reason": "bad"},
+            {"amount": 0, "reason": "bad"},
+            {"amount": 2**63, "reason": "bad"},
+            {"amount": 1, "reason": " "},
+            {"amount": 1},
+            {"amount": 1, "reason": "x" * 501},
+            {"amount": 1, "reason": "bad", "target": str(agent.account_id)},
+        ):
+            self.assertEqual(self.post("points/issue", body).status_code, 400)
+        self.assertEqual(
+            self.post(
+                "points/transfer",
+                {
+                    "identifier": agent.login_id,
+                    "amount": 1,
+                    "to_member": "false",
+                    "reason": "bad flag",
+                },
+            ).status_code,
+            400,
+        )
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(AccountSession.__table__)
+                .where(AccountSession.token_digest == session_token_digest(self.token))
+                .values(
+                    issued_at=func.now() - text("interval '11 minutes'"),
+                    mfa_verified_at=func.now() - text("interval '11 minutes'"),
+                    absolute_expires_at=func.now() + text("interval '7 hours 49 minutes'"),
+                )
+            )
+        self.assertEqual(
+            self.post("points/issue", {"amount": 1, "reason": "stale MFA"}).status_code, 403
+        )
+
+    def test_http_reserve_funding_and_surplus_return_conserve_owner_points(self):
+        before_owner, before_reserve = self.balance(self.owner), self.reserve_balance()
+        self.assertEqual(
+            self.post("points/issue", {"amount": 200, "reason": "seed"}).status_code, 200
+        )
+        key = str(uuid.uuid4())
+        body = {"amount": 100, "reason": "separate game reserve"}
+        response = self.post("reserve/fund", body, key)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertTrue(self.post("reserve/fund", body, key).json()["replayed"])
+        self.assertEqual(
+            self.post("reserve/withdraw", {"amount": 40, "reason": "proven surplus"}).status_code,
+            200,
+        )
+        self.assertEqual(
+            (self.balance(self.owner) - before_owner, self.reserve_balance() - before_reserve),
+            (140, 60),
+        )
+        self.assertEqual(
+            self.post(
+                "reserve/withdraw",
+                {"amount": self.reserve_balance() + 1, "reason": "unaffordable request"},
+            ).status_code,
+            403,
+        )
+
+    def test_http_concurrent_same_key_transfer_debits_once(self):
+        from concurrent.futures import ThreadPoolExecutor
+
+        _, member = self.fixtures()
+        self.assertEqual(
+            self.post("points/issue", {"amount": 100, "reason": "seed"}).status_code, 200
+        )
+        before = self.balance(self.owner)
+        key = str(uuid.uuid4())
+        body = {"identifier": self.name, "amount": 25, "to_member": True, "reason": "allocation"}
+
+        def request_once(_):
+            with TestClient(
+                app,
+                base_url=ORIGIN,
+                client=("203.0.113.85", 51500),
+                cookies={SESSION_COOKIE: self.token, CSRF_COOKIE: self.csrf},
+            ) as client:
+                return client.post(BASE + "points/transfer", json=body, headers=self.headers(key))
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            responses = list(pool.map(request_once, range(2)))
+        self.assertEqual([r.status_code for r in responses], [200, 200])
+        self.assertEqual(sum(r.json()["replayed"] for r in responses), 1)
+        self.assertEqual(len({r.json()["operation_id"] for r in responses}), 1)
+        self.assertEqual(
+            (before - self.balance(self.owner), self.balance(member.account_id)), (25, 25)
+        )
+
+    def test_point_receipt_failure_rolls_back_ledger_and_projection(self):
+        from fairmount_api.db.models import PointOperation
+        from fairmount_api.identity import operator_api
+
+        original = operator_api.insert
+
+        def fail_receipt(table):
+            if table is OperatorWriteReceipt.__table__:
+                raise IntegrityError("receipt failed", {}, Exception())
+            return original(table)
+
+        before = self.balance(self.owner)
+        key = str(uuid.uuid4())
+        body = {"amount": 10, "reason": "must roll back together"}
+        with patch.object(operator_api, "insert", side_effect=fail_receipt):
+            self.assertEqual(self.post("points/issue", body, key).status_code, 503)
+        self.assertEqual(self.balance(self.owner), before)
+        with self.engine.connect() as connection:
+            self.assertIsNone(
+                connection.scalar(
+                    select(PointOperation.id).where(
+                        PointOperation.actor_account_id == self.owner,
+                        PointOperation.idempotency_key == "http:" + key,
+                    )
+                )
+            )
+        self.assertEqual(self.post("points/issue", body, key).status_code, 200)
+        self.assertEqual(self.balance(self.owner), before + 10)
+
+    def test_http_withdrawal_cannot_remove_accepted_payout_or_refund_cover(self):
+        from fairmount_api.db.models import RouletteBet, RouletteRound
+        from fairmount_api.roulette.admission import place_bet
+        from fairmount_api.roulette.round_clock import open_round
+
+        _, player = self.fixtures()
+        self.assertEqual(
+            self.post("points/issue", {"amount": 1000, "reason": "seed"}).status_code, 200
+        )
+        self.assertEqual(
+            self.post(
+                "points/transfer",
+                {
+                    "identifier": self.name,
+                    "amount": 100,
+                    "to_member": True,
+                    "reason": "player budget",
+                },
+            ).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.post("reserve/fund", {"amount": 340, "reason": "winner coverage"}).status_code, 200
+        )
+        with self.engine.begin() as connection:
+            token = self.session(connection, player.account_id, "PLAYER")
+            round_id = connection.scalar(
+                select(RouletteRound.id).where(RouletteRound.state == "OPEN")
+            ) or open_round(connection)
+            place_bet(
+                connection,
+                token,
+                round_id=round_id,
+                selection_key="straight:17",
+                requested=10,
+                idempotency_key="accepted-" + str(uuid.uuid4()),
+            )
+        reserve, owner = self.reserve_balance(), self.balance(self.owner)
+        response = self.post(
+            "reserve/withdraw", {"amount": reserve, "reason": "must preserve every accepted claim"}
+        )
+        self.assertEqual(response.status_code, 403, response.text)
+        self.assertEqual((self.reserve_balance(), self.balance(self.owner)), (reserve, owner))
+        with self.engine.connect() as connection:
+            self.assertEqual(
+                connection.scalar(
+                    select(RouletteBet.accepted_stake).where(
+                        RouletteBet.round_id == round_id,
+                        RouletteBet.player_account_id == player.account_id,
+                    )
+                ),
+                10,
+            )
