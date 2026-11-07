@@ -719,6 +719,22 @@ class OperatorHTTPTests(unittest.TestCase):
             headers={"origin": ORIGIN, "content-type": "application/json"},
         )
         self.assertEqual(response.status_code, 401)
+        malformed_identifier = json.dumps(
+            {
+                "role": "PLAYER",
+                "identifier": "\ud800",
+                "secret": member.secret,
+                "new_password": "a valid permanent passphrase",
+            }
+        )
+        self.assertEqual(
+            self.client.post(
+                "/api/v1/auth/activate",
+                content=malformed_identifier,
+                headers={"origin": ORIGIN, "content-type": "application/json"},
+            ).status_code,
+            401,
+        )
         self.assertEqual(self.activate(member).status_code, 200)
 
     def agent_browser(self, agent, source="203.0.113.81"):

@@ -50,6 +50,13 @@ def _digests(surface: str, identifier: str, source_ip: str, pepper: bytes) -> tu
     canonical = identifier.strip().casefold() if len(identifier) <= 128 else "<invalid>"
     if not 1 <= len(canonical) <= 128:
         canonical = "<invalid>"
+    # JSON can contain escaped lone surrogates even when the wire is valid
+    # UTF-8. Group non-encodable subjects with other malformed identifiers,
+    # rather than raising before the failure budget/audit can run.
+    try:
+        canonical.encode("utf-8")
+    except UnicodeError:
+        canonical = "<invalid>"
     subject = hmac.new(pepper, f"subject\0{surface}\0{canonical}".encode(), hashlib.sha256)
     source = hmac.new(pepper, f"source\0{ip}".encode(), hashlib.sha256)
     return subject.hexdigest(), source.hexdigest()
