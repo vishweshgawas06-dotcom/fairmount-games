@@ -3,10 +3,13 @@
 **Current session (2026-10-15):** [P06-T02a](tasks/P06-T02a.md) adds the shared
 owner/agent console, bounded live-scope member roster and administrative history,
 protected write forms and safe retry/one-time-secret handling. Local verification:
-**336 unittest / 425 fresh-DB pytest / 8 operator Node / 11 mocked browser / 3 wheel
+**352 unittest / 441 fresh-DB pytest / 8 operator Node / 11 mocked browser / 3 wheel
 Node cases passed**, plus full migration round-trip, parity, Ruff and formatting.
-Supported Python 3.12/browser CI is tracked in the checkpoint record. Do not
-interpret mocked browser contracts as deployment acceptance.
+[CI 42780029525](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42780029525)
+passed the dashboard checkpoint on `f2ca384`. [P09-T03a](tasks/P09-T03a.md) now adds
+bounded private self/player-wallet SSE with live per-poll scope, no idle extension,
+generic terminal denial and capacity/SQL bounds. Its cumulative supported CI is
+tracked separately. Do not infer deployment acceptance from mocked UI contracts.
 
 **Date correction:** this session's planning date is **15 October 2026**. Earlier
 future-dated task labels, migration revisions and recovery sections are retained
@@ -14,7 +17,8 @@ as existing identifiers/history, not proof that those calendar dates have passed
 The [active dated delivery sequence](DETAILED_DELIVERY_PLAN.md#active-delivery-sequence--15-october-to-15-november-2026)
 supersedes older workbacks. No future missed milestone is asserted as a fact.
 
-**Next:** private session-checked events/revocation, then player login/activation,
+**Next:** wire the private snapshot feed into browsers with replace/reconnect and
+revocation cleanup; then player login/activation,
 wallet/betting/history/rebet UI, wheel/audio/accessibility, complete credential
 lifecycle/reporting, failure/security/performance gates and staging/acceptance.
 Keep privileged routes disabled behind the preview proxy. Dashboard P06/P07

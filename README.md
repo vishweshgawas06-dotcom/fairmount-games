@@ -28,7 +28,7 @@ production acceptance is claimed. See the [current status](docs/project-plan/PRO
 - **Browser UI:** incremental ES-module operator console and read-only roulette preview; Next.js/TypeScript/React/Tailwind remain proposed full-app choices.
 - **API:** FastAPI, Python, SQLAlchemy 2, Alembic.
 - **Data:** PostgreSQL; Redis for appropriate coordination/caching needs.
-- **Realtime:** public reveal-safe SSE exists; private event delivery remains open.
+- **Realtime:** public reveal-safe and bounded private snapshot SSE backends exist; private browser integration remains open.
 - **Testing/operations:** Pytest, Playwright, Docker, GitHub Actions, Sentry.
 
 Architecture choices are not completion evidence; consult the task records for tested scope and remaining gates.

@@ -12,6 +12,7 @@ from fairmount_api.identity.activation_api import router as activation_router
 from fairmount_api.identity.login_api import router as direct_login_router
 from fairmount_api.identity.operator_api import router as operator_router
 from fairmount_api.private_read_api import router as private_read_router
+from fairmount_api.private_stream_api import router as private_stream_router
 from fairmount_api.readiness import database_ready
 from fairmount_api.roulette.player_bet_api import router as player_bet_router
 from fairmount_api.roulette.public_api import router as public_round_router
@@ -27,6 +28,7 @@ app = FastAPI(
 app.include_router(public_round_router)
 app.include_router(direct_login_router)
 app.include_router(private_read_router)
+app.include_router(private_stream_router)
 app.include_router(player_bet_router)
 app.include_router(operator_router)
 app.include_router(activation_router)

@@ -24,7 +24,8 @@ from fairmount_api.db.models import (
     PrivateIdentity,
 )
 from fairmount_api.identity.owner_step_up import OWNER_STEP_UP_MAX_AGE
-from fairmount_api.resource_reads import ResourceUnavailable, _actor, _authorize_target
+from fairmount_api.identity.session_validation import resolve_session
+from fairmount_api.resource_reads import ResourceUnavailable, _authorize_target
 
 PAGE_SIZE = 50
 ADMIN_KINDS = (
@@ -38,8 +39,8 @@ ADMIN_KINDS = (
 
 
 def _operator(connection: Connection, token: str):
-    actor = _actor(connection, token)
-    if actor.role not in ("OWNER", "AGENT"):
+    actor = resolve_session(connection, token, touch_idle=False)
+    if actor is None or actor.role not in ("OWNER", "AGENT"):
         raise ResourceUnavailable("Resource unavailable")
     return actor
 

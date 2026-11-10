@@ -12,12 +12,12 @@
 future-dated checkpoint/revision labels are retained as identifiers, not calendar
 proof. This sequence supersedes older November recovery sections below. It is a
 gated target, not a promise that unfinished work is complete or a deployment
-approval. Current P06/P07 console slice: [P06-T02a](tasks/P06-T02a.md).
+approval. Current console slice: [P06-T02a](tasks/P06-T02a.md); bounded private feed backend: [P09-T03a](tasks/P09-T03a.md).
 
 | Target window | Ordered phase work / exit evidence |
 |---|---|
-| 15 October | Preserve verified engine/auth/ledger baseline; scoped owner/agent dashboards and administrative history checkpoint, browser contracts, PostgreSQL regression and supported CI. Full P06/P07 still partial. |
-| 16–20 October | P04/P09 private events with live-session/current-assignment checks on every projection, reconnect/ordering/revocation tests. Then player activation/login and wallet/bet/history UI, no cached authority. |
+| 15 October | Preserve verified engine/auth/ledger baseline; scoped owner/agent dashboards and administrative history checkpoint, browser contracts, PostgreSQL regression and supported CI. P09 private snapshot backend follows; full P06/P07/P09 still partial. |
+| 16–20 October | Integrate P04/P09 private snapshot streams into browsers with live-session/current-assignment checks, replace/reconnect/ordering/revocation tests. Then player activation/login and wallet/bet/history UI, no cached authority. |
 | 21–25 October | P10/P11 server-authoritative bet/rebet integration and failure UX; agreed shared reference table remains one source of truth for selection keys, payouts and chip denominations in P08-T02, P11-T01 and P11-T04. Verify affordability, cutoff, caps, POOL-01 payout/full-refund cover and accepted-bet preservation. |
 | 26–29 October | P12–P14 European wheel/ball displays persisted server result; audio, reduced motion, keyboard/device accessibility and responsive landscape. No client-selected outcomes or RNG influenced by bets/identity. Complete remaining P06/P07 reporting and P03 credential UI under approved policy. |
 | 30 October–3 November | P15/P16 worker supervision, diagnostics, fault/recovery/security gates, privacy/retention and backups design. Obtain unresolved D-02/D-04/D-05/deployment decisions before dependent acceptance; no all-factors-lost self-service fallback. Reconcile PR #1/schema integration without dropping UUID/security work. |

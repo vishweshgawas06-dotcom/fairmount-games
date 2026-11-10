@@ -6,7 +6,7 @@ import secrets
 import tempfile
 import unittest
 import uuid
-from datetime import UTC
+from datetime import UTC, timedelta
 from unittest.mock import patch
 
 from fairmount_api.db.models import (
@@ -1493,3 +1493,253 @@ class OperatorHTTPTests(unittest.TestCase):
                     break
         self.assertTrue(expected <= set(seen))
         self.assertEqual(len(seen), len(set(seen)))
+
+    def test_private_stream_http_headers_scope_and_no_idle_extension(self):
+        from fairmount_api import private_stream
+        from fairmount_api.identity.http_boundary import SESSION_COOKIE
+
+        self.fixtures()
+        with self.engine.connect() as connection:
+            before = connection.execute(
+                select(AccountSession.last_seen_at, AccountSession.idle_expires_at).where(
+                    AccountSession.token_digest == session_token_digest(self.token)
+                )
+            ).one()
+        with patch.multiple(
+            private_stream, MAX_SECONDS=0.5, POLL_SECONDS=0.01, HEARTBEAT_SECONDS=0.02
+        ):
+            response = self.client.get("/api/v1/me/stream", headers={"last-event-id": "99"})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertIn("text/event-stream", response.headers["content-type"])
+        self.assertEqual(response.headers["cache-control"], "no-store")
+        self.assertEqual(response.headers["vary"], "Cookie")
+        self.assertIn("id: 1\nevent: snapshot", response.text)  # replace, not event replay
+        self.assertNotIn(self.token, response.text)
+        self.assertNotIn(SESSION_COOKIE, response.text)
+        self.assertNotIn("recent_accepted_bets", response.text)  # owner is not a player
+        self.assertIsInstance(
+            __import__("json").loads(response.text.split("data: ")[1].split("\n")[0])["balance"],
+            str,
+        )
+        self.assertEqual(self.client.get("/api/v1/console/context").status_code, 200)
+        with self.engine.connect() as connection:
+            after = connection.execute(
+                select(AccountSession.last_seen_at, AccountSession.idle_expires_at).where(
+                    AccountSession.token_digest == session_token_digest(self.token)
+                )
+            ).one()
+        self.assertEqual(before, after)  # console automatic snapshots are passive too
+        for kwargs in (
+            {"params": {"token": self.token}},
+            {"headers": {"last-event-id": "bad"}},
+            {"headers": [("last-event-id", "1"), ("last-event-id", "2")]},
+            {"headers": {"last-event-id": "1" * 11}},
+        ):
+            self.assertEqual(self.client.get("/api/v1/me/stream", **kwargs).status_code, 400)
+        self.assertEqual(
+            self.client.get(
+                "/api/v1/me/stream", headers={"x-forwarded-for": "203.0.113.1"}
+            ).status_code,
+            503,
+        )
+
+    def test_private_stream_rechecks_agent_target_scope_after_each_frame(self):
+        import asyncio
+
+        from fairmount_api import private_stream
+
+        agent, member = self.fixtures()
+        browser = self.agent_browser(agent)
+        token = browser.cookies.get(SESSION_COOKIE)
+        self.assertEqual(
+            self.post(
+                "assignments", {"username": self.name, "agent_id": agent.login_id}
+            ).status_code,
+            200,
+        )
+
+        def read():
+            return private_stream.load_snapshot(token, member.account_id)
+
+        async def run():
+            stream = private_stream.events(
+                read, poll_seconds=0.005, heartbeat_seconds=0.02, max_seconds=5
+            )
+            await anext(stream)
+            first = await anext(stream)
+            self.assertIn(str(member.account_id), first)
+            self.assertNotIn("recent_accepted_bets", first)
+            with self.engine.begin() as connection:
+                other = provision_agent(connection, self.token)
+            self.assertEqual(
+                self.post(
+                    "assignments", {"username": self.name, "agent_id": other.login_id}
+                ).status_code,
+                200,
+            )
+            remaining = [frame async for frame in stream]
+            self.assertFalse(any("event: snapshot" in frame for frame in remaining))
+            self.assertIn("event: unavailable", remaining[-1])
+
+        asyncio.run(run())
+        self.assertEqual(
+            browser.get(f"/api/v1/players/{member.account_id}/stream").status_code, 401
+        )
+        self.assertEqual(browser.get(f"/api/v1/players/{agent.account_id}/stream").status_code, 401)
+
+    def test_private_stream_player_projection_and_live_idle_expiry(self):
+        import asyncio
+
+        from fairmount_api import private_stream
+
+        _, member = self.fixtures()
+        with self.engine.begin() as connection:
+            token = self.session(connection, member.account_id, "PLAYER")
+
+        async def run():
+            stream = private_stream.events(
+                lambda: private_stream.load_snapshot(token, None),
+                poll_seconds=0.005,
+                heartbeat_seconds=0.02,
+                max_seconds=5,
+            )
+            await anext(stream)
+            first = await anext(stream)
+            self.assertIn('"role":"PLAYER"', first)
+            self.assertIn('"recent_accepted_bets":[]', first)
+            for forbidden in ("secret", "password", "mobile", "display_name", token):
+                self.assertNotIn(forbidden, first)
+            with self.engine.begin() as connection:
+                # Keep the DB structural constraints valid while expiring a live session.
+                now = connection.scalar(select(func.clock_timestamp()))
+                connection.execute(
+                    update(AccountSession.__table__)
+                    .where(AccountSession.token_digest == session_token_digest(token))
+                    .values(
+                        issued_at=now - timedelta(hours=2),
+                        last_seen_at=now - timedelta(minutes=31),
+                        idle_expires_at=now - timedelta(minutes=1),
+                        absolute_expires_at=now + timedelta(hours=22),
+                    )
+                )
+            frames = [frame async for frame in stream]
+            self.assertFalse(any("event: snapshot" in frame for frame in frames))
+            self.assertIn("event: unavailable", frames[-1])
+
+        asyncio.run(run())
+
+    def test_private_stream_wallet_change_then_revocation_has_no_cached_replay(self):
+        import asyncio
+
+        from fairmount_api import private_stream
+
+        agent, member = self.fixtures()
+        browser = self.agent_browser(agent)
+        token = browser.cookies.get(SESSION_COOKIE)
+        self.assertEqual(
+            self.post(
+                "assignments", {"username": self.name, "agent_id": agent.login_id}
+            ).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.post("points/issue", {"amount": 5, "reason": "stream seed"}).status_code, 200
+        )
+
+        async def run():
+            stream = private_stream.events(
+                lambda: private_stream.load_snapshot(token, member.account_id),
+                poll_seconds=0.005,
+                heartbeat_seconds=0.02,
+                max_seconds=5,
+            )
+            await anext(stream)
+            first = await anext(stream)
+            self.assertIn('"balance":"0"', first)
+            self.assertEqual(
+                self.post(
+                    "points/transfer",
+                    {
+                        "identifier": self.name,
+                        "amount": 5,
+                        "to_member": True,
+                        "reason": "stream update",
+                    },
+                ).status_code,
+                200,
+            )
+            changed = await anext(stream)
+            while changed.startswith(":"):
+                changed = await anext(stream)
+            self.assertIn('"balance":"5"', changed)
+            self.assertIn("id: 2", changed)
+            self.assertEqual(
+                self.post(
+                    "accounts/status", {"identifier": self.name, "enabled": False}
+                ).status_code,
+                200,
+            )
+            remaining = [frame async for frame in stream]
+            self.assertFalse(any("event: snapshot" in frame for frame in remaining))
+            self.assertIn("event: unavailable", remaining[-1])
+
+        asyncio.run(run())
+        self.assertEqual(
+            self.post("accounts/status", {"identifier": self.name, "enabled": True}).status_code,
+            200,
+        )
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(AccountSession.__table__)
+                .where(AccountSession.token_digest == session_token_digest(token))
+                .values(revoked_at=func.now())
+            )
+        self.assertEqual(browser.get("/api/v1/me/stream").status_code, 401)
+
+    def test_private_stream_open_session_logout_ends_before_next_private_event(self):
+        import asyncio
+
+        from fairmount_api import private_stream
+
+        agent, _ = self.fixtures()
+        browser = self.agent_browser(agent)
+        token = browser.cookies.get(SESSION_COOKIE)
+
+        async def run():
+            stream = private_stream.events(
+                lambda: private_stream.load_snapshot(token, None),
+                poll_seconds=0.005,
+                heartbeat_seconds=0.02,
+                max_seconds=5,
+            )
+            await anext(stream)
+            self.assertIn("event: snapshot", await anext(stream))
+            response = browser.post(
+                "/api/v1/auth/logout",
+                headers={"origin": ORIGIN, CSRF_HEADER: browser.cookies.get(CSRF_COOKIE)},
+            )
+            self.assertEqual(response.status_code, 200)
+            frames = [frame async for frame in stream]
+            self.assertFalse(any("event: snapshot" in frame for frame in frames))
+            self.assertIn("event: unavailable", frames[-1])
+
+        asyncio.run(run())
+
+    def test_private_stream_lock_wait_is_bounded_and_http_caps_fail_closed(self):
+        import time
+
+        from fairmount_api import private_stream
+        from sqlalchemy.exc import SQLAlchemyError
+
+        with self.engine.begin() as connection:
+            connection.execute(select(Account.id).where(Account.id == self.owner).with_for_update())
+            start = time.monotonic()
+            with self.assertRaises(SQLAlchemyError):
+                private_stream.load_snapshot(self.token, None)
+            self.assertLess(time.monotonic() - start, 3)
+        limiter = private_stream.Capacity(total=1, per_session=1)
+        limiter.enter(session_token_digest(self.token))
+        with patch.object(private_stream, "capacity", limiter):
+            response = self.client.get("/api/v1/me/stream")
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn("text/event-stream", response.headers["content-type"])

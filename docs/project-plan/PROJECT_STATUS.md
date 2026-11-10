@@ -2,8 +2,9 @@
 
 **Current session (2026-10-15):** engine/identity/ledger checkpoints remain verified;
 the shared owner/agent console now implements scoped roster, administrative point
-history and protected lifecycle/point forms. Full P06/P07 acceptance, private
-realtime, writable player experience, complete credential/privacy lifecycle and
+history and protected lifecycle/point forms. Bounded private snapshot SSE now exists, with per-poll live authorization and
+passive idle behavior. Full P06/P07 acceptance, private browser feed integration,
+writable player experience, complete credential/privacy lifecycle and
 release operations remain open. **Production target: 15 November 2026, conditional
 on gates.** PR #1 is still OPEN/CONFLICTING, not merged.
 
@@ -14,14 +15,21 @@ supersedes them; historical task evidence is retained without rewriting migratio
 
 ## Current verified checkpoints
 
+- [P09-T03a](tasks/P09-T03a.md): opt-in private self/player-wallet snapshot streams,
+  current-session/assignment checks on every poll, no autonomous idle extension,
+  finite replace-on-reconnect semantics, generic terminal denial/outage, process /
+  session caps and local DB timeouts. Local cumulative **352 unittest (0 skips),
+  441 fresh-DB pytest, 8 operator Node, 11 mocked Playwright and 3 wheel Node**
+  passed, with metadata parity/Ruff/formatting. Private browser consumption and
+  measured workload/deployment acceptance remain open; supported CI pending.
 - [P06-T02a](tasks/P06-T02a.md): shared owner/agent console with role-derived menus,
   bounded authorized roster/history, exact balances, protected write confirmations,
   actor-bound retries and one-time-secret cleanup. Local **336 unittest (0 skips),
   425 fresh-DB pytest, 8 operator Node, 11 mocked Playwright and 3 wheel Node**
-  passed; full migration round-trip/legacy-role compatibility/parity, Ruff,
+  passed; [CI 42780029525](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42780029525) is green on `f2ca384`; full migration round-trip/legacy-role compatibility/parity, Ruff,
   formatting and actual FastAPI shell browser smoke passed. This is not private
   realtime, complete Next.js app delivery, gameplay P/L or deployment acceptance.
-- Latest cumulative verification: **327 unittest cases (zero skips), 416 fresh-DB pytest cases, three Node wheel tests, migration parity and Ruff passed locally**; [CI 42349658451](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349658451) passed on `3ea56f8`. The malformed escaped-Unicode subject regression is covered across all four authentication surfaces.
+- Prior cumulative baseline: **327 unittest cases (zero skips), 416 fresh-DB pytest cases, three Node wheel tests, migration parity and Ruff passed locally**; [CI 42349658451](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349658451) passed on `3ea56f8`. The malformed escaped-Unicode subject regression is covered across all four authentication surfaces.
 - [P05-T04a](tasks/P05-T04a.md): opt-in protected point/reserve HTTP writes, owner-only issuance, conserved owner/member and agent/current-player transfers, funded reserve surplus protection, atomic journal/projection/receipt. Full local fresh-DB unittest **326 passed**, with replay, freeze, scope and accepted-cover checks; [CI 42349512615](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349512615) passed on `59d4cbd`. No dashboard or deployment acceptance yet.
 - [P07-T01a](tasks/P07-T01a.md): real agent login→new self-assigned player, zero initial wallet, required private name/unverified contact fields for registration, actor-isolated replay receipts, collision/rollback/scope tests. Full local fresh-DB unittest **318 passed**; [CI 42349281491](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349281491) passed on `794d2d7`. P05-T04a adds point edges; P07 UI/history remains open.
 - [P03-T03a](tasks/P03-T03a.md): member activation and fresh-owner-MFA pending-secret reissue, no auto-login, subject/source failure guard, single-use/expiry/race/rollback HTTP checks. Fresh local full unittest: **311 passed, zero skips**; [CI 42349049855](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349049855) passed on `0ba5c39`. The earlier operator milestone was missed; **15 November is at risk**, with a [dated recovery sequence](DETAILED_DELIVERY_PLAN.md#7-november-status-correction-and-recovery-sequence).

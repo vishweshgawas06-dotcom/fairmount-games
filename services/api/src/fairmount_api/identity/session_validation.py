@@ -1,7 +1,7 @@
-"""Internal session resolution; never call this as a substitute for route authorization.
+"""Live session resolution, not a substitute for same-transaction authorization.
 
-An internal owner issuer exists, but no public login or HTTP cookie boundary exists.
-The caller must finish resource-level authorization in the same transaction.
+Ordinary authenticated actions slide idle expiry. Autonomous snapshot/event
+polls can validate the same live evidence without extending the user's activity.
 """
 
 from __future__ import annotations
@@ -39,12 +39,15 @@ def session_token_digest(raw_token: str) -> str | None:
     return hashlib.sha256(raw_token.encode("ascii")).hexdigest()
 
 
-def resolve_session(connection: Connection, raw_token: str) -> VerifiedSession | None:
+def resolve_session(
+    connection: Connection, raw_token: str, *, touch_idle: bool = True
+) -> VerifiedSession | None:
     """Lock account then session; reject expired/revoked/disabled and slide idle expiry.
 
     Raw token is never persisted or logged. Use inside a transaction. The session
     row and account row remain locked until caller commits/rolls back. There is no
-    HTTP authentication endpoint and no authorization policy in this module.
+    authorization policy in this module. With touch_idle=False, valid autonomous
+    polls leave last_seen_at and idle_expires_at unchanged.
     """
     digest = session_token_digest(raw_token)
     if digest is None:
@@ -61,11 +64,15 @@ def resolve_session(connection: Connection, raw_token: str) -> VerifiedSession |
     ).one_or_none()
     if account is None:
         return None
-    session = connection.execute(
-        select(AccountSession.__table__)
-        .where(AccountSession.account_id == account_id, AccountSession.token_digest == digest)
-        .with_for_update()
-    ).mappings().one_or_none()
+    session = (
+        connection.execute(
+            select(AccountSession.__table__)
+            .where(AccountSession.account_id == account_id, AccountSession.token_digest == digest)
+            .with_for_update()
+        )
+        .mappings()
+        .one_or_none()
+    )
     if session is None or session["revoked_at"] is not None:
         return None
     # clock_timestamp() must be read *after* locks, unlike transaction-scoped now().
@@ -84,12 +91,15 @@ def resolve_session(connection: Connection, raw_token: str) -> VerifiedSession |
             .values(revoked_at=now)
         )
         return None
-    idle_deadline = min(now + _IDLE[account.role], session["absolute_expires_at"])
-    connection.execute(
-        update(AccountSession.__table__)
-        .where(AccountSession.id == session["id"])
-        .values(last_seen_at=now, idle_expires_at=idle_deadline)
-    )
+    # Autonomous event polls validate the same live evidence without masquerading
+    # as human activity. Ordinary authenticated actions retain their existing touch.
+    if touch_idle:
+        idle_deadline = min(now + _IDLE[account.role], session["absolute_expires_at"])
+        connection.execute(
+            update(AccountSession.__table__)
+            .where(AccountSession.id == session["id"])
+            .values(last_seen_at=now, idle_expires_at=idle_deadline)
+        )
     return VerifiedSession(
         account_id=account.id,
         session_id=session["id"],

@@ -39,7 +39,9 @@ first-success setup-secret response cannot be recovered by retry: the owner must
 reissue a still-pending secret after checking the member state.
 
 Pages recheck authorization on reads, writes, visibility return and a foreground
-60-second refresh. This is **not** private realtime revocation or a push feed.
+60-second refresh. Passive console reads do not extend session idle deadlines.
+Bounded private SSE backend routes now exist, but this UI does **not yet consume**
+them: immediate browser revocation/push integration remains open.
 Contact numbers are accepted at creation but excluded from roster/history reads.
 No gameplay P/L, security-event export, CSV, activation UI, active-password reset,
 all-factors-lost recovery, anonymization workflow or production acceptance is

@@ -2,6 +2,21 @@
 
 FastAPI health and public read-only round snapshot foundation. P02-T02a introduced an account/identity/assignment **database schema** and local Alembic runner. The opt-in direct-TLS guarded login, self-wallet, self-recent-bets, live ID-only roster and scoped player-wallet routes are disabled in this proxy preview; there is no general cross-account wallet, wager or payout route. `/health/live` is process liveness; `/health/ready` checks a separately configured PostgreSQL URL and exact migration revision, not worker or game availability.
 
+## Incremental operator console and private streams
+
+The shared [operator console](../../apps/operator-web/README.md) is served at
+`/console/`; its bounded context/member/administrative-history API and protected
+write forms are described in [P06-T02a](../../docs/project-plan/tasks/P06-T02a.md).
+The public `/preview/` remains non-playable. Privileged reads/writes are disabled
+in the ordinary proxy preview; no forwarding-header trust exception exists.
+
+[P09-T03a](../../docs/project-plan/tasks/P09-T03a.md) adds direct-TLS-only
+`/api/v1/me/stream` and `/api/v1/players/{uuid}/stream`. Every poll rechecks live
+session/assignment without extending idle activity; finite replace-snapshot SSE,
+generic terminal denial/outage, capacity/SQL timeouts and no cached private replay.
+Browser consumption, complete gameplay projections and production acceptance are
+still open. These feeds are not a durable event log or settlement/P&L report.
+
 ## Planned module boundaries
 
 - `auth/` — authentication and session lifecycle
@@ -30,7 +45,7 @@ Start the API:
 uvicorn fairmount_api.main:app --reload --app-dir services/api/src
 ```
 
-Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261107_02`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
+Check <http://127.0.0.1:8000/health/live> for process liveness. `/health/ready` returns HTTP 503 unless `FAIRMOUNT_API_DATABASE_URL` is explicitly supplied outside Git as a `postgresql+psycopg://` URL for a migrated database; it requires Alembic revision `20261107_03`. Restart the API after changing this URL. Readiness responses never contain connection details and are not cached. Neither health endpoint checks the round worker, reserve coverage or whether gameplay is publicly available; do not route players to this preview as a working game.
 
 Run tests and lint:
 
