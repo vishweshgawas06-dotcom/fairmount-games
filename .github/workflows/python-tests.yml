@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -45,14 +45,20 @@ jobs:
           node-version: "22"
       - name: Verify wheel presentation never invents a result
         run: node --test apps/player-web/tests/*.test.mjs
-      - name: Verify operator transport and browser contracts
+      - name: Install operator browser test dependencies
+        working-directory: apps/operator-web
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify operator transport and formatting
         working-directory: apps/operator-web
         run: |
-          npm ci --ignore-scripts --no-audit --no-fund
           npm test
           npm run format:check
-          npx playwright install --with-deps chromium
-          npm run test:browser
+      - name: Install supported Chromium
+        working-directory: apps/operator-web
+        run: npx playwright install --with-deps chromium
+      - name: Verify operator browser contracts
+        working-directory: apps/operator-web
+        run: npm run test:browser -- --reporter=github,list
       - name: Run Ruff
         run: ruff check .
       - name: Stop local PostgreSQL and remove CI test volume
