@@ -8,8 +8,8 @@ Node cases passed**, plus full migration round-trip, parity, Ruff and formatting
 [CI 42780029525](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42780029525)
 passed the dashboard checkpoint on `f2ca384`. [P09-T03a](tasks/P09-T03a.md) now adds
 bounded private self/player-wallet SSE with live per-poll scope, no idle extension,
-generic terminal denial and capacity/SQL bounds. Its cumulative supported CI is
-tracked separately. Do not infer deployment acceptance from mocked UI contracts.
+generic terminal denial and capacity/SQL bounds. [CI 42781001959](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42781001959)
+passed the cumulative Python 3.12/PostgreSQL/Chromium gates on `c051f66`. Do not infer deployment acceptance from mocked UI contracts.
 
 **Date correction:** this session's planning date is **15 October 2026**. Earlier
 future-dated task labels, migration revisions and recovery sections are retained
@@ -22,7 +22,7 @@ revocation cleanup; then player login/activation,
 wallet/betting/history/rebet UI, wheel/audio/accessibility, complete credential
 lifecycle/reporting, failure/security/performance gates and staging/acceptance.
 Keep privileged routes disabled behind the preview proxy. Dashboard P06/P07
-**remain partial**, and the 15 November production target is conditional/on risk.
+**remain partial**, and the 15 November production target is conditional and at risk.
 
 **Release blockers:** trusted deployment/client-IP policy, D-02 retention/backups,
 D-04 workload/targets, supervised operations/incident policy, full real-browser /

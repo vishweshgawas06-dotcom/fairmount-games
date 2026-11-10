@@ -21,7 +21,7 @@ supersedes them; historical task evidence is retained without rewriting migratio
   session caps and local DB timeouts. Local cumulative **352 unittest (0 skips),
   441 fresh-DB pytest, 8 operator Node, 11 mocked Playwright and 3 wheel Node**
   passed, with metadata parity/Ruff/formatting. Private browser consumption and
-  measured workload/deployment acceptance remain open; supported CI pending.
+  measured workload/deployment acceptance remain open. [CI 42781001959](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42781001959) passed on `c051f66` (Python 3.12/PostgreSQL/Chromium).
 - [P06-T02a](tasks/P06-T02a.md): shared owner/agent console with role-derived menus,
   bounded authorized roster/history, exact balances, protected write confirmations,
   actor-bound retries and one-time-secret cleanup. Local **336 unittest (0 skips),
