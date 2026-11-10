@@ -1,5 +1,12 @@
-# Admin Web App
+# Owner / admin web app
 
-Planned owner/admin console for account administration, agent management, point adjustments, reporting, audit review, and security events.
+The incremental owner console is implemented in [the shared operator web app](../operator-web/README.md)
+and served at `/console/`. Owner password + MFA, scoped roster and administrative
+history, creation/assignment/status controls, one-time pending-secret reissue,
+point issuance/transfers and funded-reserve actions use the guarded backend.
 
-Status: not implemented. Owner/admin MFA and privileged-operation auditing are release requirements.
+The console is unavailable for privileged actions in the ordinary proxy preview.
+This is not the complete proposed Next.js app or full P06/release acceptance:
+private realtime, complete reporting, active credential/privacy workflows and
+staging/security/operations gates remain open. No gameplay P/L or security-event
+export is presented as an administrative point journal.

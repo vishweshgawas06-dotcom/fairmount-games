@@ -4,7 +4,13 @@ FairMount Games is a planned, responsive virtual-points gaming platform. Version
 
 ## Current status
 
-**Planning and specification phase.** Do not treat this repository as a deployable application yet. No production gameplay or wallet implementation is claimed to exist.
+**Implementation in progress; not production-ready.** Server-authoritative UUID
+wallet/reserve, roulette and protected identity/point services have scoped test
+evidence. The shared owner/agent console now lives at `/console/`; the public
+reveal-only roulette preview remains at `/preview/`. Privileged APIs deliberately
+remain unavailable in the ordinary proxy preview. No real-money functionality or
+production acceptance is claimed. See the [current status](docs/project-plan/PROJECT_STATUS.md),
+[next action](docs/project-plan/NEXT_ACTION.md) and [console checkpoint](docs/project-plan/tasks/P06-T02a.md).
 
 ## Product principles
 
@@ -19,13 +25,13 @@ FairMount Games is a planned, responsive virtual-points gaming platform. Version
 
 ## Intended architecture
 
-- **Player, Agent, Admin web apps:** Next.js, TypeScript, React, Tailwind CSS.
+- **Browser UI:** incremental ES-module operator console and read-only roulette preview; Next.js/TypeScript/React/Tailwind remain proposed full-app choices.
 - **API:** FastAPI, Python, SQLAlchemy 2, Alembic.
 - **Data:** PostgreSQL; Redis for appropriate coordination/caching needs.
-- **Realtime:** WebSockets with server-authoritative state.
+- **Realtime:** public reveal-safe SSE exists; private event delivery remains open.
 - **Testing/operations:** Pytest, Playwright, Docker, GitHub Actions, Sentry.
 
-These are planned choices, not proof that the services have been implemented or validated.
+Architecture choices are not completion evidence; consult the task records for tested scope and remaining gates.
 
 ## Repository map
 

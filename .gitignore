@@ -37,3 +37,7 @@ Thumbs.db
 postgres-data/
 redis-data/
 *.log
+
+# Browser test artifacts (may contain sensitive page snapshots)
+playwright-report/
+test-results/

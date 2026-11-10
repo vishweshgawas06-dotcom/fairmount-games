@@ -692,3 +692,8 @@ footer {
   }
 
 }
+
+.console-link {
+  color:#e4c791;
+  text-underline-offset:3px
+}

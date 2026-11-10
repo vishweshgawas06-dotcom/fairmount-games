@@ -1,11 +1,13 @@
 """FastAPI application entry point for FairMount Games."""
 
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from fairmount_api.console_api import router as console_router
 from fairmount_api.identity.activation_api import router as activation_router
 from fairmount_api.identity.login_api import router as direct_login_router
 from fairmount_api.identity.operator_api import router as operator_router
@@ -28,6 +30,34 @@ app.include_router(private_read_router)
 app.include_router(player_bet_router)
 app.include_router(operator_router)
 app.include_router(activation_router)
+app.include_router(console_router)
+
+# Static operator shell is viewable in the proxy preview, but its APIs retain
+# the direct-TLS authorization boundary. No insecure auth override is introduced.
+_console_dir = Path(__file__).resolve().parents[4] / "apps/operator-web/web"
+if _console_dir.is_dir():
+    app.mount("/console", StaticFiles(directory=str(_console_dir), html=True), name="console")
+
+
+@app.middleware("http")
+async def console_security_headers(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/console/"):
+        policy = (
+            "default-src 'self'; script-src 'self'; style-src 'self'; "
+            "connect-src 'self'; img-src 'self' data:; object-src 'none'; "
+            "base-uri 'none'; form-action 'self'"
+        )
+        # Production operator pages must not be framed. The nonfunctional
+        # default preview shell remains embeddable in Arena's viewer.
+        if os.environ.get("FAIRMOUNT_AUTH_EDGE_MODE") == "direct-tls":
+            policy += "; frame-ancestors 'self'"
+        response.headers["Content-Security-Policy"] = policy
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
 
 # Repository-only read-only interface. An installed API wheel can run without
 # the frontend tree; production UI hosting is a separate deployment gate.

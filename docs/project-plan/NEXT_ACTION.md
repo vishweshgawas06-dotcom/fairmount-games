@@ -1,10 +1,29 @@
 # Next Action
 
-**Current (2026-11-07):** [P03-T03a](tasks/P03-T03a.md) activation/reissue passed [CI 42349049855](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349049855) on `0ba5c39`; [P07-T01a](tasks/P07-T01a.md) agent-created assigned players/private profiles passed [CI 42349281491](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349281491) on `794d2d7`. [P05-T04a](tasks/P05-T04a.md) now wires owner issuance/transfers, agent-scoped transfers and reserve funding/surplus withdrawal through the protected HTTP/replay pipeline. [CI 42349512615](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349512615) passed on `59d4cbd`. A follow-up malformed escaped-Unicode authentication-subject fix now keeps invalid identifiers inside the normal failure accounting instead of raising a server error. Current local full fresh PostgreSQL unittest: **327 passed, zero skips**; separate fresh pytest **416 passed**; [CI 42349658451](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349658451) passed on `3ea56f8`. No production deployment or complete P06/P07 UI is claimed.
+**Current session (2026-10-15):** [P06-T02a](tasks/P06-T02a.md) adds the shared
+owner/agent console, bounded live-scope member roster and administrative history,
+protected write forms and safe retry/one-time-secret handling. Local verification:
+**336 unittest / 425 fresh-DB pytest / 8 operator Node / 11 mocked browser / 3 wheel
+Node cases passed**, plus full migration round-trip, parity, Ruff and formatting.
+Supported Python 3.12/browser CI is tracked in the checkpoint record. Do not
+interpret mocked browser contracts as deployment acceptance.
 
-**Next:** owner/agent dashboards and authorized history/reporting, private session-checked realtime events, then player betting/wallet/history/rebet UX, wheel/audio/accessibility, failure/security/performance gates and staging/acceptance. Keep privileged routes disabled behind the preview proxy. Follow the [7 November recovery sequence](DETAILED_DELIVERY_PLAN.md#7-november-status-correction-and-recovery-sequence); **15 November remains at risk**.
+**Date correction:** this session's planning date is **15 October 2026**. Earlier
+future-dated task labels, migration revisions and recovery sections are retained
+as existing identifiers/history, not proof that those calendar dates have passed.
+The [active dated delivery sequence](DETAILED_DELIVERY_PLAN.md#active-delivery-sequence--15-october-to-15-november-2026)
+supersedes older workbacks. No future missed milestone is asserted as a fact.
 
-**Release blockers:** trusted proxy/client-IP policy, D-02 retention/backups, D-04 workload/targets, supervised operations/incident policy, full browser/device tests, staging/legal/privacy/owner acceptance and PR #1's schema conflict. No schedule overrides a failed gate.
+**Next:** private session-checked events/revocation, then player login/activation,
+wallet/betting/history/rebet UI, wheel/audio/accessibility, complete credential
+lifecycle/reporting, failure/security/performance gates and staging/acceptance.
+Keep privileged routes disabled behind the preview proxy. Dashboard P06/P07
+**remain partial**, and the 15 November production target is conditional/on risk.
+
+**Release blockers:** trusted deployment/client-IP policy, D-02 retention/backups,
+D-04 workload/targets, supervised operations/incident policy, full real-browser /
+device tests, staging/legal/privacy/owner acceptance and PR #1's schema conflict.
+No schedule overrides a failed gate.
 
 
 P04-T02b [self-only recent-bets projection](tasks/P04-T02b.md) passed [Python 3.12/PostgreSQL CI 40173826711](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40173826711). [P04-T02c](tasks/P04-T02c.md) committed direct-TLS login→self-read→logout/disablement passed [PostgreSQL CI 40188275920](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40188275920). [P04-T02d](tasks/P04-T02d.md) adds a scoped player-wallet API read with database reauthorization, passed [PostgreSQL CI 40188492976](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40188492976); [P04-T02e](tasks/P04-T02e.md) tests committed AGENT HTTP reassignment and disablement, passed [PostgreSQL CI 40188664573](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40188664573); [P04-T02f](tasks/P04-T02f.md) adds owner HTTP audit and a live ID-only dashboard roster, passed [PostgreSQL CI 40189738375](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40189738375); [P04-T02g](tasks/P04-T02g.md) bounded 100-ID keyset pages and migration passed [PostgreSQL CI 40192377032](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40192377032); [P04-T02h](tasks/P04-T02h.md) committed owner MFA login→private resource→logout/replay passed [PostgreSQL CI 40192542205](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40192542205). [P04-T02i](tasks/P04-T02i.md) upgraded agent assignment tests to real HTTP Agent-ID/password login, passed [PostgreSQL CI 40192708908](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/40192708908). Next gate operational load thresholds, protected write contracts and gameplay-write CSRF. Do not enable private reads behind the HTTP proxy preview. Full gameplay and operator policies remain open.

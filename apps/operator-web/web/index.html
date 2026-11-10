@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#12201e" />
+    <meta name="color-scheme" content="light" />
+    <title>FairMount · Operator console</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to console</a>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Console navigation">
+        <a class="brand" href="/console/"
+          ><span class="monogram">F<span>·</span>M</span
+          ><span>FAIRMOUNT<small>OPERATOR CONSOLE</small></span></a
+        >
+        <div class="sidebar-label">WORKSPACE</div>
+        <nav>
+          <button id="nav-members" aria-current="page">
+            <span aria-hidden="true">▦</span> Members
+            <span class="nav-mark">01</span></button
+          ><button id="nav-history">
+            <span aria-hidden="true">≡</span> Point journal
+            <span class="nav-mark">02</span>
+          </button>
+        </nav>
+        <div class="sidebar-note">
+          <span class="small-line"></span
+          ><strong>Stewardship, not shortcuts.</strong>
+          <p>Every point movement has an actor, a reason and a record.</p>
+        </div>
+        <div class="sidebar-bottom">
+          <span class="secure-dot"></span> VIRTUAL POINTS ONLY
+          <small>No deposits. No cash prizes.</small>
+        </div>
+      </aside>
+      <div class="workspace">
+        <header class="topbar">
+          <div class="breadcrumb">
+            FairMount Games <span>/</span> Operations
+          </div>
+          <div class="top-actions">
+            <span class="role-badge" id="role-label">RESTRICTED</span
+            ><button id="sign-in" class="button small">Sign in</button
+            ><button id="sign-out" class="button small" hidden>Sign out</button>
+          </div>
+        </header>
+        <main id="main" tabindex="-1">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow">THE OPERATOR WORKSPACE</div>
+              <h1>The control room<span>.</span></h1>
+              <p id="subtitle">
+                A clear view of your members. A careful record of every point.
+              </p>
+            </div>
+            <div class="heading-actions">
+              <button class="button" id="refresh">↻ <span>Refresh</span></button
+              ><button class="button primary" id="add-member" data-auth hidden>
+                ＋ Add member
+              </button>
+            </div>
+          </div>
+          <div class="environment" role="note">
+            <span aria-hidden="true">◇</span
+            ><span
+              ><strong>Restricted environment.</strong> Privileged access
+              requires a configured direct-TLS deployment. This proxy preview
+              does not authorize account or point changes.</span
+            >
+          </div>
+          <div id="status" role="status" aria-live="polite" class="status">
+            Checking secure access…
+          </div>
+          <div id="pending-bar" class="pending-bar" hidden>
+            <strong>A request needs resolution.</strong
+            ><span
+              >Do not create a replacement. Retry the same request after
+              reconnecting or signing in.</span
+            ><button class="button" id="resume-command">
+              Review pending request
+            </button>
+          </div>
+          <section class="metrics" aria-label="Current account summary">
+            <article class="metric">
+              <div class="metric-label">
+                YOUR AVAILABLE POINTS <span aria-hidden="true">↗</span>
+              </div>
+              <div class="metric-value" id="own-balance">—</div>
+              <div class="metric-caption">
+                Confirmed wallet balance · not money
+              </div>
+            </article>
+            <article class="metric" id="reserve-card">
+              <div class="metric-label">
+                GAME RESERVE <span aria-hidden="true">◇</span>
+              </div>
+              <div class="metric-value" id="reserve-balance">—</div>
+              <div class="metric-caption">
+                Separately funded · not disposable surplus
+              </div>
+            </article>
+            <article class="metric">
+              <div class="metric-label">
+                ACCESS &amp; FRESHNESS <span aria-hidden="true">◷</span>
+              </div>
+              <div class="access-value" id="access-value">Not connected</div>
+              <div class="metric-caption" id="observed">
+                No private data loaded
+              </div>
+              <button id="reauth" class="text-button" hidden>
+                Refresh owner MFA →
+              </button>
+            </article>
+          </section>
+          <section
+            class="panel"
+            id="members-panel"
+            aria-labelledby="members-title"
+          >
+            <div class="panel-heading">
+              <div>
+                <div class="eyebrow">PEOPLE &amp; SCOPE</div>
+                <h2 id="members-title">Your members</h2>
+              </div>
+              <span class="subtle" id="member-count">No roster loaded</span>
+            </div>
+            <div class="panel-description" id="scope-note">
+              Owners manage agents and players. Agents see only enabled players
+              currently assigned to them.
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="sr-only">
+                  Authorized member roster
+                </caption>
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Role / status</th>
+                    <th class="numeric">Points</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="members-body"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="members-empty">
+              <span class="empty-symbol" aria-hidden="true">▦</span>
+              <h3>Private by design.</h3>
+              <p>
+                Sign in to load a server-authorized roster. No sample accounts
+                or balances are shown.
+              </p>
+            </div>
+            <div class="panel-footer">
+              <span>Current scope only · 50 records per page</span>
+              <div>
+                <button class="button small" id="members-prev" disabled>
+                  ← Previous</button
+                ><button class="button small" id="members-next" disabled>
+                  Next →
+                </button>
+              </div>
+            </div>
+          </section>
+          <section
+            class="panel"
+            id="history-panel"
+            aria-labelledby="history-title"
+            hidden
+          >
+            <div class="panel-heading">
+              <div>
+                <div class="eyebrow">ACCOUNTABILITY</div>
+                <h2 id="history-title">The point journal</h2>
+              </div>
+              <span class="subtle">Administrative movements</span>
+            </div>
+            <div class="panel-description">
+              Issuance, transfers and reserve movements only. This is not
+              gameplay profit/loss. Agent history follows current enabled-player
+              scope.
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="sr-only">
+                  Authorized administrative point history
+                </caption>
+                <thead>
+                  <tr>
+                    <th>When / reference</th>
+                    <th>Movement</th>
+                    <th class="numeric">Points</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="history-empty">
+              <h3>No journal loaded.</h3>
+              <p>
+                Confirmed administrative records appear here after
+                authorization.
+              </p>
+            </div>
+            <div class="panel-footer">
+              <span>Immutable records · not an editable balance sheet</span>
+              <div>
+                <button class="button small" id="history-prev" disabled>
+                  ← Previous</button
+                ><button class="button small" id="history-next" disabled>
+                  Next →
+                </button>
+              </div>
+            </div>
+          </section>
+          <section
+            class="owner-tools"
+            id="owner-tools"
+            hidden
+            aria-label="Owner point and reserve actions"
+          >
+            <div>
+              <h2>Owner treasury</h2>
+              <p>
+                Issue to your wallet, then transfer. Reserve withdrawals retain
+                accepted payout and refund coverage.
+              </p>
+            </div>
+            <div class="tool-buttons">
+              <button class="button" id="issue">Issue points</button
+              ><button class="button" id="fund">Fund reserve</button
+              ><button class="button" id="withdraw">Return surplus</button
+              ><button class="button" id="assign">Assign player</button>
+            </div>
+          </section>
+          <footer>
+            <span
+              >FAIRMOUNT <span class="footer-dot">/</span> VIRTUAL-POINT
+              OPERATIONS</span
+            ><span>Server authorization is always authoritative.</span>
+          </footer>
+        </main>
+      </div>
+    </div>
+    <dialog id="login-dialog" aria-labelledby="login-title">
+      <form id="login-form" method="dialog">
+        <div class="eyebrow">SECURE ACCESS</div>
+        <h2 id="login-title">Enter your workspace.</h2>
+        <p class="dialog-copy">
+          Owner access requires a password and MFA. Agent access uses an Agent
+          ID and password.
+        </p>
+        <label
+          >Role<select id="login-role" name="role">
+            <option value="OWNER">Owner</option>
+            <option value="AGENT">Agent</option>
+          </select></label
+        ><label
+          >Login identifier<input
+            id="login-identifier"
+            name="identifier"
+            value="owner"
+            required
+            maxlength="32"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false" /></label
+        ><label
+          >Password<input
+            id="login-password"
+            name="password"
+            type="password"
+            required
+            maxlength="128"
+            autocomplete="current-password"
+        /></label>
+        <div id="mfa-fields">
+          <label
+            >MFA method<select id="factor-kind">
+              <option value="totp">Authenticator code</option>
+              <option value="recovery">Offline recovery code</option>
+            </select></label
+          ><label
+            >MFA code<input
+              id="login-code"
+              type="password"
+              maxlength="64"
+              autocomplete="one-time-code"
+          /></label>
+        </div>
+        <p id="login-error" role="alert" class="form-error"></p>
+        <div class="dialog-actions">
+          <button type="button" class="button" data-close="login-dialog">
+            Cancel</button
+          ><button class="button primary" type="submit" id="login-submit">
+            Sign in securely
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="action-dialog" aria-labelledby="action-title">
+      <form id="action-form" method="dialog">
+        <div class="eyebrow">PREPARE A CHANGE</div>
+        <h2 id="action-title">Member action</h2>
+        <div id="action-fields"></div>
+        <p id="action-error" role="alert" class="form-error"></p>
+        <div class="dialog-actions">
+          <button type="button" class="button" data-close="action-dialog">
+            Cancel</button
+          ><button class="button primary" type="submit">Review change →</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+      <div class="eyebrow">CHECK BEFORE COMMITTING</div>
+      <h2 id="confirm-title">Confirm this change.</h2>
+      <p class="dialog-copy">
+        The server will recheck your role, scope, available funds and security
+        proof. Nothing is changed until it confirms success.
+      </p>
+      <dl id="command-preview"></dl>
+      <p id="confirm-error" role="alert" class="form-error"></p>
+      <div class="dialog-actions">
+        <button class="button" id="confirm-login">Sign in again</button
+        ><button class="button" id="cancel-command">Cancel</button
+        ><button class="button primary" id="commit-command">
+          Confirm change
+        </button>
+      </div>
+    </dialog>
+    <dialog id="secret-dialog" aria-labelledby="secret-title">
+      <div class="eyebrow">ONE-TIME HANDOFF</div>
+      <h2 id="secret-title">Keep this setup secret safe.</h2>
+      <p class="dialog-copy">
+        Shown only on first success. Deliver it securely to the member. Do not
+        put it in ordinary chat, logs or shared notes.
+      </p>
+      <p id="secret-account"></p>
+      <label
+        >Setup secret<input
+          id="secret-value"
+          readonly
+          type="password"
+          autocomplete="off"
+      /></label>
+      <p class="subtle" id="secret-expiry"></p>
+      <div class="dialog-actions">
+        <button class="button" id="reveal-secret">Reveal</button
+        ><button class="button" id="copy-secret">Copy secret</button
+        ><button class="button primary" id="clear-secret">
+          I have delivered it
+        </button>
+      </div>
+      <p id="secret-note" role="status"></p>
+    </dialog>
+  </body>
+</html>

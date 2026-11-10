@@ -1327,3 +1327,169 @@ class OperatorHTTPTests(unittest.TestCase):
                 ),
                 10,
             )
+
+    def test_console_owner_context_roster_is_private_and_bounded(self):
+        from fairmount_api.console_reads import PAGE_SIZE
+        from fairmount_api.db.models import PrivateIdentity
+
+        agent, member = self.fixtures()
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(PrivateIdentity.__table__)
+                .where(PrivateIdentity.account_id == member.account_id)
+                .values(display_name="Roster member", mobile_number="PRIVATE CONTACT")
+            )
+        context = self.client.get("/api/v1/console/context", headers={"origin": ORIGIN})
+        self.assertEqual(context.status_code, 200, context.text)
+        self.assertEqual(context.json()["role"], "OWNER")
+        self.assertIsInstance(context.json()["balance"], str)
+        self.assertIn("reserve_balance", context.json())
+        self.assertEqual(context.headers["cache-control"], "no-store")
+        # There can be earlier committed fixtures; consume bounded keyset pages.
+        seen, cursor = [], None
+        for _ in range(20):
+            response = self.client.get(
+                "/api/v1/console/members",
+                params={"after": cursor} if cursor else {},
+                headers={"origin": ORIGIN},
+            )
+            self.assertEqual(response.status_code, 200, response.text)
+            page = response.json()
+            self.assertLessEqual(len(page["items"]), PAGE_SIZE)
+            self.assertNotIn("PRIVATE CONTACT", response.text)
+            self.assertNotIn("initial_secret", response.text)
+            seen.extend(row["account_id"] for row in page["items"])
+            cursor = page["next_after"]
+            if cursor is None:
+                break
+        self.assertIn(str(agent.account_id), seen)
+        self.assertIn(str(member.account_id), seen)
+        self.assertEqual(len(set(seen)), len(seen))
+
+    def test_console_agent_roster_and_history_reauthorize_assignment(self):
+        agent, member = self.fixtures()
+        browser = self.agent_browser(agent)
+        body = {"username": self.name, "agent_id": agent.login_id}
+        self.assertEqual(self.post("assignments", body).status_code, 200)
+        self.assertEqual(
+            self.post("points/issue", {"amount": 100, "reason": "seed"}).status_code, 200
+        )
+        self.assertEqual(
+            self.post(
+                "points/transfer",
+                {"identifier": agent.login_id, "amount": 50, "to_member": True, "reason": "budget"},
+            ).status_code,
+            200,
+        )
+        response = self.agent_transfer(browser, self.name, 10)
+        operation = response.json()["operation_id"]
+        context = browser.get("/api/v1/console/context").json()
+        self.assertEqual(context["role"], "AGENT")
+        self.assertNotIn("reserve_balance", context)
+        roster = browser.get("/api/v1/console/members").json()["items"]
+        self.assertEqual([row["account_id"] for row in roster], [str(member.account_id)])
+        history = browser.get("/api/v1/console/history").json()["items"]
+        self.assertEqual([row["operation_id"] for row in history], [operation])
+        # Disabling a current player removes it and its transfer history from
+        # this agent's current-scope projection, not just a browser-side filter.
+        self.assertEqual(
+            self.post("accounts/status", {"identifier": self.name, "enabled": False}).status_code,
+            200,
+        )
+        self.assertEqual(browser.get("/api/v1/console/members").json()["items"], [])
+        self.assertEqual(browser.get("/api/v1/console/history").json()["items"], [])
+        self.assertEqual(
+            self.post("accounts/status", {"identifier": self.name, "enabled": True}).status_code,
+            200,
+        )
+        self.assertEqual(self.post("assignments/remove", {"username": self.name}).status_code, 200)
+        self.assertEqual(browser.get("/api/v1/console/members").json()["items"], [])
+        self.assertEqual(browser.get("/api/v1/console/history").json()["items"], [])
+
+    def test_console_player_revoked_and_malformed_cursor_denials(self):
+        _, member = self.fixtures()
+        with self.engine.begin() as connection:
+            player_token = self.session(connection, member.account_id, "PLAYER")
+        with TestClient(
+            app,
+            base_url=ORIGIN,
+            client=("203.0.113.91", 51020),
+            cookies={SESSION_COOKIE: player_token},
+        ) as client:
+            for suffix in ("context", "members", "history"):
+                self.assertEqual(client.get("/api/v1/console/" + suffix).status_code, 401)
+        for route, query in (
+            ("members", "after=bad"),
+            ("history", "after=bad"),
+            ("context", "account_id=bad"),
+            ("history", "after=a&after=b"),
+        ):
+            self.assertEqual(
+                self.client.get("/api/v1/console/" + route + "?" + query).status_code, 400
+            )
+        self.assertEqual(
+            self.client.get(
+                "/api/v1/console/context", headers={"x-forwarded-for": "203.0.113.1"}
+            ).status_code,
+            503,
+        )
+        with self.engine.begin() as connection:
+            connection.execute(
+                update(AccountSession.__table__)
+                .where(AccountSession.token_digest == session_token_digest(self.token))
+                .values(revoked_at=func.now())
+            )
+        for suffix in ("context", "members", "history"):
+            self.assertEqual(self.client.get("/api/v1/console/" + suffix).status_code, 401)
+
+    def test_console_history_is_administrative_not_gameplay_profit_or_loss(self):
+        from fairmount_api.console_reads import ADMIN_KINDS, PAGE_SIZE
+
+        self.assertEqual(
+            self.post("points/issue", {"amount": 20, "reason": "console audit"}).status_code, 200
+        )
+        response = self.client.get("/api/v1/console/history")
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertLessEqual(len(response.json()["items"]), PAGE_SIZE)
+        self.assertTrue(response.json()["items"])
+        for row in response.json()["items"]:
+            self.assertIn(row["kind"], ADMIN_KINDS)
+            self.assertIsInstance(row["amount"], str)
+            for forbidden in ("idempotency_key", "request_fingerprint", "password", "context_id"):
+                self.assertNotIn(forbidden, row)
+
+    def test_console_history_cursor_preserves_timestamp_ties_without_duplicates(self):
+        from fairmount_api import console_reads
+        from fairmount_api.console_reads import decode_cursor
+        from fairmount_api.point_accounting import issue_owner_points
+
+        expected = set()
+        with self.engine.begin() as connection:
+            for _ in range(7):
+                operation = issue_owner_points(
+                    connection,
+                    self.token,
+                    amount=1,
+                    reason="timestamp tie pagination",
+                    idempotency_key=str(uuid.uuid4()),
+                )
+                expected.add(str(operation.operation_id))
+        seen, cursor = [], None
+        with patch.object(console_reads, "PAGE_SIZE", 3):
+            for _ in range(10):
+                response = self.client.get(
+                    "/api/v1/console/history", params={"after": cursor} if cursor else {}
+                )
+                self.assertEqual(response.status_code, 200)
+                payload = response.json()
+                self.assertLessEqual(len(payload["items"]), 3)
+                seen.extend(row["operation_id"] for row in payload["items"])
+                cursor = payload["next_after"]
+                if cursor:
+                    decode_cursor(cursor)
+                if expected <= set(seen):
+                    break
+                if cursor is None:
+                    break
+        self.assertTrue(expected <= set(seen))
+        self.assertEqual(len(seen), len(set(seen)))

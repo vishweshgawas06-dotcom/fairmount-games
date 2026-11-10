@@ -6,6 +6,31 @@
 
 **Scope:** V1 virtual-points, single-zero European roulette only. No deposits, withdrawals, cash-equivalent prizes, or real-money gambling.
 
+## Active delivery sequence — 15 October to 15 November 2026
+
+**Planning date correction:** current session is 15 October 2026. Existing
+future-dated checkpoint/revision labels are retained as identifiers, not calendar
+proof. This sequence supersedes older November recovery sections below. It is a
+gated target, not a promise that unfinished work is complete or a deployment
+approval. Current P06/P07 console slice: [P06-T02a](tasks/P06-T02a.md).
+
+| Target window | Ordered phase work / exit evidence |
+|---|---|
+| 15 October | Preserve verified engine/auth/ledger baseline; scoped owner/agent dashboards and administrative history checkpoint, browser contracts, PostgreSQL regression and supported CI. Full P06/P07 still partial. |
+| 16–20 October | P04/P09 private events with live-session/current-assignment checks on every projection, reconnect/ordering/revocation tests. Then player activation/login and wallet/bet/history UI, no cached authority. |
+| 21–25 October | P10/P11 server-authoritative bet/rebet integration and failure UX; agreed shared reference table remains one source of truth for selection keys, payouts and chip denominations in P08-T02, P11-T01 and P11-T04. Verify affordability, cutoff, caps, POOL-01 payout/full-refund cover and accepted-bet preservation. |
+| 26–29 October | P12–P14 European wheel/ball displays persisted server result; audio, reduced motion, keyboard/device accessibility and responsive landscape. No client-selected outcomes or RNG influenced by bets/identity. Complete remaining P06/P07 reporting and P03 credential UI under approved policy. |
+| 30 October–3 November | P15/P16 worker supervision, diagnostics, fault/recovery/security gates, privacy/retention and backups design. Obtain unresolved D-02/D-04/D-05/deployment decisions before dependent acceptance; no all-factors-lost self-service fallback. Reconcile PR #1/schema integration without dropping UUID/security work. |
+| 4–8 November | P17 measured capacity, latency, reconnect, crash/failover and restore tests against approved targets; P18 legal/privacy and complete credential/data lifecycle review; real deployed browser/device journey tests. |
+| 9–12 November | P19 staging rehearsal, owner-run bootstrap/key custody, backup/restore and rollback drill, owner acceptance with all evidence. Any red gate means no-go, not a rushed deployment. |
+| 13–14 November | Release freeze, independent security/operational review, migration rehearsal and final go/no-go. Confirm service/worker readiness separately; no timeout auto-void or persisted-result reroll. |
+| 15 November | Production target **only if every prior gate is passed**, owner acceptance and operational/legal approval exist, and rollback/on-call are ready. Otherwise explicitly defer launch. |
+
+**Risk:** substantial private realtime/player/operations work and external decisions
+remain. The console's green tests do not satisfy those gates. No new audit
+retention period, exceptional incident void, proxy trust or deployment authority
+is silently chosen to fit this schedule.
+
 ## How to use this plan
 
 - [Locked requirements](LOCKED_REQUIREMENTS.md), the [owner-approved payout/settlement specification](roulette/PAYOUT_AND_SETTLEMENT_SPEC_DRAFT.md), and the [approved legal-position catalogue](roulette/LEGAL_POSITION_CATALOGUE_REVIEW.md) govern product behavior. This document proposes a delivery sequence, not new product rules. In particular, the approved **total-payout** multipliers are intentional: a winning 10-point straight-up bet credits 350 total, not 360.

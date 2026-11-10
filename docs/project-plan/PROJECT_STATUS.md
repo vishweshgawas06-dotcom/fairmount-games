@@ -1,9 +1,26 @@
 # Project Status
 
-**Current phase (2026-11-07):** Private P05/P08/P11 engine slices, opt-in direct-TLS P03/P04 request-edge reads, a public reveal-only round stream and P15 diagnostics have scoped CI evidence; operator lifecycle services and five opt-in direct-TLS owner routes (P06-T01a/b) now exist with non-secret replay receipts. Writable gameplay UI, realtime privacy, complete registration/operator UI, proxy trust and operational integration remain open, and production is targeted for **2026-11-15**. PR #1 was last checked as conflicting with main's incompatible integer-ID engine core; recheck GitHub before any merge decision.
+**Current session (2026-10-15):** engine/identity/ledger checkpoints remain verified;
+the shared owner/agent console now implements scoped roster, administrative point
+history and protected lifecycle/point forms. Full P06/P07 acceptance, private
+realtime, writable player experience, complete credential/privacy lifecycle and
+release operations remain open. **Production target: 15 November 2026, conditional
+on gates.** PR #1 is still OPEN/CONFLICTING, not merged.
 
-## Current verified checkpoints (2026-11-07)
+**Calendar correction:** use 15 October 2026 for current planning. Future-dated
+checkpoint/migration identifiers and older recovery workbacks below do not prove
+those calendar dates occurred. The [active delivery sequence](DETAILED_DELIVERY_PLAN.md#active-delivery-sequence--15-october-to-15-november-2026)
+supersedes them; historical task evidence is retained without rewriting migrations.
 
+## Current verified checkpoints
+
+- [P06-T02a](tasks/P06-T02a.md): shared owner/agent console with role-derived menus,
+  bounded authorized roster/history, exact balances, protected write confirmations,
+  actor-bound retries and one-time-secret cleanup. Local **336 unittest (0 skips),
+  425 fresh-DB pytest, 8 operator Node, 11 mocked Playwright and 3 wheel Node**
+  passed; full migration round-trip/legacy-role compatibility/parity, Ruff,
+  formatting and actual FastAPI shell browser smoke passed. This is not private
+  realtime, complete Next.js app delivery, gameplay P/L or deployment acceptance.
 - Latest cumulative verification: **327 unittest cases (zero skips), 416 fresh-DB pytest cases, three Node wheel tests, migration parity and Ruff passed locally**; [CI 42349658451](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349658451) passed on `3ea56f8`. The malformed escaped-Unicode subject regression is covered across all four authentication surfaces.
 - [P05-T04a](tasks/P05-T04a.md): opt-in protected point/reserve HTTP writes, owner-only issuance, conserved owner/member and agent/current-player transfers, funded reserve surplus protection, atomic journal/projection/receipt. Full local fresh-DB unittest **326 passed**, with replay, freeze, scope and accepted-cover checks; [CI 42349512615](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349512615) passed on `59d4cbd`. No dashboard or deployment acceptance yet.
 - [P07-T01a](tasks/P07-T01a.md): real agent login→new self-assigned player, zero initial wallet, required private name/unverified contact fields for registration, actor-isolated replay receipts, collision/rollback/scope tests. Full local fresh-DB unittest **318 passed**; [CI 42349281491](https://github.com/vishweshgawas06-dotcom/fairmount-games/actions/runs/42349281491) passed on `794d2d7`. P05-T04a adds point edges; P07 UI/history remains open.

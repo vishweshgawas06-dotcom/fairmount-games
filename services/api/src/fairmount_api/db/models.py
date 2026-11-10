@@ -495,6 +495,25 @@ class PointOperation(Base):
         UniqueConstraint(
             "actor_account_id", "idempotency_key", name="uq_point_operations_actor_key"
         ),
+        Index(
+            "ix_point_operations_admin_page",
+            "created_at",
+            "id",
+            postgresql_where=text(
+                "kind IN ('OWNER_ISSUE','OWNER_TRANSFER','AGENT_TRANSFER','RESERVE_FUND',"
+                "'RESERVE_WITHDRAW','AGENT_DISABLE_RETURN')"
+            ),
+        ),
+        Index(
+            "ix_point_operations_actor_admin_page",
+            "actor_account_id",
+            "created_at",
+            "id",
+            postgresql_where=text(
+                "kind IN ('OWNER_ISSUE','OWNER_TRANSFER','AGENT_TRANSFER','RESERVE_FUND',"
+                "'RESERVE_WITHDRAW','AGENT_DISABLE_RETURN')"
+            ),
+        ),
     )
 
 
